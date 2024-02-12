@@ -1,0 +1,36 @@
+version: "3"
+
+services:
+  mongo:
+    image: "mongo:4.0"
+    container_name: mongo
+    ports:
+      - "27019:27017"
+    restart: always
+    volumes:
+      - .mongo:/data/db
+    networks:
+      - backend
+
+  app:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pipes-api
+    container_name: app
+    restart: on-failure
+    env_file:
+      - .env
+    volumes:
+      - .:/src
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+    command: ["/wait-for-mongo.sh", "/entrypoint.sh"]
+    networks:
+      - backend
+
+networks:
+  backend:
