@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
-settings = get_settings(os.environ.get("PIPES_ENVIRONMENT"))
+settings = get_settings(os.environ.get("PIPES_ENV", "dev"))
 app = FastAPI(
     title=settings.TITLE,
     debug=settings.DEBUG,

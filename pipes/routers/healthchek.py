@@ -7,7 +7,7 @@ router = APIRouter()
 
 
 @router.get("/ping")
-def healthcheck():
+def ping():
     """
     For ALB health check, need to ping Neptune regularly to avoid idle timeout - 20mins
 

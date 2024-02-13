@@ -28,6 +28,10 @@ insert_final_newline = ignore
 indent_size = 2
 insert_final_newline = ignore
 
+[*.ini]
+indent_size = 2
+insert_final_newline = ignore
+
 [*.{yml,yaml}]
 indent_size = 2
 

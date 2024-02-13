@@ -15,18 +15,18 @@ class DevelopmentSettings(CommonSettings):
     DEBUG: bool = True
 
 
-class DeploymentSettings(CommonSettings):
+class ProductionSettings(CommonSettings):
     DEBUG: bool = False
 
 
-def get_settings(environment):
+def get_settings(env):
     """Get settings regarding the given environment"""
-    if environment in ["dev", "prod"]:
-        return DeploymentSettings()
+    if env == "prod":
+        return ProductionSettings()
 
-    if environment == "local":
+    if env == "dev":
         return DevelopmentSettings()
 
     raise ValueError(
-        f"Not a valid environment '{environment}', please use 'local', 'dev', or 'prod'",
+        f"Not a valid environment '{env}', please use 'dev' or 'prod'",
     )

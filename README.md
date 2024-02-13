@@ -25,7 +25,7 @@ In `.env` file,
 
 ```
 # env
-PIPES_ENVIRONMENT=local
+PIPES_ENV=dev
 
 # mongo
 MONGO_HOST=mongo
@@ -44,7 +44,7 @@ $ docker compose build
 $ docker compose up
 ```
 
-Visit [localhost:8080](http://localhost:8080) for local development.
+Visit [localhost:8080](http://localhost:8080) for development.
 
 
 ### 2. Pre-Commit
