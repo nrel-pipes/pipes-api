@@ -55,7 +55,14 @@ Create a Python virtual environment on your machine, and activate it. Then insta
 $ pip install -r requirements-dev.txt
 ```
 
-`pre-commit` is installed, which would detect code problems before they enter the version control system.
+Then run
+
+```bash
+$ pre-commit install
+```
+
+`pre-commit` detects code problems before they enter the version control system. If any issue when committing, please
+fix them, then add and commit again.
 
 ### 3. Automated Testing
 
