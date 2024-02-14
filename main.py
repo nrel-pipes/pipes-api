@@ -25,8 +25,8 @@ app.add_middleware(
     allow_headers=settings.ALLOW_HEADERS,
 )
 
-app.include_router(healthchek.router, tags=["HealthCheck"], prefix="/api")
-app.include_router(project.router, tags=["Project"], prefix="/api")
+app.include_router(healthchek.router, tags=["healthcheck"], prefix="/api")
+app.include_router(project.router, tags=["project"], prefix="/api")
 
 
 if __name__ == "__main__":
