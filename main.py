@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pipes.routers import healthchek
+from pipes.routers import project
 from pipes.settings import get_settings
 
 import uvicorn
@@ -25,6 +26,7 @@ app.add_middleware(
 )
 
 app.include_router(healthchek.router, tags=["HealthCheck"], prefix="/api")
+app.include_router(project.router, tags=["Project"], prefix="/api")
 
 
 if __name__ == "__main__":
