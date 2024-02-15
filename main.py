@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import os
-from pipes.routers import healthchek
-from pipes.routers import project
-from pipes.settings import get_settings
+from pipes.config.settings import get_settings
+from pipes.health.routes import router as health_router
+from pipes.projects.routes import router as projects_router
 
 import uvicorn
 from fastapi import FastAPI
@@ -25,8 +25,8 @@ app.add_middleware(
     allow_headers=settings.ALLOW_HEADERS,
 )
 
-app.include_router(healthchek.router, tags=["healthcheck"], prefix="/api")
-app.include_router(project.router, tags=["project"], prefix="/api")
+app.include_router(health_router, tags=["health"], prefix="/api")
+app.include_router(projects_router, tags=["project"], prefix="/api")
 
 
 if __name__ == "__main__":
