@@ -1,0 +1,104 @@
+######## pipeline data ################
+
+# -------- Run 1 --------
+[project_run]
+  name = "3"
+  description = "Single scenario, single year, simple test"
+  assumptions = ["The single scenario, single year, simple tests assumes 1 scenario and 1 model year at the project run level which is different than the project level. The project run also has 2 models with one edge. Each model has its own example of a different model requirement for geographic_extent compared to the run-level."]
+  scenarios = ["earlynobio_moderate"]
+  scheduled_start = "2022-09-27"
+  scheduled_end = "2022-10-15"
+
+[project_run.requirements] # these become the new requirements for all datasets in this run
+  model_years = [2020]
+
+[[project_run.models]]
+  model = "dsgrid"
+  type = "Energy Demand" # This is used in pipeline as header to represent the category of model
+  description = "The Demand-Side Grid Model used for LA100 project Run 1"
+  assumptions = ["This is a dsgrid assumption"]
+  expected_scenarios = ["demand_moderate"] # scenarios we're expecting the model to checkin datasets under
+  scheduled_start = "2022-09-28"
+  scheduled_end = "2022-10-05"
+
+[[project_run.models.scenario_mappings]] # need to check that either all project scenarios are accounted for or that all project_run scenarios are accounted for if models.scenario_mappings are provided
+  model_scenario = "demand_moderate"
+  project_scenarios = ["earlynobio_moderate"] # one model scenario can map to multiple project scenarios.
+  description = [
+    "30% of passenger cars on the road in 2045 are plug-in electric.",
+    "Residential building equipment and appliance sales are distributed across all efficiency levels.",
+    "80% of new & retrofit equipment is 5 years ahead of California's Title 24 commercial building energy-efficiency code-minimum.",
+    "75% of residents have access to residential charging; 25% access to workplace charging."]
+
+[project_run.models.requirements]  # model specific requirement that applies to this run
+  geographic_extent = "RS-A"
+
+[[project_run.models]]
+  model = "rpm"
+  type = "Capacity Expansion"
+  description = "Resource Planning Model for LADWP and WECC from the LA100 Project"
+  assumptions = ["LADWP is treated as an island"]
+  expected_scenarios = ["earlynobio_moderate"]
+  scheduled_start = "2022-10-05"
+  scheduled_end = "2022-10-15"
+
+[project_run.models.requirements]
+  geographic_extent = "RS-C"
+
+[[project_run.topology]]
+  from_model = "dsgrid"
+  to_model = "rpm"
+
+  [[project_run.topology.handoffs]]
+  id = "handoff_id1"
+  description = "8760 system-level load profiles, including T&D losses, before distributed generation, at the RS nodal level"
+  scheduled_start = ""  # some date
+  scheduled_end = "2023-06-30"  # *Required* some date
+  notes = ""
+
+  [[project_run.topology.handoffs]]
+  id = "handoff_id2"
+  description = "EV locations"
+  scheduled_start = ""  # some date
+  scheduled_end = "2023-07-10"  # *Required* some date
+  notes = ""
+
+##################### modeling teams #####################
+[[model_teams]]
+  name = "dsgrid"
+
+  [[model_teams.members]]
+  first_name = "Sam"
+  last_name = "Molnar"
+  email = "sam.molnar@nrel.gov"
+  username = "smolnar"
+
+  [[model_teams.members]]
+  first_name = "Meghan"
+  last_name = "Mooney"
+  email = "Meghan.Mooney@nrel.gov"
+  username = "mmooney"
+
+[[model_teams]]
+  name = "dgen"
+
+  [[model_teams.members]]
+  first_name = "Paritosh"
+  last_name = "Das"
+  email = "Paritosh.Das@nrel.gov"
+  username = "pdas"
+
+[[model_teams]]
+  name = "rpm"
+
+  [[model_teams.members]]
+  first_name = "Kenny"
+  last_name = "Gruchalla"
+  email = "Kenny.Gruchalla@nrel.gov"
+  username = "kgruchal"
+
+  [[model_teams.members]]
+  first_name = "David"
+  last_name = "Rager"
+  email = "David.Rager@nrel.gov"
+  username = "drager"

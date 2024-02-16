@@ -1,0 +1,16 @@
+# this is an example of the toml that is submitted when a user has completed tasks
+
+task_name = "trans-task"
+type = "Transformation"                          # must be one of [QAQC, Visualization, Transformation]
+dataset_ids = ["load-profiles"]                  # This is for datasets that live within the model run
+vertex_ids = []                                  # If any datasets live outside of this model run, provide the vertex ids here
+description = "Transformed something"            # describe the purpose of the task
+notes = """"""			                             # any info to store about the task (e.g., any issues etc.)
+script = ["my_script.py"]                        # the script(s) used
+subtask_ids = ["trans_1", "trans_2"]			       # if performing planned tasks that PIPES knows about 
+                                                 # please provide all ids of the tasks that were performed
+                                                 
+relates_to = [""]                                # objects in PIPES this task relates to
+[outputs]                                        # if your task outputs other files that are not datasets (images, videos etc.) you can reference them here
+  location = ""                                  # where is the output located if it is not going to be checked into PIPES
+  # put any other information you want related to outputs below

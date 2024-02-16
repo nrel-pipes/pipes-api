@@ -1,0 +1,43 @@
+# Ad-hoc example tasks under one handoff
+
+handoff_id = "handoff_id2"
+
+[[tasks]]
+  id = "trans_x" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "30% of passenger cars on the road in 2045 are plug-in electric. Residential building equipment and appliance sales are distributed across all efficiency levels. 80% of new & retrofit equipment is 5 years ahead of California's Title 24 commercial building energy-efficiency code-minimum. 75% of residents have access to residential charging; 25% access to workplace charging."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_moderate" # *required* DO NOT MODIFY
+  to_value = "earlynobio_moderate" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this task.
+
+[[tasks]]
+  id = "check_x"    # *required* name to refer to this task, must be unique otherwise PIPES will append integers, spaces are converted to '_'
+  type = "QAQC"     # *required* type to refer to this task
+  description = ""			# *required*
+  inputs = ["",]				#
+  notes = [""]          # optional
+  scheduled_start = ""  # optional, by default this is scheduled according to model run and handoff schedules
+  scheduled_end   = ""  # optional, by default this is scheduled according to model run and handoff schedules
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this task.
+
+  [[tasks.acceptance_criteria]] # custom user key/value TOML pairs (possibly nested) to describe what needs to be done with qaqc, we provide some examples below
+    bounds = []
+    columns = [""] # columns to check
+    units = "" # check that units
+
+[[tasks]]
+  id = "vis_x"
+  type = "Visualization" # *required* type to refer to this task
+  description = ""
+  inputs = ["",]
+  notes = [""]
+  scheduled_start = "" # optional, by default this is scheduled according to model run and handoff schedules
+  scheduled_end   = "" # optional, by default this is scheduled according to model run and handoff schedules
+  assignee = "testuser" # *required* who (assignee's username) will be responsible for performing this task.
+
+  [[tasks.parameters]] # custom user key/value TOML pairs (possibly nested) to describe what needs to be done with vis, we provide some examples below
+    type = "line"  #
+    columns = []   #
+    colors = []

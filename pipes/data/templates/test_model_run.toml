@@ -1,0 +1,283 @@
+# lines marked with a *required* are REQUIRED PIECES OF METADATA
+# if a header does not have *required* it is not required info, but part of its metadata can be marked as *required* to indicate that this metadata is required when the header is included
+
+name = "model-run-1" # *required* name of model run
+description = ["This is model run 1"] # description/purpose of the model run
+assumptions = [""] # model specific assumptions for this run
+version = "v1" # version of model code
+notes = [""]
+
+[source_code] # code associated with run
+location = "https://github.com/example-model"
+branch = "main"
+
+[config]
+# any info on config for model sim
+
+[env_deps]
+# any info on environment dependencies for model sim
+
+[[datasets]] # datasets this model run is expected to output that will be handed off
+  name = "dsg_rpm_2_v2.1" # ** name of dataset
+  dataset_id = "load-profiles"
+  description = "this is a general description about the dataset, the actual dataset description will be given in the dataset checkin" # any info about dataset
+  scheduled_checkin = "2023-02-28" # estimate of when dataset will be checked in
+
+[[handoffs]]
+  id = "handoff_id1"
+  description = "8760 system-level load profiles, including T&D losses, before distributed generation, at the RS nodal level, including gap-system level loads but not including load shifting from demand response."
+  from_model = "" # Optional get FROM PIPES
+  to_model = "rpm" # *required*
+  scheduled_start = ""
+  scheduled_end = "2023-03-01" # *required*
+  notes = ""
+
+[[handoffs]]
+  id = "handoff_id2"
+	description = "EV Locations."
+	from_model = "" # Optional get FROM PIPES
+  to_model = "dgen" # *required*
+  scheduled_start = ""
+  scheduled_end = "2023-05-05" # *required*
+  notes = ""
+
+[[tasks]]
+  id = "check_solar"    # *required* name to refer to this task, must be unique otherwise PIPES will append integers, spaces are converted to '_'
+  type = "QAQC"         # *required* type to refer to this task
+  description = ""			# *required*
+  inputs = ["load-profiles",]				#
+  notes = [""]          # optional
+  scheduled_start = ""  # optional, by default this is scheduled according to model run and handoff schedules
+  scheduled_end   = ""  # optional, by default this is scheduled according to model run and handoff schedules
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this QAQC task.
+  handoff_id = "handoff_id1" # optional, use this field if a task is associated with a handoff id. If not, this line should be deleted.
+
+  [[tasks.acceptance_criteria]] # custom user key/value TOML pairs (possibly nested) to describe what needs to be done with qaqc, we provide some examples below
+    bounds = []
+    columns = [""] # columns to check
+    units = "" # check that units
+
+[[tasks]]
+  id = "vis_solar"
+  type = "Visualization" # *required* type to refer to this task
+  description = ""
+  inputs = ["",]
+  notes = [""]
+  scheduled_start = "" # optional, by default this is scheduled according to model run and handoff schedules
+  scheduled_end   = "" # optional, by default this is scheduled according to model run and handoff schedules
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this visualization task.
+  handoff_id = "handoff_id1"
+
+  [[tasks.parameters]] # custom user key/value TOML pairs (possibly nested) to describe what needs to be done with vis, we provide some examples below
+    type = "line"  #
+    columns = []   #
+    colors = []
+
+[[tasks]]
+  id = "trans_1" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "30% of passenger cars on the road in 2045 are plug-in electric. Residential building equipment and appliance sales are distributed across all efficiency levels. 80% of new & retrofit equipment is 5 years ahead of California's Title 24 commercial building energy-efficiency code-minimum. 75% of residents have access to residential charging; 25% access to workplace charging."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_moderate" # *required* DO NOT MODIFY
+  to_value = "earlynobio_moderate" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id1"
+
+[[tasks]]
+  id = "trans_2" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "30% of passenger cars on the road in 2045 are plug-in electric. Residential building equipment and appliance sales are distributed across all efficiency levels. 80% of new & retrofit equipment is 5 years ahead of California's Title 24 commercial building energy-efficiency code-minimum. 75% of residents have access to residential charging; 25% access to workplace charging."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_moderate" # *required* DO NOT MODIFY
+  to_value = "sb100_moderate" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id1"
+
+[[tasks]]
+  id = "trans_3" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "30% of passenger cars on the road in 2045 are plug-in electric. Residential building equipment and appliance sales are distributed across all efficiency levels. 80% of new & retrofit equipment is 5 years ahead of California's Title 24 commercial building energy-efficiency code-minimum. 75% of residents have access to residential charging; 25% access to workplace charging."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_moderate" # *required* DO NOT MODIFY
+  to_value = "trans_moderate" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id1"
+
+[[tasks]]
+  id = "trans_4" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "30% of passenger cars on the road in 2045 are plug-in electric. Residential building equipment and appliance sales are distributed across all efficiency levels. 80% of new & retrofit equipment is 5 years ahead of California's Title 24 commercial building energy-efficiency code-minimum. 75% of residents have access to residential charging; 25% access to workplace charging."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_moderate" # *required* DO NOT MODIFY
+  to_value = "ltdnewtrans_moderate" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id1"
+
+[[tasks]]
+  id = "trans_5" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "Appliances, heating within buildings switch from natural gas to electric. Residential building equipment and appliance sales are at highest efficiency available. 80% of passenger cars on the road in 2045 are plug-in electric. 60% of residents have access to residential charging; 50% access to workplace charging to encourage more daytime charging. Demand is more flexible in its timing."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_high" # *required* DO NOT MODIFY
+  to_value = "earlynobio_high" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id1"
+
+[[tasks]]
+  id = "trans_6" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "Appliances, heating within buildings switch from natural gas to electric. Residential building equipment and appliance sales are at highest efficiency available. 80% of passenger cars on the road in 2045 are plug-in electric. 60% of residents have access to residential charging; 50% access to workplace charging to encourage more daytime charging. Demand is more flexible in its timing."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_high" # *required* DO NOT MODIFY
+  to_value = "sb100_high" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id1"
+
+[[tasks]]
+  id = "trans_7" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "Appliances, heating within buildings switch from natural gas to electric. Residential building equipment and appliance sales are at highest efficiency available. 80% of passenger cars on the road in 2045 are plug-in electric. 60% of residents have access to residential charging; 50% access to workplace charging to encourage more daytime charging. Demand is more flexible in its timing."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_high" # *required* DO NOT MODIFY
+  to_value = "trans_high" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id1"
+
+[[tasks]]
+  id = "trans_8" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "Appliances, heating within buildings switch from natural gas to electric. Residential building equipment and appliance sales are at highest efficiency available. 80% of passenger cars on the road in 2045 are plug-in electric. 60% of residents have access to residential charging; 50% access to workplace charging to encourage more daytime charging. Demand is more flexible in its timing."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_high" # *required* DO NOT MODIFY
+  to_value = "ltdnewtrans_high" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id1"
+
+[[tasks]]
+  id = "trans_9" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "All the electrification of High, but timing of demand is not aligned with renewable generation. Energy efficiency adoption is lower than Moderate (matches LADWPs 2017 Strategic Long Term Resource Plan 10-year efficiency goals). 90% of residents have access to residential charging; 15% access to workplace charging to restrict daytime charging."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_stress" # *required* DO NOT MODIFY
+  to_value = "sb100_stress" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id1"
+
+[[tasks]]
+  id = "trans_10" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "30% of passenger cars on the road in 2045 are plug-in electric. Residential building equipment and appliance sales are distributed across all efficiency levels. 80% of new & retrofit equipment is 5 years ahead of California's Title 24 commercial building energy-efficiency code-minimum. 75% of residents have access to residential charging; 25% access to workplace charging."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_moderate" # *required* DO NOT MODIFY
+  to_value = "earlynobio_moderate" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "smolnar" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id2"
+
+[[tasks]]
+  id = "trans_11" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "30% of passenger cars on the road in 2045 are plug-in electric. Residential building equipment and appliance sales are distributed across all efficiency levels. 80% of new & retrofit equipment is 5 years ahead of California's Title 24 commercial building energy-efficiency code-minimum. 75% of residents have access to residential charging; 25% access to workplace charging."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_moderate" # *required* DO NOT MODIFY
+  to_value = "sb100_moderate" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "smolnar" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id2"
+
+[[tasks]]
+  id = "trans_12" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "30% of passenger cars on the road in 2045 are plug-in electric. Residential building equipment and appliance sales are distributed across all efficiency levels. 80% of new & retrofit equipment is 5 years ahead of California's Title 24 commercial building energy-efficiency code-minimum. 75% of residents have access to residential charging; 25% access to workplace charging."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_moderate" # *required* DO NOT MODIFY
+  to_value = "trans_moderate" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "smolnar" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id2"
+
+[[tasks]]
+  id = "trans_13" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "30% of passenger cars on the road in 2045 are plug-in electric. Residential building equipment and appliance sales are distributed across all efficiency levels. 80% of new & retrofit equipment is 5 years ahead of California's Title 24 commercial building energy-efficiency code-minimum. 75% of residents have access to residential charging; 25% access to workplace charging."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_moderate" # *required* DO NOT MODIFY
+  to_value = "ltdnewtrans_moderate" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "smolnar" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id2"
+
+[[tasks]]
+  id = "trans_14" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "Appliances, heating within buildings switch from natural gas to electric. Residential building equipment and appliance sales are at highest efficiency available. 80% of passenger cars on the road in 2045 are plug-in electric. 60% of residents have access to residential charging; 50% access to workplace charging to encourage more daytime charging. Demand is more flexible in its timing."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_high" # *required* DO NOT MODIFY
+  to_value = "earlynobio_high" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "smolnar" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id2"
+
+[[tasks]]
+  id = "trans_15" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "Appliances, heating within buildings switch from natural gas to electric. Residential building equipment and appliance sales are at highest efficiency available. 80% of passenger cars on the road in 2045 are plug-in electric. 60% of residents have access to residential charging; 50% access to workplace charging to encourage more daytime charging. Demand is more flexible in its timing."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_high" # *required* DO NOT MODIFY
+  to_value = "sb100_high" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "smolnar" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id2"
+
+[[tasks]]
+  id = "trans_16" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "Appliances, heating within buildings switch from natural gas to electric. Residential building equipment and appliance sales are at highest efficiency available. 80% of passenger cars on the road in 2045 are plug-in electric. 60% of residents have access to residential charging; 50% access to workplace charging to encourage more daytime charging. Demand is more flexible in its timing."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_high" # *required* DO NOT MODIFY
+  to_value = "trans_high" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "smolnar" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id2"
+
+[[tasks]]
+  id = "trans_17" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "Appliances, heating within buildings switch from natural gas to electric. Residential building equipment and appliance sales are at highest efficiency available. 80% of passenger cars on the road in 2045 are plug-in electric. 60% of residents have access to residential charging; 50% access to workplace charging to encourage more daytime charging. Demand is more flexible in its timing."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_high" # *required* DO NOT MODIFY
+  to_value = "ltdnewtrans_high" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "smolnar" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id2"
+
+[[tasks]]
+  id = "trans_18" # *required* can be any tag, must be unique. if not unique PIPES will make unique. PIPES replaces spaces with '_'
+  type = "Transformation" # *required* type to refer to this task
+  description = "All the electrification of High, but timing of demand is not aligned with renewable generation. Energy efficiency adoption is lower than Moderate (matches LADWPs 2017 Strategic Long Term Resource Plan 10-year efficiency goals). 90% of residents have access to residential charging; 15% access to workplace charging to restrict daytime charging."
+  key = "scenario" # *required* DO NOT MODIFY
+  from_value = "demand_stress" # *required* DO NOT MODIFY
+  to_value = "sb100_stress" # *required* DO NOT MODIFY
+  inputs = [ "",] # what handoff datasets this transformation applies to, if empty applies to all handoff datasets going to 'to_model'.
+  assignee = "smolnar" # *required* who (assignee's username) will be responsible for performing this transformation.
+  handoff_id = "handoff_id2"
+
+[[tasks]]
+  id = "misc-task"
+  type = "QAQC"
+  description = "Misc task"
+  inputs = ["load-profiles",]				#
+  notes = [""]          # optional
+  scheduled_start = ""  # optional, by default this is scheduled according to model run and handoff schedules
+  scheduled_end   = ""  # optional, by default this is scheduled according to model run and handoff schedules
+  assignee = "jgu2" # *required* who (assignee's username) will be responsible for performing this QAQC task.
+  handoff_id = "handoff_id2"

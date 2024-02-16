@@ -1,0 +1,17 @@
+name = "rpm-mr-1" # *required* name of model run
+description = [ "",] # description/purpose of the model run
+assumptions = [ "",] # model specific assumptions for this run
+version = "1.0"
+notes = ["hi",]
+[source_code]
+    location = "some_spot" # code associated with run
+    branch = ""
+[config]
+
+[env_deps]
+
+[[datasets]]
+name = "rpm_datasets" # ** name of dataset
+dataset_id= "rpm_test_data"
+description = "fake description"
+scheduled_checkin = "" # estimate of when datset will be checked in

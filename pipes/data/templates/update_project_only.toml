@@ -1,0 +1,93 @@
+################## Project data ####################
+
+[project]
+  name = "test1"  # A short name in one word as project identifier
+  full_name = "Updated Project Name"
+  description = "New project description"
+  assumptions = [
+    "We can use LA100 as a test project for the C2C data pipeline.",
+    "No effects of climate change on power system outside of increased demand for cooling are measured.",
+    "LADWP will need to achieve a 100% clean energy by 2030 or 2045 completely on its own (e.g., no other utilities will be trading energy).",
+    "Path to 100% is based off today's technology options.",
+    "https://maps.nrel.gov/la100/la100-study/topics/renewable-energy-pathways#renewable-energy-pathways-assumptions"
+  ]
+  scheduled_start = "2023-10-01"
+  scheduled_end = "2025-01-01"
+  sensitivities = []
+
+  [[project.milestones]]
+    name = "Milestone 1"
+    description = "First test project milestone"
+    milestone_date = "2023-12-01"
+  [[project.milestones]]
+    name = "Milestone 2"
+    description = "Second test project milestone"
+    milestone_date = "2023-12-15"
+
+  [project.owner] # who will be the main POC for the project?
+    first_name = "Joe"
+    last_name = "Shmo"
+    email = "joe.shmo@nrel.gov"
+    username = "jshmo"
+
+  [project.requirements] # these are default requirements to be used unless otherwise specified at a project run level or for individual models
+    weather_years = [2012, 2014]
+    model_years = [2020, 2025, 2030, 2040, 2045]
+    geographic_extent = "LA City"
+
+
+  ################# project scenario data ####################
+
+  [[project.scenarios]]
+    name = "sb100_high"
+    description = [
+      "100% clean energy by 2045.",
+      "Only scenario with a target based on retail sales, not generation.",
+      "Evaluated under High Load Electrification."
+      ] 
+
+  [[project.scenarios]]
+    name = "sb100_moderate"
+    description = [
+      "100% clean energy by 2045.",
+      "Only scenario with a target based on retail sales, not generation.",
+      "Evaluated under Moderate Load Electrification."]
+
+  [[project.scenarios]]
+    name = "sb100_stress"
+    description = [
+      "100% clean energy by 2045.",
+      "Only scenario with a target based on retail sales, not generation.",
+      "Evaluated under High Stress Load Electrification."]
+
+  [[project.scenarios]]
+    name = "earlynobio_high"
+    description = [
+      "100% clean energy by 2035, 10 years sooner than other scenarios.",
+      "No natural gas generation or biofuels.",
+      "Allows existing nuclear and upgrades to transmission.",
+      "Evaluated under High Load Electrification."]
+
+  [[project.scenarios]]
+    name = "earlynobio_moderate"
+    description = [
+      "100% clean energy by 2035, 10 years sooner than other scenarios.",
+      "No natural gas generation or biofuels.",
+      "Allows existing nuclear and upgrades to transmission.",
+      "Evaluated under Moderate Load Electrification."]
+
+  [[project.scenarios]]
+    name = "trans_high"
+    description = [
+      "100% clean energy by 2045.",
+      "Only scenario that builds new transmission corridors.",
+      "No natural gas or nuclear generation.",
+      "Evaluated under High Load Electrification."]
+
+  [[project.scenarios]]
+    name = "trans_moderate"
+    description = [
+      "100% clean energy by 2045.",
+      "Only scenario that builds new transmission corridors.",
+      "No natural gas or nuclear generation.",
+      "Evaluated under Moderate Load Electrification."]
