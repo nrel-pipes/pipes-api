@@ -1,8 +1,6 @@
-from __future__ import annotations
-
-import pathlib
 import sys
+from pathlib import Path
 
-PROJECT_ROOT_DIRECTORY = str(pathlib.Path(__file__).parents[1].absolute())
+ROOT_DIR = Path(__file__).parents[1].absolute()
 
-sys.path.append(PROJECT_ROOT_DIRECTORY)
+sys.path.append(str(ROOT_DIR))
