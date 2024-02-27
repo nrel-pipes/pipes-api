@@ -11,20 +11,15 @@ repos:
     - id: name-tests-test
       args: [--pytest-test-first]
     - id: requirements-txt-fixer
--   repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.12.0
-    hooks:
-    - id: reorder-python-imports
-      args: [--py39-plus, --add-import, 'from __future__ import annotations']
 -   repo: https://github.com/asottile/add-trailing-comma
     rev: v3.1.0
     hooks:
     - id: add-trailing-comma
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.0
+    rev: v3.15.1
     hooks:
     - id: pyupgrade
-      args: [--py39-plus]
+      args: [--py310-plus]
 -   repo: https://github.com/hhatto/autopep8
     rev: v2.0.4
     hooks:
