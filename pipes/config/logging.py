@@ -1,4 +1,4 @@
-LOGGING_CONFIG = {
+PIPES_LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": True,
     "formatters": {
@@ -35,4 +35,4 @@ LOGGING_CONFIG = {
 def config_logging():
     import logging.config
 
-    logging.config.dictConfig(LOGGING_CONFIG)
+    logging.config.dictConfig(PIPES_LOGGING_CONFIG)
