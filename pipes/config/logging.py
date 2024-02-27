@@ -33,6 +33,6 @@ LOGGING_CONFIG = {
 
 
 def config_logging():
-    import logging
+    import logging.config
 
     logging.config.dictConfig(LOGGING_CONFIG)
