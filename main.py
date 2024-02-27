@@ -1,16 +1,11 @@
-from __future__ import annotations
-
-import os
-from pipes.config.settings import get_settings
-from pipes.health.routes import router as health_router
-from pipes.projects.routes import router as projects_router
-
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from pipes.config.settings import settings
+from pipes.healthcheck.routes import router as healthcheck
+from pipes.projects.routes import router as projects
 
-settings = get_settings(os.environ.get("PIPES_ENV", "dev"))
 app = FastAPI(
     title=settings.TITLE,
     debug=settings.DEBUG,
@@ -25,8 +20,8 @@ app.add_middleware(
     allow_headers=settings.ALLOW_HEADERS,
 )
 
-app.include_router(health_router, tags=["health"], prefix="/api")
-app.include_router(projects_router, tags=["project"], prefix="/api")
+app.include_router(healthcheck, prefix="/api", tags=["healthcheck"])
+app.include_router(projects, prefix="/api", tags=["projects"])
 
 
 if __name__ == "__main__":
