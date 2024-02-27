@@ -44,7 +44,7 @@ $ docker compose build
 $ docker compose up
 ```
 
-Visit [localhost:8080](http://localhost:8080) for development.
+Then visit [http://127.0.0.1:8080](http://127.0.0.1:8080)
 
 
 ### 2. Pre-Commit
