@@ -1,14 +1,14 @@
 version: "3"
 
 services:
-  mongo:
+  mongodb:
     image: "mongo:4.0"
-    container_name: mongo
+    container_name: mongodb
     ports:
       - "27019:27017"
     restart: always
     volumes:
-      - .mongo:/data/db
+      - .mongodb:/data/db
     networks:
       - backend
 
@@ -27,8 +27,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - mongo
-    command: ["/wait-for-mongo.sh", "/entrypoint.sh"]
+      - mongodb
+    command: ["/wait-for-mongodb.sh", "/entrypoint.sh"]
     networks:
       - backend
 
