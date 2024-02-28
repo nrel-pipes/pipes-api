@@ -5,7 +5,12 @@ from fastapi import APIRouter
 router = APIRouter()
 
 
-@router.get("/ping")
+@router.get("/")
+async def welcome():
+    return {"message": "Hello, Welcome to PIPES API!"}
+
+
+@router.get("/ping/")
 async def ping():
     """
     For ALB health check, need to ping Neptune regularly to avoid idle timeout - 20mins
