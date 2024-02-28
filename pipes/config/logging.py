@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 PIPES_LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": True,
@@ -30,9 +32,3 @@ PIPES_LOGGING_CONFIG = {
         },
     },
 }
-
-
-def config_logging():
-    import logging.config
-
-    logging.config.dictConfig(PIPES_LOGGING_CONFIG)

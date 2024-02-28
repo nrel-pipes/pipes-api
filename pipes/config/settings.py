@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 from pydantic_settings import BaseSettings
@@ -6,6 +8,9 @@ __all__ = ["settings"]
 
 
 class CommonSettings(BaseSettings):
+    # Environment
+    PIPES_ENV: str
+
     # FastAPI
     TITLE: str = "PIPES API"
     DEBUG: bool = False
@@ -17,6 +22,9 @@ class CommonSettings(BaseSettings):
     # DocumentDB
     PIPES_DOCDB_HOST: str
     PIPES_DOCDB_PORT: str
+    PIPES_DOCDB_NAME: str
+    PIPES_DOCDB_USER: str | None
+    PIPES_DOCDB_PASS: str | None
 
     # Cognito
     PIPES_REGION: str = "us-west-2"

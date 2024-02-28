@@ -1,7 +1,8 @@
-from __future__ import annotations
+import logging
 
 from fastapi import APIRouter
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -10,6 +11,7 @@ async def list_projects():
     """
     Returns all projects that the current user has been participating in.
     """
+    logger.info("Listing projects...")
     # TODO:
     projects = [
         {
