@@ -4,12 +4,12 @@ from datetime import datetime
 
 import pymongo
 from pymongo import IndexModel
-from beanie import Document, Link
+from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, EmailStr, Field
 
 
 # Team
-class TeamCreate(BaseModel):
+class Team(BaseModel):
     name: str = Field(
         title="name",
         description="The team name",
@@ -20,30 +20,8 @@ class TeamCreate(BaseModel):
     )
 
 
-class TeamRead(BaseModel):
-    name: str = Field(
-        title="name",
-        description="The team name",
-    )
-    description: str = Field(
-        title="description",
-        description="The team description",
-    )
-    members: list[EmailStr] = Field(
-        title="members",
-        description="List of user email addresses",
-    )
-
-
-class TeamDocument(Document):
-    name: str = Field(
-        title="name",
-        description="The team name",
-    )
-    description: str = Field(
-        title="description",
-        description="The team description",
-    )
+class TeamDocument(Team, Document):
+    """Team document in db"""
 
     class Settings:
         name = "teams"
@@ -84,15 +62,15 @@ class UserCreate(BaseModel):
 class UserRead(UserCreate):
     """Schema for user read"""
 
-    teams: list[EmailStr] = Field(
+    teams: set[PydanticObjectId] = Field(
         title="teams",
-        default=[],
-        description="Teams that user belongs to",
+        default=set(),
+        description="List of team names",
     )
 
 
 class UserDocument(UserRead, Document):
-    """PIPES User Schema"""
+    """User document in db"""
 
     username: str | None = Field(
         title="cognito:username",
@@ -109,20 +87,15 @@ class UserDocument(UserRead, Document):
         default=False,
         description="Is superuser or not",
     )
-    last_login: datetime | None = Field(
-        title="last_login",
-        default=None,
-        description="Last login datetime",
-    )
     created_at: datetime | None = Field(
         title="created_at",
         default=None,
         description="User created datetime",
     )
-    teams: list[Link[TeamDocument]] = Field(
+    teams: set[PydanticObjectId] = Field(
         title="teams",
-        default=[],
-        description="Teams that user belongs to",
+        default=set(),
+        description="ObjectIds of teams",
     )
 
     class Settings:
@@ -133,3 +106,16 @@ class UserDocument(UserRead, Document):
                 unique=True,
             ),
         ]
+
+
+# Team Members
+class TeamMembers(BaseModel):
+    team: str = Field(
+        title="team",
+        description="Team name",
+    )
+    members: set[EmailStr] = Field(
+        title="members",
+        to_lower=True,
+        description="List of user emails",
+    )
