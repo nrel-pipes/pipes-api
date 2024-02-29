@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 from pydantic import EmailStr
 
-from pipes.users.manager import TeamManager, UserManager
+from pipes.users.managers import TeamManager, UserManager
 from pipes.users.schemas import TeamCreate, TeamRead, TeamMembers, UserCreate, UserRead
 
 router = APIRouter()

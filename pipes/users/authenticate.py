@@ -13,7 +13,7 @@ from jose import jwk, jwt
 from jose.utils import base64url_decode
 
 from pipes.config.settings import settings
-from pipes.users.manager import UserManager
+from pipes.users.managers import UserManager
 
 
 class CognitoJWKsVerifier:
