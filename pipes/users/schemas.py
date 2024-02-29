@@ -9,7 +9,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 
 # Team
-class Team(BaseModel):
+class TeamCreate(BaseModel):
     name: str = Field(
         title="name",
         description="The team name",
@@ -20,7 +20,11 @@ class Team(BaseModel):
     )
 
 
-class TeamDocument(Team, Document):
+class TeamRead(TeamCreate):
+    pass
+
+
+class TeamDocument(TeamRead, Document):
     """Team document in db"""
 
     class Settings:
