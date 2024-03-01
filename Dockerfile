@@ -16,7 +16,7 @@ RUN apt-get update -y --fix-missing \
     && apt-get autoclean
 
 # install python packages
-WORKDIR /src
+WORKDIR /app
 COPY ./requirements.txt requirements.txt
 COPY ./requirements-dev.txt requirements-dev.txt
 RUN pip3 install --upgrade pip setuptools
