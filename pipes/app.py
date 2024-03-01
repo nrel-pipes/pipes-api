@@ -14,6 +14,9 @@ from pipes.projects.routes import router as ProjectsRouter
 from pipes.users import schemas as UsersSchemas
 from pipes.users.routes import router as UsersRouter
 
+# NOTE: Simulate GRPC API returns during MVP, will be removed later
+from pipes.projects.routes import grpcrouter as ProjectGrpcRouter
+
 __version__ = "0.0.1"
 
 
@@ -56,6 +59,9 @@ app.add_middleware(
     allow_methods=settings.ALLOW_METHODS,
     allow_headers=settings.ALLOW_HEADERS,
 )
+
+# NOTE: Remove in the future
+app.include_router(ProjectGrpcRouter, prefix="/grpc", tags=["[grpc] projects"])
 
 # Routers
 app.include_router(HeathcheckRouter, prefix="/api", tags=["healthcheck"])
