@@ -9,7 +9,7 @@ from fastapi.responses import RedirectResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from pipes.config.settings import settings
-from pipes.healthcheck.routes import router as HeathcheckRouter
+from pipes.health.routes import router as HealthRouter
 from pipes.projects.routes import router as ProjectsRouter
 from pipes.users import schemas as UsersSchemas
 from pipes.users.routes import router as UsersRouter
@@ -64,7 +64,7 @@ app.add_middleware(
 app.include_router(ProjectGrpcRouter, prefix="/grpc", tags=["[grpc] projects"])
 
 # Routers
-app.include_router(HeathcheckRouter, prefix="/api", tags=["healthcheck"])
+app.include_router(HealthRouter, prefix="/api", tags=["health"])
 app.include_router(ProjectsRouter, prefix="/api", tags=["projects"])
 app.include_router(UsersRouter, prefix="/api", tags=["users"])
 
