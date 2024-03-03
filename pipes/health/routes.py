@@ -7,7 +7,7 @@ router = APIRouter()
 
 @router.get("/")
 async def welcome():
-    return {"message": "Hello, Welcome to PIPES API!"}
+    return {"message": "Hello PIPES!"}
 
 
 @router.get("/ping/")

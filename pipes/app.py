@@ -10,6 +10,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from pipes.config.settings import settings
 from pipes.health.routes import router as HealthRouter
+from pipes.projects import schemas as ProjectsSchemas
 from pipes.projects.routes import router as ProjectsRouter
 from pipes.users import schemas as UsersSchemas
 from pipes.users.routes import router as UsersRouter
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI):
         document_models=[
             UsersSchemas.TeamDocument,
             UsersSchemas.UserDocument,
+            ProjectsSchemas.ProjectDocument,
         ],
     )
 

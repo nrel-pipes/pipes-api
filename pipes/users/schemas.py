@@ -41,6 +41,12 @@ class TeamDocument(TeamRead, Document):
 class UserCreate(BaseModel):
     """Schema for user create"""
 
+    username: str | None = Field(
+        title="username",
+        default=None,
+        description="Cognito username",
+    )
+
     email: EmailStr = Field(
         title="email",
         to_lower=True,
@@ -76,11 +82,6 @@ class UserRead(UserCreate):
 class UserDocument(UserRead, Document):
     """User document in db"""
 
-    username: str | None = Field(
-        title="cognito:username",
-        default=None,
-        description="Cognito username",
-    )
     is_active: bool | None = Field(
         title="is_active",
         default=None,

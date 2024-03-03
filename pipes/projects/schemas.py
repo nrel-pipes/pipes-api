@@ -5,7 +5,7 @@ from datetime import datetime
 import pymongo
 from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 
 from pipes.common.schemas import (
     Assumption,
@@ -34,6 +34,9 @@ class ProjectCreate(BaseModel):
         default="",
         description="project description",
     )
+
+
+class ProjectUpdate(ProjectCreate):
     assumptions: list[Assumption] = Field(
         title="assumptions",
         default=[],
@@ -59,25 +62,49 @@ class ProjectCreate(BaseModel):
         default=[],
         description="project milestones",
     )
-    scheduled_start: datetime = Field(
+    scheduled_start: datetime | None = Field(
         title="scheduled_start",
+        default=None,
         description="project start datetime, format YYYY-MM-DD",
     )
-    scheduled_end: datetime = Field(
+    scheduled_end: datetime | None = Field(
         title="scheduled_end",
+        default=None,
         description="format YYYY-MM-DD",
     )
-    owner: UserCreate = Field(
+    owner: UserCreate | None = Field(
         title="owner",
+        default=None,
         description="project owner",
     )
 
 
-class ProjectRead(ProjectCreate):
+class ProjectRead(ProjectUpdate):
     pass
 
 
 class ProjectDocument(ProjectRead, Document):
+
+    created_at: datetime | None = Field(
+        title="created_at",
+        default=None,
+        description="project creation time",
+    )
+    created_by: EmailStr | None = Field(
+        title="created_by",
+        default=None,
+        description="user who created the project",
+    )
+    last_modified: datetime = Field(
+        title="last_modified",
+        default=datetime.utcnow(),
+        description="last modification datetime",
+    )
+    modified_by: EmailStr | None = Field(
+        title="modified_by",
+        default=None,
+        description="user who modified the project",
+    )
 
     class Settings:
         name = "projects"

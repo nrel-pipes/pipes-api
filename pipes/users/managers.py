@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 
-from beanie import PydanticObjectId
 from fastapi import HTTPException, status
 from pydantic import EmailStr
 from pymongo.errors import DuplicateKeyError
@@ -52,16 +51,6 @@ class TeamManager(DocumentGrahpObjectManager):
             )
         team_read = TeamRead(name=team_doc.name, description=team_doc.description)
         return team_read
-
-    async def get_team_by_id(self, team_id: PydanticObjectId) -> TeamDocument | None:
-        """Get team by document _id"""
-        team_doc = await TeamDocument.get(team_id)
-        if not team_doc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Team '{team_id}' not found",
-            )
-        return team_doc
 
     async def get_team_members(self, team_name: str) -> TeamMembers:
         """Given a team, return all team members"""
@@ -125,6 +114,7 @@ class UserManager(DocumentGrahpObjectManager):
 
     async def create_user(self, user_create: UserCreate) -> UserRead | None:
         user_doc = UserDocument(
+            username=user_create.username,
             email=user_create.email,
             first_name=user_create.first_name,
             last_name=user_create.last_name,
@@ -162,9 +152,13 @@ class UserManager(DocumentGrahpObjectManager):
         )
         return user_read
 
-    async def get_user_by_id(self, user_id: PydanticObjectId) -> UserRead | None:
-        """Get user by document _id"""
-        user_doc = await UserDocument.get(user_id)
+    async def get_user_by_username(self, username: str) -> UserRead | None:
+        """Get user by cognito username decoded from access token"""
+        print("================================uuasusuau")
+        print("xjldjalfdsa: ===", username)
+        user_doc = await UserDocument.find_one(UserDocument.username == username)
+        print(user_doc)
+        print("userdaodc===")
         if not user_doc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
