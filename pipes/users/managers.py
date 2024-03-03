@@ -7,12 +7,11 @@ from fastapi import HTTPException, status
 from pydantic import EmailStr
 from pymongo.errors import DuplicateKeyError
 
-from pipes.db.manager import DocumentGrahpObjectManager
+from pipes.db.manager import PipesObjectManager
 from pipes.users.schemas import (
     TeamCreate,
     TeamRead,
     TeamDocument,
-    TeamMembers,
     UserCreate,
     UserRead,
     UserDocument,
@@ -21,7 +20,7 @@ from pipes.users.schemas import (
 logger = logging.getLogger(__name__)
 
 
-class TeamManager(DocumentGrahpObjectManager):
+class TeamManager(PipesObjectManager):
     """Manager class for team anagement"""
 
     async def create_team(self, team_create: TeamCreate) -> TeamRead | None:
@@ -52,7 +51,7 @@ class TeamManager(DocumentGrahpObjectManager):
         team_read = TeamRead(name=team_doc.name, description=team_doc.description)
         return team_read
 
-    async def get_team_members(self, team_name: str) -> TeamMembers:
+    async def get_team_members(self, team_name: str) -> list[UserRead]:
         """Given a team, return all team members"""
         team_doc = await TeamDocument.find_one(TeamDocument.name == team_name)
         if team_doc is None:
@@ -60,12 +59,8 @@ class TeamManager(DocumentGrahpObjectManager):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Team '{team_name}' not exist",
             )
-        members = UserDocument.find({"teams": team_doc.id})
-        team_members = TeamMembers(
-            team=team_name,
-            members=[m.email async for m in members],
-        )
-        return team_members
+        members = await UserDocument.find({"teams": team_doc.id}).to_list()
+        return members
 
     async def put_team_members(
         self,
@@ -109,7 +104,7 @@ class TeamManager(DocumentGrahpObjectManager):
             logger.info("Put user '%s' into team '%s'.", user_doc.email, team_name)
 
 
-class UserManager(DocumentGrahpObjectManager):
+class UserManager(PipesObjectManager):
     """Manager class for user management"""
 
     async def create_user(self, user_create: UserCreate) -> UserRead | None:

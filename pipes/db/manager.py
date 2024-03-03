@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from typing import Any
+
 from pipes.db.document import DocumentDB
 from pipes.db.graph import GraphDB
 
 
-class DocumentGrahpObjectManager:
+class PipesObjectManager:
 
     def __init__(self):
         self.d = DocumentDB()
@@ -15,6 +17,5 @@ class DocumentGrahpObjectManager:
     def current_user(self):
         return self._current_user
 
-    @current_user.setter
-    def current_user(self, user):
+    def set_current_user(self, user: Any):
         self._current_user = user

@@ -19,7 +19,24 @@ from pipes.users.schemas import UserCreate
 
 
 # Project
-class ProjectCreate(BaseModel):
+class ProjectBase(BaseModel):
+    name: str = Field(
+        title="name",
+        description="human-readable project id name, must be unique.",
+    )
+    title: str = Field(
+        title="title",
+        default="",
+        description="Project title",
+    )
+    description: str = Field(
+        title="description",
+        default="",
+        description="project description",
+    )
+
+
+class ProjectCreate(ProjectBase):
     name: str = Field(
         title="name",
         description="human-readable project id name, must be unique.",
@@ -77,13 +94,22 @@ class ProjectUpdate(ProjectCreate):
         default=None,
         description="project owner",
     )
+    leads: list[PydanticObjectId] = Field(
+        title="leads",
+        default=[],
+        description="list of project lead",
+    )
 
 
-class ProjectRead(ProjectUpdate):
+class ProjectReadBasic(ProjectBase):
     pass
 
 
-class ProjectDocument(ProjectRead, Document):
+class ProjectReadDetail(ProjectUpdate):
+    pass
+
+
+class ProjectDocument(ProjectReadDetail, Document):
 
     created_at: datetime | None = Field(
         title="created_at",

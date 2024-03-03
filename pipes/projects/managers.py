@@ -6,10 +6,10 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from pymongo.errors import DuplicateKeyError
 
-from pipes.db.manager import DocumentGrahpObjectManager
+from pipes.db.manager import PipesObjectManager
 from pipes.projects.schemas import (
     ProjectCreate,
-    ProjectRead,
+    ProjectReadBasic,
     ProjectDocument,
     ProjectRunCreate,
     ProjectRunRead,
@@ -18,39 +18,41 @@ from pipes.projects.schemas import (
 logger = logging.getLogger(__name__)
 
 
-class ProjectManager(DocumentGrahpObjectManager):
+class ProjectManager(PipesObjectManager):
 
-    async def create_project(self, project_create: ProjectCreate) -> ProjectRead | None:
+    async def create_project(self, p_create: ProjectCreate) -> ProjectReadBasic | None:
         """Create a new project"""
-        project_doc = ProjectDocument(
-            name=project_create.name,
-            title=project_create.title,
-            description=project_create.description,
+        p_doc = ProjectDocument(
+            # Basic information
+            name=p_create.name,
+            title=p_create.title,
+            description=p_create.description,
+            # Record information
             created_at=datetime.utcnow(),
             created_by=self.current_user.email,
             last_modified=datetime.utcnow(),
             modified_by=self.current_user.email,
         )
         try:
-            await project_doc.insert()
+            await p_doc.insert()
         except DuplicateKeyError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Project '{project_create.name}' already exists.",
+                detail=f"Project '{p_create.name}' already exists.",
             )
-        logger.info("New project '%s' created successfully", project_create.name)
-        project_read = ProjectRead(
-            name=project_doc.name,
-            title=project_doc.title,
-            description=project_doc.description,
-        )
-        return project_read
+        logger.info("New project '%s' created successfully", p_create.name)
+        p_read_basic = p_doc  # Pydantic ignore extra fields
+        return p_read_basic
 
-    async def get_project_by_name(self, project_name: str) -> ProjectRead | None:
-        pass
+    async def get_current_user_projects(self) -> list[ProjectReadBasic] | None:
+        """Get all projects of current user, basic information only."""
+        p_docs = await ProjectDocument.find().to_list()
+
+        p_read_basics = p_docs
+        return p_read_basics
 
 
-class ProjectRunManager(DocumentGrahpObjectManager):
+class ProjectRunManager(PipesObjectManager):
 
     def create_projectrun(
         self,

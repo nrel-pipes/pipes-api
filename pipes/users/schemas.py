@@ -7,45 +7,12 @@ from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, EmailStr, Field
 
-
-# Team
-class TeamCreate(BaseModel):
-    name: str = Field(
-        title="name",
-        description="The team name",
-    )
-    description: str = Field(
-        title="description",
-        description="The team description",
-    )
-
-
-class TeamRead(TeamCreate):
-    pass
-
-
-class TeamDocument(TeamRead, Document):
-    """Team document in db"""
-
-    class Settings:
-        name = "teams"
-        indexes = [
-            IndexModel(
-                [("name", pymongo.ASCENDING)],
-                unique=True,
-            ),
-        ]
+from pipes.common.contexts import ProjectContext, ProjectRefContext
 
 
 # User
-class UserCreate(BaseModel):
-    """Schema for user create"""
-
-    username: str | None = Field(
-        title="username",
-        default=None,
-        description="Cognito username",
-    )
+class UserBase(BaseModel):
+    """User base model"""
 
     email: EmailStr = Field(
         title="email",
@@ -69,32 +36,35 @@ class UserCreate(BaseModel):
     )
 
 
-class UserRead(UserCreate):
-    """Schema for user read"""
+class UserCreate(UserBase):
+    """Schema for user create"""
 
-    teams: set[PydanticObjectId] = Field(
-        title="teams",
-        default=set(),
-        description="List of team names",
+    username: str = Field(
+        title="username",
+        description="Cognito username",
     )
 
 
-class UserDocument(UserRead, Document):
-    """User document in db"""
+class UserRead(UserCreate):
+    """Schema for user read"""
 
-    is_active: bool | None = Field(
+    is_active: bool = Field(
         title="is_active",
-        default=None,
-        description="is active or inactive",
+        default=True,
+        description="active or inactive user",
     )
     is_superuser: bool = Field(
         title="is_superuser",
         default=False,
         description="Is superuser or not",
     )
-    created_at: datetime | None = Field(
+
+
+class UserDocument(UserRead, Document):
+    """User document in db"""
+
+    created_at: datetime = Field(
         title="created_at",
-        default=None,
         description="User created datetime",
     )
     teams: set[PydanticObjectId] = Field(
@@ -113,14 +83,50 @@ class UserDocument(UserRead, Document):
         ]
 
 
-# Team Members
-class TeamMembers(BaseModel):
-    team: str = Field(
-        title="team",
-        description="Team name",
+# Team
+class TeamBase(BaseModel):
+    name: str = Field(
+        title="name",
+        description="The team name",
     )
+    description: str | None = Field(
+        title="description",
+        default=None,
+        description="The team description",
+    )
+
+
+class TeamCreate(TeamBase):
+    context: ProjectContext = Field(
+        title="context",
+        description="project context",
+    )
+
+
+class TeamRead(TeamBase):
     members: set[EmailStr] = Field(
         title="members",
         to_lower=True,
         description="List of user emails",
     )
+
+
+class TeamDocument(TeamBase, Document):
+    """Team document in db"""
+
+    context: ProjectRefContext = Field(
+        title="context",
+        description="project referenced context",
+    )
+
+    class Settings:
+        name = "teams"
+        indexes = [
+            IndexModel(
+                [
+                    ("context", pymongo.ASCENDING),
+                    ("name", pymongo.ASCENDING),
+                ],
+                unique=True,
+            ),
+        ]

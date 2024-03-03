@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from pydantic import EmailStr
 
 from pipes.users.managers import TeamManager, UserManager
-from pipes.users.schemas import TeamCreate, TeamRead, TeamMembers, UserCreate, UserRead
+from pipes.users.schemas import TeamCreate, TeamRead, UserCreate, UserRead
 
 router = APIRouter()
 
@@ -36,7 +36,7 @@ async def put_team_members(team_name: str, user_emails: list[EmailStr]):
     }
 
 
-@router.get("/teams/members/", response_model=TeamMembers)
+@router.get("/teams/members/", response_model=list[UserRead])
 async def get_team_members(team_name: str):
     """Given team name, get the team members"""
     manager = TeamManager()

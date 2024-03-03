@@ -226,8 +226,8 @@ async def auth_required(
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authorized",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden, authentication required.",
         )
     return user
 
