@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pipes.users.authenticate import CognitoAuth
+from pipes.users.auth import CognitoAuth
 
 from fastapi.security import HTTPAuthorizationCredentials
 
