@@ -24,12 +24,28 @@ $ touch .env
 In `.env` file,
 
 ```
-# env
+# Environment
 PIPES_ENV=dev
 
-# mongo
-MONGO_HOST=mongo
-MONGO_PORT=27017
+# MongoDB
+PIPES_DOCDB_HOST=mongodb
+PIPES_DOCDB_PORT=27017
+PIPES_DOCDB_NAME=pipes_dev
+PIPES_DOCDB_USER=pipes
+PIPES_DOCDB_PASS=
+
+# Neptune
+PIPES_NEPTUNE_HOST=<Put Your Neptune Host URI>
+PIPES_NEPTUNE_PORT=8182
+PIPES_NEPTUNE_SECURE=true
+PIPES_NEPTUNE_EVENT_LOOP=false
+
+# Cognito
+PIPES_REGION=us-west-2
+PIPES_COGNITO_USER_POOL_ID=us-west-2_TvEJ1biz0
+PIPES_COGNITO_CLIENT_ID=6n5co9eh7bab4a21egr95ds3r8
+PIPES_COGNITO_USERNAME=<Put Your Cognito Username>
+PIPES_COGNITO_PASSWORD=<Put Your Cognito Password>
 ```
 
 **Build Images**
@@ -75,3 +91,14 @@ $ tox
 ## API Documentation
 
 API documentation:  [http://localhost:8080/docs](http://localhost:8080/docs)
+
+
+## Cognito Authentication
+
+AWS Cognito has been integrated to authenticate access. Steps:
+
+* Make sure your cognito username and password are configured in `.env`.
+* Run `python scripts/get_cognito_access_token.py` to get the access token.
+* Authenticate the Swagger Docs with the token for running API tests.
+
+The access token would last for 1 hour before it expires. After the expiration, you will need to re-run the script to get a new one.
