@@ -94,12 +94,12 @@ class ProjectUpdate(ProjectCreate):
         default=None,
         description="project owner",
     )
-    leads: list[PydanticObjectId] = Field(
+    leads: set[PydanticObjectId] = Field(
         title="leads",
         default=[],
         description="list of project lead",
     )
-    teams: list[PydanticObjectId] = Field(
+    teams: set[PydanticObjectId] = Field(
         title="teams",
         default=[],
         description="list of project teams",

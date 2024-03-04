@@ -91,6 +91,13 @@ class ProjectManager(ObjectManager):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project with id '{pub_id}' not found.",
             )
+
+        if not self.current_user_can_update(p_doc):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Forbiden. No edit permission to project '{pub_id}'.",
+            )
+
         data = p_update.model_dump()
         await p_doc.set(data)
 
@@ -107,7 +114,55 @@ class ProjectManager(ObjectManager):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project with id '{pub_id}' not found.",
             )
+        if not self.current_user_can_read(p_doc):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Forbiden, no access to project '{pub_id}'.",
+            )
         return p_doc
+
+    async def current_user_can_read(self, p_doc: ProjectDocument) -> bool:
+        """Validate if current user can read this project
+
+        One of the following conditions must be met:
+         - current user is the project owner
+         - current user is project creator
+         - current user is one of the project leads
+         - current user belongs to one of the project teams
+        """
+        if self.current_user.id == p_doc.owner:
+            return True
+
+        if self.current_user.id == p_doc.created_by:
+            return True
+
+        if self.current_user.id in p_doc.leads:
+            return True
+
+        teams = p_doc.teams.intersection(self.current_user.teams)
+        if len(teams) >= 1:
+            return True
+
+        return False
+
+    async def current_user_can_update(self, p_doc: ProjectDocument) -> bool:
+        """Validate if current user can edit this project
+
+        One of the following conditions must be met:
+         - current user is the project owner
+         - current user is project creator
+         - current user is one of the project leads
+        """
+        if self.current_user.id == p_doc.owner:
+            return True
+
+        if self.current_user.id == p_doc.created_by:
+            return True
+
+        if self.current_user.id in p_doc.leads:
+            return True
+
+        return False
 
 
 class ProjectRunManager(ObjectManager):
