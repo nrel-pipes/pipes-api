@@ -5,9 +5,10 @@ from datetime import datetime
 import pymongo
 from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 
 from pipes.common.schemas import (
+    PublicModel,
     Assumption,
     Requirement,
     Sensitivity,
@@ -15,7 +16,6 @@ from pipes.common.schemas import (
     Milestone,
 )
 from pipes.models.schemas import ModelRelation
-from pipes.users.schemas import UserCreate
 
 
 # Project
@@ -89,7 +89,7 @@ class ProjectUpdate(ProjectCreate):
         default=None,
         description="format YYYY-MM-DD",
     )
-    owner: UserCreate | None = Field(
+    owner: PydanticObjectId | None = Field(
         title="owner",
         default=None,
         description="project owner",
@@ -99,13 +99,18 @@ class ProjectUpdate(ProjectCreate):
         default=[],
         description="list of project lead",
     )
+    teams: list[PydanticObjectId] = Field(
+        title="teams",
+        default=[],
+        description="list of project teams",
+    )
 
 
-class ProjectReadBasic(ProjectBase):
+class ProjectReadBasic(PublicModel, ProjectBase):
     pass
 
 
-class ProjectReadDetail(ProjectUpdate):
+class ProjectReadDetail(PublicModel, ProjectUpdate):
     pass
 
 
@@ -116,7 +121,7 @@ class ProjectDocument(ProjectReadDetail, Document):
         default=None,
         description="project creation time",
     )
-    created_by: EmailStr | None = Field(
+    created_by: PydanticObjectId | None = Field(
         title="created_by",
         default=None,
         description="user who created the project",
@@ -126,7 +131,7 @@ class ProjectDocument(ProjectReadDetail, Document):
         default=datetime.utcnow(),
         description="last modification datetime",
     )
-    modified_by: EmailStr | None = Field(
+    modified_by: PydanticObjectId | None = Field(
         title="modified_by",
         default=None,
         description="user who modified the project",

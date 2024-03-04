@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends
 from pipes.projects.managers import ProjectManager
 from pipes.projects.schemas import (
     ProjectCreate,
+    ProjectUpdate,
     ProjectReadBasic,
     ProjectReadDetail,
 )
@@ -17,39 +18,44 @@ router = APIRouter()
 
 @router.post("/projects/", response_model=ProjectReadBasic)
 async def create_project(
-    project_create: ProjectCreate,
-    current_user: UserRead = Depends(auth_required),
+    p_create: ProjectCreate,
+    user: UserRead = Depends(auth_required),
 ):
     """Create a new project"""
-    pm = ProjectManager()
-    pm.set_current_user(user=current_user)
-    project = await pm.create_project(project_create)
-    return project
+    manager = ProjectManager()
+    manager.set_current_user(user)
+    p_doc = await manager.create_project(p_create)
+    p_read_basic = p_doc
+    return p_read_basic
 
 
-@router.get("/projects/", response_model=list[ProjectReadBasic])
-async def get_projects(
-    current_user: UserRead = Depends(auth_required),
-):
+@router.get("/projects/basics/", response_model=list[ProjectReadBasic])
+async def get_projects(user: UserRead = Depends(auth_required)):
     """Get all projects with basic information"""
-    pm = ProjectManager()
-    pm.set_current_user(user=current_user)
-    p_read_docs = await pm.get_current_user_projects()
+    manager = ProjectManager()
+    manager.set_current_user(user)
+    p_read_docs = await manager.get_projects_of_current_user()
     return p_read_docs
 
 
-@router.put("/projects/details/", response_model=ProjectReadDetail)
+@router.put("/projects/{id}/details/", response_model=ProjectReadDetail)
 async def put_project_detail(
-    project_name: str,
-    current_user: UserRead = Depends(auth_required),
+    id: str,
+    data: ProjectUpdate,
+    user: UserRead = Depends(auth_required),
 ):
-    pass
+    """Update project detail information"""
+    manager = ProjectManager()
+    manager.set_current_user(user)
+    p = manager.update_project_details(pub_id=id, p_update=data)
+
+    return p
 
 
-@router.get("/projects/details/", response_model=ProjectReadDetail)
+@router.get("/projects/{id}/details/", response_model=ProjectReadDetail)
 async def get_project_detail(
-    project_name: str,
-    current_user: UserRead = Depends(auth_required),
+    id: str,
+    user: UserRead = Depends(auth_required),
 ):
     pass
 
