@@ -4,6 +4,15 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
+class PublicModel(BaseModel):
+    pub_id: str = Field(
+        title="pub_id",
+        max_length=8,
+        min_length=8,
+        description="The public id",
+    )
+
+
 class Milestone(BaseModel):
     name: str = Field(
         title="name",
