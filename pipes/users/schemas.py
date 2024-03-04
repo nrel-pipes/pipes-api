@@ -37,13 +37,20 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """Schema for user create"""
 
-    username: str = Field(
+    pass
+
+
+class CognitoUserCreate(UserBase):
+    """Schema for cognito user create"""
+
+    username: str | None = Field(
         title="username",
+        default=None,
         description="Cognito username",
     )
 
 
-class UserRead(UserCreate):
+class UserRead(CognitoUserCreate):
     """Schema for user read"""
 
     is_active: bool = Field(

@@ -10,7 +10,7 @@ from pymongo.errors import DuplicateKeyError
 
 from pipes.common.manager import AbstractObjectManager
 from pipes.teams.schemas import TeamDocument
-from pipes.users.schemas import UserCreate, UserRead, UserDocument
+from pipes.users.schemas import UserCreate, CognitoUserCreate, UserRead, UserDocument
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,10 @@ class UserManager(AbstractObjectManager):
         """No need to validate the context for user management"""
         pass
 
-    async def create_user(self, u_create: UserCreate) -> UserDocument | None:
+    async def create_cognito_user(
+        self,
+        u_create: CognitoUserCreate,
+    ) -> UserDocument | None:
         """Admin create new user"""
         u_doc = UserDocument(
             username=u_create.username,
@@ -41,6 +44,20 @@ class UserManager(AbstractObjectManager):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"User '{u_create.email}' already exists.",
             )
+        return u_doc
+
+    async def get_or_create_user(self, u_create: UserCreate) -> UserDocument | None:
+        """Get or create user"""
+        u_doc = await UserDocument.find_one(UserDocument.email == u_create.email)
+        if not u_doc:
+            u_doc = UserDocument(
+                email=u_create.email,
+                first_name=u_create.first_name,
+                last_name=u_create.last_name,
+                organization=u_create.organization,
+                created_at=datetime.utcnow(),
+            )
+            u_doc = await u_doc.insert()
         return u_doc
 
     async def get_users(self) -> list[UserDocument]:

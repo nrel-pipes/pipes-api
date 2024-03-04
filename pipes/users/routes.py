@@ -21,7 +21,7 @@ async def create_user(
     """Create a new user"""
     context = UserContext(user=user)
     manager = UserManager(context)
-    u_doc = await manager.create_user(user_create)
+    u_doc = await manager.create_cognito_user(user_create)
     u_read = u_doc  # FastAPI ignore extra fields automatically
     return u_read
 

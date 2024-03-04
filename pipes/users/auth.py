@@ -18,7 +18,7 @@ from pydantic import EmailStr
 from pipes.common.mapping import DNS_ORG_MAPPING
 from pipes.config.settings import settings
 from pipes.users.contexts import UserContext
-from pipes.users.schemas import UserCreate, UserDocument
+from pipes.users.schemas import CognitoUserCreate, UserDocument
 from pipes.users.managers import UserManager
 
 http_bearer = HTTPBearer()
@@ -176,14 +176,14 @@ class CognitoAuth:
             organization = await self._get_organization_from_email(
                 cognito_user["email"],
             )
-            user_create = UserCreate(
+            user_create = CognitoUserCreate(
                 username=cognito_user["username"],
                 email=cognito_user["email"],
                 first_name=cognito_user["first_name"],
                 last_name=cognito_user["last_name"],
                 organization=organization,
             )
-            user_doc = await manager.create_user(user_create)
+            user_doc = await manager.create_cognito_user(user_create)
 
         current_user = await self._authorize(user_doc)
 
