@@ -38,9 +38,9 @@ async def get_projects(user: UserRead = Depends(auth_required)):
     return p_read_docs
 
 
-@router.put("/projects/{id}/details/", response_model=ProjectReadDetail)
+@router.put("/projects/details/", response_model=ProjectReadDetail)
 async def put_project_detail(
-    id: str,
+    pub_id: str,
     p_update: ProjectUpdate,
     user: UserRead = Depends(auth_required),
 ):
@@ -48,22 +48,22 @@ async def put_project_detail(
     manager = ProjectManager()
     manager.set_current_user(user)
 
-    p_doc = await manager.update_project_details(pub_id=id, p_update=p_update)
+    p_doc = await manager.update_project_details(pub_id=pub_id, p_update=p_update)
 
     p_read_detail = p_doc  # FastAPI will ignore extra fields by default
     return p_read_detail
 
 
-@router.get("/projects/{id}/details/", response_model=ProjectReadDetail)
+@router.get("/projects/details/", response_model=ProjectReadDetail)
 async def get_project_detail(
-    id: str,
+    pub_id: str,
     user: UserRead = Depends(auth_required),
 ):
     """Get project detail information"""
     manager = ProjectManager()
     manager.set_current_user(user)
 
-    p_doc = await manager.get_project_details(pub_id=id)
+    p_doc = await manager.get_project_details(pub_id=pub_id)
     p_read_detail = p_doc  # FastAPI will ignore extra fields by default
     return p_read_detail
 
