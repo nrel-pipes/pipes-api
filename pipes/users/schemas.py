@@ -7,8 +7,6 @@ from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, EmailStr, Field
 
-from pipes.common.contexts import ProjectContext, ProjectRefContext
-
 
 # User
 class UserBase(BaseModel):
@@ -78,56 +76,6 @@ class UserDocument(UserRead, Document):
         indexes = [
             IndexModel(
                 [("email", pymongo.ASCENDING)],
-                unique=True,
-            ),
-        ]
-
-
-# Team
-class TeamBase(BaseModel):
-    name: str = Field(
-        title="name",
-        description="The team name",
-    )
-    description: str | None = Field(
-        title="description",
-        default=None,
-        description="The team description",
-    )
-
-
-class TeamCreate(TeamBase):
-    pass
-
-
-class TeamRead(TeamBase):
-    context: ProjectContext = Field(
-        title="context",
-        description="project context",
-    )
-    members: set[UserRead] = Field(
-        title="members",
-        to_lower=True,
-        description="List of user emails",
-    )
-
-
-class TeamDocument(TeamBase, Document):
-    """Team document in db"""
-
-    context: ProjectRefContext = Field(
-        title="context",
-        description="project referenced context",
-    )
-
-    class Settings:
-        name = "teams"
-        indexes = [
-            IndexModel(
-                [
-                    ("context", pymongo.ASCENDING),
-                    ("name", pymongo.ASCENDING),
-                ],
                 unique=True,
             ),
         ]

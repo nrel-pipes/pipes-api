@@ -11,12 +11,13 @@ from botocore.exceptions import ClientError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwk, jwt
+from jose.exceptions import JWTError
 from jose.utils import base64url_decode
 from pydantic import EmailStr
 
-from pipes.common.contexts import UserContext
 from pipes.common.mapping import DNS_ORG_MAPPING
 from pipes.config.settings import settings
+from pipes.users.contexts import UserContext
 from pipes.users.schemas import UserCreate, UserDocument
 from pipes.users.managers import UserManager
 
@@ -110,7 +111,14 @@ class CognitoJWKsVerifier:
         return True
 
     def verify_token(self, access_token: str) -> bool:
-        claims = jwt.get_unverified_claims(access_token)
+        try:
+            claims = jwt.get_unverified_claims(access_token)
+        except JWTError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token, failed to get claims.",
+            )
+
         if claims["token_use"] != "access":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -153,7 +161,7 @@ class CognitoAuth:
             return None
 
         # Get current user
-        manager = UserManager(UserContext(user=None))
+        manager = UserManager(UserContext())
         try:
             cognito_username = self.verifier._claims.get("username")
             user_doc = await manager.get_user_by_username(cognito_username)
@@ -254,7 +262,7 @@ async def admin_required(
     if not user or not user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden, not allowed.",
+            detail="Forbidden, admin permission required.",
         )
     return user
 
