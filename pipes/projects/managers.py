@@ -7,7 +7,8 @@ from itertools import chain
 from fastapi import HTTPException, status
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.manager import ObjectManager
+from pipes.common.contexts import UserContext, ProjectContext
+from pipes.common.manager import AbstractObjectManager
 from pipes.common.utilities import generate_shortuuid
 from pipes.projects.schemas import (
     ProjectCreate,
@@ -21,7 +22,12 @@ from pipes.users.managers import UserManager
 logger = logging.getLogger(__name__)
 
 
-class ProjectManager(ObjectManager):
+class ProjectManager(AbstractObjectManager):
+    """Project management class"""
+
+    async def validate_context(self, context: ProjectContext) -> bool | None:
+        """Not required under project manager"""
+        return None
 
     async def create_project(self, p_create: ProjectCreate) -> ProjectDocument | None:
         """Create a new project"""
@@ -32,13 +38,13 @@ class ProjectManager(ObjectManager):
             name=p_create.name,
             title=p_create.title,
             description=p_create.description,
-            owner=self.current_user.id,
-            leads=[self.current_user.id],
+            owner=self.user.id,
+            leads=[self.user.id],
             # Record information
             created_at=datetime.utcnow(),
-            created_by=self.current_user.id,
+            created_by=self.user.id,
             last_modified=datetime.utcnow(),
-            modified_by=self.current_user.id,
+            modified_by=self.user.id,
         )
         try:
             await p_doc.insert()
@@ -54,20 +60,20 @@ class ProjectManager(ObjectManager):
         """Get all projects of current user, basic information only."""
         # project created by current user
         p1_docs = await ProjectDocument.find(
-            {"created_by": {"$eq": self.current_user.id}},
+            {"created_by": {"$eq": self.user.id}},
         ).to_list()
 
         # project owner is current user
         p2_docs = await ProjectDocument.find(
-            {"owner": {"$eq": self.current_user.id}},
+            {"owner": {"$eq": self.user.id}},
         ).to_list()
 
         # project leads containing current user
-        p3_docs = await ProjectDocument.find({"leads": self.current_user.id}).to_list()
+        p3_docs = await ProjectDocument.find({"leads": self.user.id}).to_list()
 
         # project team containing current user
-        user_manager = UserManager()
-        user_team_ids = await user_manager.get_user_team_ids(self.current_user)
+        user_manager = UserManager(UserContext(user=None))
+        user_team_ids = await user_manager.get_user_team_ids(self.user)
         p4_docs = await ProjectDocument.find({"teams": user_team_ids}).to_list()
 
         # return projects
@@ -125,21 +131,28 @@ class ProjectManager(ObjectManager):
         """Validate if current user can read this project
 
         One of the following conditions must be met:
+         - current user is superuser
          - current user is the project owner
          - current user is project creator
          - current user is one of the project leads
          - current user belongs to one of the project teams
         """
-        if self.current_user.id == p_doc.owner:
+        if self.user is None:
+            return False
+
+        if self.user.is_superuser:
             return True
 
-        if self.current_user.id == p_doc.created_by:
+        if self.user.id == p_doc.owner:
             return True
 
-        if self.current_user.id in p_doc.leads:
+        if self.user.id == p_doc.created_by:
             return True
 
-        teams = p_doc.teams.intersection(self.current_user.teams)
+        if self.user.id in p_doc.leads:
+            return True
+
+        teams = p_doc.teams.intersection(self.user.teams)
         if len(teams) >= 1:
             return True
 
@@ -149,23 +162,30 @@ class ProjectManager(ObjectManager):
         """Validate if current user can edit this project
 
         One of the following conditions must be met:
+         - current user is superuser
          - current user is the project owner
          - current user is project creator
          - current user is one of the project leads
         """
-        if self.current_user.id == p_doc.owner:
+        if self.user is None:
+            return False
+
+        if self.user.is_superuser:
             return True
 
-        if self.current_user.id == p_doc.created_by:
+        if self.user.id == p_doc.owner:
             return True
 
-        if self.current_user.id in p_doc.leads:
+        if self.user.id == p_doc.created_by:
+            return True
+
+        if self.user.id in p_doc.leads:
             return True
 
         return False
 
 
-class ProjectRunManager(ObjectManager):
+class ProjectRunManager(AbstractObjectManager):
 
     def create_projectrun(
         self,

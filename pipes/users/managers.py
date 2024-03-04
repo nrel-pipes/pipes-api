@@ -8,10 +8,11 @@ from fastapi import HTTPException, status
 from pydantic import EmailStr
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.manager import ObjectManager
+from pipes.common.contexts import ProjectUserContext
+from pipes.common.manager import AbstractObjectManager
+from pipes.projects.schemas import ProjectDocument
 from pipes.users.schemas import (
     TeamCreate,
-    TeamRead,
     TeamDocument,
     UserCreate,
     UserRead,
@@ -21,27 +22,71 @@ from pipes.users.schemas import (
 logger = logging.getLogger(__name__)
 
 
-class TeamManager(ObjectManager):
+class TeamManager(AbstractObjectManager):
     """Manager class for team anagement"""
 
-    async def create_team(self, team_create: TeamCreate) -> TeamRead | None:
+    async def validate_context(self, context: ProjectUserContext) -> dict:
+        """Validate under project user context"""
+        if not self.user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid context, user None.",
+            )
+
+        p_name = context.get("project", None)
+        if not p_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid context, project '{p_name}'.",
+            )
+
+        p_doc = await ProjectDocument.find_one(ProjectDocument.name == p_name)
+        if not p_doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Invalid context, project '{p_name}' not found.",
+            )
+
+        is_superuser = self.user.is_superuser
+        is_owner = self.user.id == p_doc.owner
+        is_lead = self.user.id in p_doc.leads
+        is_creator = self.user.id == p_doc.created_by
+
+        if not (is_superuser or is_owner or is_lead or is_creator):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Invalid context, no access to project '{p_name}'.",
+            )
+
+        validated_context = {"project": p_doc}
+        return validated_context
+
+    async def create_team(
+        self,
+        p_doc: ProjectDocument,
+        t_create: TeamCreate,
+    ) -> TeamDocument | None:
         """Create new team"""
-        team_doc = TeamDocument(
-            name=team_create.name,
-            description=team_create.description,
+        t_doc = TeamDocument(
+            context={"project": p_doc.id},
+            name=t_create.name,
+            description=t_create.description,
         )
         try:
-            await team_doc.insert()
+            await t_doc.insert()
         except DuplicateKeyError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Team '{team_create.name}' already exists.",
+                detail=f"Team '{t_create.name}' already exists.",
             )
-        logger.info("New team '%s' created successfully.", team_doc.name)
-        team_read = TeamRead(name=team_doc.name, description=team_doc.description)
-        return team_read
+        logger.info(
+            "New team '%s' created successfully under project '%s'.",
+            t_doc.name,
+            p_doc.name,
+        )
+        return t_doc
 
-    async def get_team_by_name(self, team_name: str) -> TeamRead | None:
+    async def get_team_by_name(self, team_name: str) -> TeamDocument | None:
         """Get team by name"""
         team_doc = await TeamDocument.find_one(TeamDocument.name == team_name)
         if not team_doc:
@@ -49,8 +94,7 @@ class TeamManager(ObjectManager):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Team '{team_name}' not found",
             )
-        team_read = TeamRead(name=team_doc.name, description=team_doc.description)
-        return team_read
+        return team_doc
 
     async def get_team_members(self, team_name: str) -> list[UserRead]:
         """Given a team, return all team members"""
@@ -105,63 +149,66 @@ class TeamManager(ObjectManager):
             logger.info("Put user '%s' into team '%s'.", user_doc.email, team_name)
 
 
-class UserManager(ObjectManager):
+class UserManager(AbstractObjectManager):
     """Manager class for user management"""
 
-    async def create_user(self, user_create: UserCreate) -> UserDocument | None:
-        user_doc = UserDocument(
-            username=user_create.username,
-            email=user_create.email,
-            first_name=user_create.first_name,
-            last_name=user_create.last_name,
-            organization=user_create.organization,
+    async def validate_context(self, context):
+        pass
+
+    async def create_user(self, u_create: UserCreate) -> UserDocument | None:
+        u_doc = UserDocument(
+            username=u_create.username,
+            email=u_create.email,
+            first_name=u_create.first_name,
+            last_name=u_create.last_name,
+            organization=u_create.organization,
             created_at=datetime.utcnow(),
             is_active=True,
             is_superuser=False,
         )
         try:
-            await user_doc.insert()
+            await u_doc.insert()
         except DuplicateKeyError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"User '{user_create.email}' already exists.",
+                detail=f"User '{u_create.email}' already exists.",
             )
-        return user_doc
+        return u_doc
 
     async def get_user_by_email(self, user_email: EmailStr) -> UserRead | None:
         """Get user by email"""
-        user_doc = await UserDocument.find_one(UserDocument.email == user_email)
-        if not user_doc:
+        u_doc = await UserDocument.find_one(UserDocument.email == user_email)
+        if not u_doc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
 
-        team_names = await self.get_user_team_names(user_doc)
-        user_read = UserRead(
-            email=user_doc.email,
-            first_name=user_doc.first_name,
-            last_name=user_doc.last_name,
-            organization=user_doc.organization,
+        team_names = await self.get_user_team_names(u_doc)
+        u_read = UserRead(
+            email=u_doc.email,
+            first_name=u_doc.first_name,
+            last_name=u_doc.last_name,
+            organization=u_doc.organization,
             teams=team_names,
         )
-        return user_read
+        return u_read
 
     async def get_user_by_username(self, username: str) -> UserDocument | None:
         """Get user by cognito username decoded from access token"""
-        user_doc = await UserDocument.find_one(UserDocument.username == username)
-        if not user_doc:
+        u_doc = await UserDocument.find_one(UserDocument.username == username)
+        if not u_doc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
-        return user_doc
+        return u_doc
 
     async def get_user_team_names(self, user_doc: UserDocument) -> list[str]:
         """Given a user, return its team names"""
-        team_docs = TeamDocument.find({"_id": {"$in": user_doc.teams}})
-        return [team_doc.name async for team_doc in team_docs]
+        t_docs = TeamDocument.find({"_id": {"$in": user_doc.teams}})
+        return [t_doc.name async for t_doc in t_docs]
 
     async def get_user_team_ids(self, user_doc: UserDocument) -> list[PydanticObjectId]:
-        team_docs = TeamDocument.find({"_id": {"$in": user_doc.teams}})
-        return [team_doc.id async for team_doc in team_docs]
+        t_docs = TeamDocument.find({"_id": {"$in": user_doc.teams}})
+        return [t_doc.id async for t_doc in t_docs]

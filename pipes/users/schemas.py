@@ -97,14 +97,15 @@ class TeamBase(BaseModel):
 
 
 class TeamCreate(TeamBase):
+    pass
+
+
+class TeamRead(TeamBase):
     context: ProjectContext = Field(
         title="context",
         description="project context",
     )
-
-
-class TeamRead(TeamBase):
-    members: set[EmailStr] = Field(
+    members: set[UserRead] = Field(
         title="members",
         to_lower=True,
         description="List of user emails",

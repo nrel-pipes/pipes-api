@@ -1,9 +1,8 @@
-from beanie import PydanticObjectId
+from beanie import PydanticObjectId, Document
 from pydantic import BaseModel, Field
 
+
 # Human readable
-
-
 class ProjectContext(BaseModel):
     project: str = Field(title="project", description="project name")
 
@@ -40,7 +39,7 @@ class ProjectRunRefContext(BaseModel):
 
 
 class ModelRefContext(BaseModel):
-    project: PydanticObjectId = Field(title="project", description="project name")
+    project: PydanticObjectId = Field(title="project", description="project _id")
     projectrun: PydanticObjectId = Field(
         title="projectrun",
         description="project run _id",
@@ -56,3 +55,24 @@ class ModelRunRefContext(BaseModel):
     )
     model: PydanticObjectId = Field(title="model", description="model _id")
     modelrun: PydanticObjectId = Field(title="modelrun", description="model run _id")
+
+
+# Context validation
+class UserContext(BaseModel):
+    user: Document = Field(title="user", description="current user")
+
+
+class ProjectUserContext(UserContext, ProjectContext):
+    pass
+
+
+class ProjectRunUserContext(UserContext, ProjectRunContext):
+    pass
+
+
+class ModelUserContext(UserContext, ModelContext):
+    pass
+
+
+class ModelRunUserContext(UserContext, ModelRunContext):
+    pass

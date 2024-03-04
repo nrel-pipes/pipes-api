@@ -14,6 +14,7 @@ from jose import jwk, jwt
 from jose.utils import base64url_decode
 from pydantic import EmailStr
 
+from pipes.common.contexts import UserContext
 from pipes.common.mapping import DNS_ORG_MAPPING
 from pipes.config.settings import settings
 from pipes.users.schemas import UserCreate, UserDocument
@@ -152,7 +153,7 @@ class CognitoAuth:
             return None
 
         # Get current user
-        manager = UserManager()
+        manager = UserManager(UserContext(user=None))
         try:
             cognito_username = self.verifier._claims.get("username")
             user_doc = await manager.get_user_by_username(cognito_username)
