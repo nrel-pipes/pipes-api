@@ -41,15 +41,15 @@ async def get_projects(user: UserRead = Depends(auth_required)):
 @router.put("/projects/{id}/details/", response_model=ProjectReadDetail)
 async def put_project_detail(
     id: str,
-    data: ProjectUpdate,
+    p_update: ProjectUpdate,
     user: UserRead = Depends(auth_required),
 ):
     """Update project detail information"""
     manager = ProjectManager()
     manager.set_current_user(user)
-    p = manager.update_project_details(pub_id=id, p_update=data)
-
-    return p
+    p_doc = await manager.update_project_details(pub_id=id, p_update=p_update)
+    p_read_detail = p_doc  # FastAPI will ignore extra fields by default
+    return p_read_detail
 
 
 @router.get("/projects/{id}/details/", response_model=ProjectReadDetail)

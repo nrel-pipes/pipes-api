@@ -84,7 +84,14 @@ class ProjectManager(ObjectManager):
         pub_id: str,
         p_update: ProjectUpdate,
     ) -> ProjectDocument | None:
-        return None
+        p_doc = await ProjectDocument.find_one(ProjectDocument.pub_id == pub_id)
+        data = p_update.model_dump()
+        await p_doc.set(data)
+
+        # await p_doc.save()
+        logger.info("Project got updated successfully.")
+
+        return p_doc
 
 
 class ProjectRunManager(ObjectManager):
