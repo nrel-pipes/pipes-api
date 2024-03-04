@@ -3,11 +3,12 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 
+from beanie import PydanticObjectId
 from fastapi import HTTPException, status
 from pydantic import EmailStr
 from pymongo.errors import DuplicateKeyError
 
-from pipes.db.manager import PipesObjectManager
+from pipes.common.manager import ObjectManager
 from pipes.users.schemas import (
     TeamCreate,
     TeamRead,
@@ -20,7 +21,7 @@ from pipes.users.schemas import (
 logger = logging.getLogger(__name__)
 
 
-class TeamManager(PipesObjectManager):
+class TeamManager(ObjectManager):
     """Manager class for team anagement"""
 
     async def create_team(self, team_create: TeamCreate) -> TeamRead | None:
@@ -104,10 +105,10 @@ class TeamManager(PipesObjectManager):
             logger.info("Put user '%s' into team '%s'.", user_doc.email, team_name)
 
 
-class UserManager(PipesObjectManager):
+class UserManager(ObjectManager):
     """Manager class for user management"""
 
-    async def create_user(self, user_create: UserCreate) -> UserRead | None:
+    async def create_user(self, user_create: UserCreate) -> UserDocument | None:
         user_doc = UserDocument(
             username=user_create.username,
             email=user_create.email,
@@ -125,8 +126,7 @@ class UserManager(PipesObjectManager):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"User '{user_create.email}' already exists.",
             )
-        user_read = user_doc  # NOTE: FastAPI will automatically convert it
-        return user_read
+        return user_doc
 
     async def get_user_by_email(self, user_email: EmailStr) -> UserRead | None:
         """Get user by email"""
@@ -137,7 +137,7 @@ class UserManager(PipesObjectManager):
                 detail="User not found",
             )
 
-        team_names = await self._get_user_teams(user_doc)
+        team_names = await self.get_user_team_names(user_doc)
         user_read = UserRead(
             email=user_doc.email,
             first_name=user_doc.first_name,
@@ -147,13 +147,9 @@ class UserManager(PipesObjectManager):
         )
         return user_read
 
-    async def get_user_by_username(self, username: str) -> UserRead | None:
+    async def get_user_by_username(self, username: str) -> UserDocument | None:
         """Get user by cognito username decoded from access token"""
-        print("================================uuasusuau")
-        print("xjldjalfdsa: ===", username)
         user_doc = await UserDocument.find_one(UserDocument.username == username)
-        print(user_doc)
-        print("userdaodc===")
         if not user_doc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -161,7 +157,11 @@ class UserManager(PipesObjectManager):
             )
         return user_doc
 
-    async def _get_user_teams(self, user_doc: UserDocument):
+    async def get_user_team_names(self, user_doc: UserDocument) -> list[str]:
         """Given a user, return its team names"""
         team_docs = TeamDocument.find({"_id": {"$in": user_doc.teams}})
         return [team_doc.name async for team_doc in team_docs]
+
+    async def get_user_team_ids(self, user_doc: UserDocument) -> list[PydanticObjectId]:
+        team_docs = TeamDocument.find({"_id": {"$in": user_doc.teams}})
+        return [team_doc.id async for team_doc in team_docs]

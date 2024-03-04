@@ -16,7 +16,7 @@ from pydantic import EmailStr
 
 from pipes.common.mapping import DNS_ORG_MAPPING
 from pipes.config.settings import settings
-from pipes.users.schemas import UserRead, UserCreate
+from pipes.users.schemas import UserCreate, UserDocument
 from pipes.users.managers import UserManager
 
 http_bearer = HTTPBearer()
@@ -143,7 +143,7 @@ class CognitoAuth:
     async def authenticate(
         self,
         auth_creds: HTTPAuthorizationCredentials,
-    ) -> UserRead | None:
+    ) -> UserDocument | None:
         """Authenticate user based Cognito credentials"""
         access_token = auth_creds.credentials
 
@@ -155,9 +155,9 @@ class CognitoAuth:
         manager = UserManager()
         try:
             cognito_username = self.verifier._claims.get("username")
-            current_user = await manager.get_user_by_username(cognito_username)
+            user_doc = await manager.get_user_by_username(cognito_username)
         except HTTPException:
-            cognito_user = await self._get_cognito_user_info(access_token)
+            cognito_user = await self._get_cognito_user_attributes(access_token)
             if cognito_user is None:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -174,16 +174,22 @@ class CognitoAuth:
                 last_name=cognito_user["last_name"],
                 organization=organization,
             )
-            current_user = await manager.create_user(user_create)
+            user_doc = await manager.create_user(user_create)
+
+        current_user = await self._authorize(user_doc)
 
         return current_user
 
-    async def _authorize(self, user):
-        """Authorize user based on scope (groups)"""
+    async def _authorize(self, user: UserDocument | None) -> UserDocument | None:
+        """Authorize user based on scope, group/team, or role"""
+        if not user:
+            return user
+
         # TODO: implement logic later if need.
+
         return user
 
-    async def _get_cognito_user_info(self, access_token: str) -> dict | None:
+    async def _get_cognito_user_attributes(self, access_token: str) -> dict | None:
         """Given access token, get current user"""
         cognito_idp = boto3.client("cognito-idp", region_name=settings.PIPES_REGION)
         try:
@@ -192,17 +198,17 @@ class CognitoAuth:
             return None
 
         # Get user attributes from Cognito
-        user_info = {
+        user_attrs = {
             "username": response["Username"],
             "email": None,
             "first_name": None,
             "last_name": None,
         }
         for item in response["UserAttributes"]:
-            if item["Name"] in user_info:
-                user_info[item["Name"]] = item["Value"]
+            if item["Name"] in user_attrs:
+                user_attrs[item["Name"]] = item["Value"]
 
-        return user_info
+        return user_attrs
 
     async def _get_organization_from_email(self, email: EmailStr) -> str | None:
         """Parse organization based on email domain"""
