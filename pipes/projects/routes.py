@@ -10,7 +10,7 @@ from pipes.projects.schemas import (
     ProjectReadDetail,
 )
 from pipes.users.auth import auth_required
-from pipes.users.schemas import UserRead
+from pipes.users.schemas import UserDocument
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -19,7 +19,7 @@ router = APIRouter()
 @router.post("/projects/", response_model=ProjectReadBasic)
 async def create_project(
     p_create: ProjectCreate,
-    user: UserRead = Depends(auth_required),
+    user: UserDocument = Depends(auth_required),
 ):
     """Create a new project"""
     manager = ProjectManager()
@@ -30,7 +30,7 @@ async def create_project(
 
 
 @router.get("/projects/basics/", response_model=list[ProjectReadBasic])
-async def get_projects(user: UserRead = Depends(auth_required)):
+async def get_projects(user: UserDocument = Depends(auth_required)):
     """Get all projects with basic information"""
     manager = ProjectManager()
     manager.set_current_user(user)
@@ -42,7 +42,7 @@ async def get_projects(user: UserRead = Depends(auth_required)):
 async def put_project_detail(
     pub_id: str,
     p_update: ProjectUpdate,
-    user: UserRead = Depends(auth_required),
+    user: UserDocument = Depends(auth_required),
 ):
     """Update project detail information"""
     manager = ProjectManager()
@@ -57,7 +57,7 @@ async def put_project_detail(
 @router.get("/projects/details/", response_model=ProjectReadDetail)
 async def get_project_detail(
     pub_id: str,
-    user: UserRead = Depends(auth_required),
+    user: UserDocument = Depends(auth_required),
 ):
     """Get project detail information"""
     manager = ProjectManager()
