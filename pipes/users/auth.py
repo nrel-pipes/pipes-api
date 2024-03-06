@@ -15,10 +15,11 @@ from jose.exceptions import JWTError
 from jose.utils import base64url_decode
 from pydantic import EmailStr
 
-from pipes.common.mapping import DNS_ORG_MAPPING
+from pipes.common.constants import DNS_ORG_MAPPING
 from pipes.config.settings import settings
-from pipes.users.contexts import UserContext
-from pipes.users.schemas import CognitoUserCreate, UserDocument
+from pipes.common import exceptions as E
+from pipes.users.contexts import UserManagementContext
+from pipes.users.schemas import UserCreate, UserDocument
 from pipes.users.managers import UserManager
 
 http_bearer = HTTPBearer()
@@ -60,51 +61,37 @@ class CognitoJWKsVerifier:
         try:
             headers = jwt.get_unverified_headers(access_token)
         except jwt.JWTError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid header, not authenticated",
+            raise E.CognitoAuthError(
+                "Not authenticated. Invalid access token - headers.",
             )
 
         kid = headers.get("kid")
         if not kid:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid header, not authenticated",
-            )
+            raise E.CognitoAuthError("Not authenticated. Invalid access token - kid.")
 
         try:
             key = self.keys.get(kid)
             publickey = jwk.construct(key)
         except KeyError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid header, not authenticated",
-            )
+            raise E.CognitoAuthError("Not authenticated. Invalid access token - key.")
         return publickey
 
     def _verify_claims(self, claims: dict) -> bool:
         # Check token expiration time
         if claims["exp"] < time.time():
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Access token expired",
-            )
+            raise E.CognitoAuthError("Not authenticated. Access token expired.")
 
         # Check issuer client
         if claims["client_id"] != self.aud:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token was not issued for this client id audience.",
+            raise E.CognitoAuthError(
+                "Not authenticated. Invalid access token - issuer.",
             )
 
         # verify issuer auth time
         now = timegm(datetime.utcnow().utctimetuple())
         iat = int(claims.get("iat"))  # type: ignore
         if now < iat:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token not verified, invalid iat",
-            )
+            raise E.CognitoAuthError("Not authenticated. Invalid access token - iat.")
 
         self._claims = claims
 
@@ -114,16 +101,12 @@ class CognitoJWKsVerifier:
         try:
             claims = jwt.get_unverified_claims(access_token)
         except JWTError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token, failed to get claims.",
+            raise E.CognitoAuthError(
+                "Not authenticated. Invalid access token - claims.",
             )
 
         if claims["token_use"] != "access":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token use",
-            )
+            raise E.CognitoAuthError("Not authenticated. Invalid access token - use.")
 
         message, signature = str(access_token).rsplit(".", 1)
         decoded_signature = base64url_decode(signature.encode("utf-8"))
@@ -131,9 +114,8 @@ class CognitoJWKsVerifier:
         publickey = self._get_publickey(access_token)
         is_verified = publickey.verify(message.encode("utf-8"), decoded_signature)
         if not is_verified:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Signature verification failed.",
+            raise E.CognitoAuthError(
+                "Not authenticated. Invalid access token - not verified.",
             )
 
         is_verified = self._verify_claims(claims)
@@ -161,29 +143,33 @@ class CognitoAuth:
             return None
 
         # Get current user
-        manager = UserManager(UserContext())
+        manager = UserManager(UserManagementContext())
         try:
             cognito_username = self.verifier._claims.get("username")
             user_doc = await manager.get_user_by_username(cognito_username)
-        except HTTPException:
+        except E.DocumentDoesNotExist:
             cognito_user = await self._get_cognito_user_attributes(access_token)
-            if cognito_user is None:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Not authorized, failed to fetch Cognito user information.",
-                )
+            if not cognito_user:
+                raise E.CognitoAuthError("Invalid access token.")
 
-            organization = await self._get_organization_from_email(
-                cognito_user["email"],
-            )
-            user_create = CognitoUserCreate(
-                username=cognito_user["username"],
+            organization = await self._parse_organization(cognito_user["email"])
+            u_create = UserCreate(
                 email=cognito_user["email"],
                 first_name=cognito_user["first_name"],
                 last_name=cognito_user["last_name"],
                 organization=organization,
             )
-            user_doc = await manager.create_cognito_user(user_create)
+
+            try:
+                user_doc = await manager.create_user(
+                    u_create=u_create,
+                    u_username=cognito_user["username"],
+                )
+            except E.DocumentAlreadyExists:
+                pass
+
+        if (not user_doc) or (not user_doc.is_active):
+            return None
 
         current_user = await self._authorize(user_doc)
 
@@ -219,7 +205,7 @@ class CognitoAuth:
 
         return user_attrs
 
-    async def _get_organization_from_email(self, email: EmailStr) -> str | None:
+    async def _parse_organization(self, email: EmailStr) -> str | None:
         """Parse organization based on email domain"""
         domain = email.lower().split("@")[1]
         if domain in DNS_ORG_MAPPING:
@@ -231,58 +217,23 @@ async def auth_required(
     auth_creds: HTTPAuthorizationCredentials = Depends(http_bearer),
 ):
     """Authenticate the user and return it"""
-    auth = CognitoAuth()
-    user = await auth.authenticate(auth_creds)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication failed",
-        )
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden, authentication required.",
-        )
-    return user
-
-
-async def admin_required(
-    auth_creds: HTTPAuthorizationCredentials = Depends(http_bearer),
-):
-    """Authenticate admin user for operations"""
-    auth = CognitoAuth()
-    user = await auth.authenticate(auth_creds)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication failed.",
-        )
-
-    if not user or not user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden, admin permission required.",
-        )
-    return user
-
-
-async def manager_required(
-    auth_creds: HTTPAuthorizationCredentials = Depends(http_bearer),
-):
-    """Authenticate manager for operations"""
-    auth = CognitoAuth()
     try:
+        auth = CognitoAuth()
         user = await auth.authenticate(auth_creds)
+    except E.CognitoAuthError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
     except Exception:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Authentication failed",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated, exception happened.",
         )
 
-    if not user or not user.is_manager:  # TODO: Default user roles
+    if user is None:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not allowed",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed, user None.",
         )
     return user

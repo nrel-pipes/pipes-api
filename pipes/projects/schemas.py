@@ -8,7 +8,6 @@ from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field
 
 from pipes.common.schemas import (
-    PublicModel,
     Assumption,
     Requirement,
     Sensitivity,
@@ -19,26 +18,10 @@ from pipes.models.schemas import ModelRelation
 
 
 # Project
-class ProjectBase(BaseModel):
+class ProjectCreate(BaseModel):
     name: str = Field(
         title="name",
-        description="human-readable project id name, must be unique.",
-    )
-    title: str = Field(
-        title="title",
-        default="",
-        description="Project title",
-    )
-    description: str = Field(
-        title="description",
-        default="",
-        description="project description",
-    )
-
-
-class ProjectCreate(ProjectBase):
-    name: str = Field(
-        title="name",
+        min_length=2,
         description="human-readable project id name, must be unique.",
     )
     title: str = Field(
@@ -106,15 +89,15 @@ class ProjectUpdate(ProjectCreate):
     )
 
 
-class ProjectReadBasic(PublicModel, ProjectBase):
+class ProjectBasicRead(ProjectCreate):
     pass
 
 
-class ProjectReadDetail(PublicModel, ProjectUpdate):
+class ProjectDetailRead(ProjectUpdate):
     pass
 
 
-class ProjectDocument(ProjectReadDetail, Document):
+class ProjectDocument(ProjectDetailRead, Document):
 
     created_at: datetime | None = Field(
         title="created_at",
@@ -151,8 +134,8 @@ class ProjectDocument(ProjectReadDetail, Document):
 class ProjectRunCreate(BaseModel):
     name: str = Field(
         title="name",
+        min_length=2,
         description="Project run name",
-        requirements=("Project run names must be unique from each other.",),
     )
     description: str = Field(
         title="description",

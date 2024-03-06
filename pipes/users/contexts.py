@@ -1,11 +1,5 @@
-from pydantic import BaseModel, Field
-
-from pipes.users.schemas import UserDocument
+from pydantic import BaseModel
 
 
-class UserContext(BaseModel):
-    user: UserDocument | None = Field(
-        title="user",
-        default=None,
-        description="current user",
-    )
+class UserManagementContext(BaseModel):
+    pass

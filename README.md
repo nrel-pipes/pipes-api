@@ -88,11 +88,6 @@ Use `tox` to run tests,
 $ tox
 ```
 
-## API Documentation
-
-API documentation:  [http://localhost:8080/docs](http://localhost:8080/docs)
-
-
 ## Cognito Authentication
 
 AWS Cognito has been integrated to authenticate access. Steps:
@@ -101,4 +96,12 @@ AWS Cognito has been integrated to authenticate access. Steps:
 * Run `python scripts/get_cognito_access_token.py` to get the access token.
 * Authenticate the Swagger Docs with the token for running API tests.
 
-The access token would last for 1 hour before it expires. After the expiration, you will need to re-run the script to get a new one.
+The access token would last for 12 hour before it expires.
+After the expiration, you will need to re-run the script to get a new one.
+
+Besides, you'll be granted as superuser at local for development.
+
+
+## API Documentation
+
+API documentation:  [http://localhost:8080/docs](http://localhost:8080/docs)

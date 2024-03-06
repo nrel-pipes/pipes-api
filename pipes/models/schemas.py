@@ -69,7 +69,7 @@ class ModelCreate(BaseModel):
 
     model: str = Field(
         title="model",
-        required=True,
+        min_length=2,
         description="the model name",
     )
     modeling_team: str | None = Field(
@@ -207,3 +207,11 @@ class ModelRunCreate(BaseModel):
         description="Scheduled datasets of the model run",
         default=[],
     )
+
+
+class ModelRunRead(ModelRunCreate):
+    pass
+
+
+class ModelRunDocument(ModelRunRead, Document):
+    pass

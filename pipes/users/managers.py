@@ -4,13 +4,14 @@ import logging
 from datetime import datetime
 
 from beanie import PydanticObjectId
-from fastapi import HTTPException, status
 from pydantic import EmailStr
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.manager import AbstractObjectManager
+from pipes.common.managers import AbstractObjectManager
 from pipes.teams.schemas import TeamDocument
-from pipes.users.schemas import UserCreate, CognitoUserCreate, UserRead, UserDocument
+from pipes.common.exceptions import DocumentDoesNotExist, DocumentAlreadyExists
+from pipes.users.contexts import UserManagementContext
+from pipes.users.schemas import UserCreate, UserRead, UserDocument, DummyUserDocument
 
 logger = logging.getLogger(__name__)
 
@@ -18,17 +19,26 @@ logger = logging.getLogger(__name__)
 class UserManager(AbstractObjectManager):
     """Manager class for user management"""
 
-    async def validate_context(self):
-        """No need to validate the context for user management"""
-        pass
+    def __init__(self, user: UserDocument | None) -> None:
+        if user is None:
+            user = DummyUserDocument()
+        super().__init__(user)
 
-    async def create_cognito_user(
+    async def validate_context(
         self,
-        u_create: CognitoUserCreate,
+        context: UserManagementContext,
+    ) -> UserManagementContext:
+        """No need to validate the context for user management"""
+        # Skip, no context validation required now.
+        return context
+
+    async def create_user(
+        self,
+        u_create: UserCreate,
+        u_username: str = "",
     ) -> UserDocument | None:
         """Admin create new user"""
         u_doc = UserDocument(
-            username=u_create.username,
             email=u_create.email,
             first_name=u_create.first_name,
             last_name=u_create.last_name,
@@ -37,16 +47,16 @@ class UserManager(AbstractObjectManager):
             is_active=True,
             is_superuser=False,
         )
+        if u_username:
+            u_doc.username = u_username
+
         try:
             await u_doc.insert()
         except DuplicateKeyError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"User '{u_create.email}' already exists.",
-            )
+            raise DocumentAlreadyExists(f"User '{u_create.email}' already exists.")
         return u_doc
 
-    async def get_or_create_user(self, u_create: UserCreate) -> UserDocument | None:
+    async def get_or_create_user(self, u_create: UserCreate) -> UserDocument:
         """Get or create user"""
         u_doc = await UserDocument.find_one(UserDocument.email == u_create.email)
         if not u_doc:
@@ -65,15 +75,12 @@ class UserManager(AbstractObjectManager):
         u_docs = await UserDocument.find().to_list()
         return u_docs
 
-    async def get_user_by_email(self, user_email: EmailStr) -> UserRead | None:
+    async def get_user_by_email(self, email: EmailStr) -> UserRead | None:
         """Get user by email"""
-        user_email = user_email.lower()
-        u_doc = await UserDocument.find_one(UserDocument.email == user_email)
+        email = email.lower()
+        u_doc = await UserDocument.find_one(UserDocument.email == email)
         if not u_doc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
+            raise DocumentDoesNotExist(f"User '{email}' not found")
 
         team_names = await self.get_user_team_names(u_doc)
         u_read = UserRead(
@@ -92,10 +99,7 @@ class UserManager(AbstractObjectManager):
         """Get user by cognito username decoded from access token"""
         u_doc = await UserDocument.find_one(UserDocument.username == username)
         if not u_doc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
+            raise DocumentDoesNotExist(f"User not found - username: {username}")
         return u_doc
 
     async def get_user_team_names(self, user_doc: UserDocument) -> list[str]:
@@ -103,6 +107,6 @@ class UserManager(AbstractObjectManager):
         t_docs = TeamDocument.find({"_id": {"$in": user_doc.teams}})
         return [t_doc.name async for t_doc in t_docs]
 
-    async def get_user_team_ids(self, user_doc: UserDocument) -> list[PydanticObjectId]:
-        t_docs = TeamDocument.find({"_id": {"$in": user_doc.teams}})
+    async def get_user_team_ids(self, u_doc: UserDocument) -> list[PydanticObjectId]:
+        t_docs = TeamDocument.find({"_id": {"$in": u_doc.teams}})
         return [t_doc.id async for t_doc in t_docs]

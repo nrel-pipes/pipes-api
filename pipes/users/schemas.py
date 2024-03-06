@@ -9,7 +9,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 
 # User
-class UserBase(BaseModel):
+class UserCreate(BaseModel):
     """User base model"""
 
     email: EmailStr = Field(
@@ -34,29 +34,18 @@ class UserBase(BaseModel):
     )
 
 
-class UserCreate(UserBase):
-    """Schema for user create"""
-
-    pass
-
-
-class CognitoUserCreate(UserBase):
-    """Schema for cognito user create"""
+class UserRead(UserCreate):
+    """Schema for user read"""
 
     username: str | None = Field(
         title="username",
         default=None,
         description="Cognito username",
     )
-
-
-class UserRead(CognitoUserCreate):
-    """Schema for user read"""
-
     is_active: bool = Field(
         title="is_active",
         default=True,
-        description="active or inactive user",
+        description="Active or inactive user",
     )
     is_superuser: bool = Field(
         title="is_superuser",
@@ -68,8 +57,9 @@ class UserRead(CognitoUserCreate):
 class UserDocument(UserRead, Document):
     """User document in db"""
 
-    created_at: datetime = Field(
+    created_at: datetime | None = Field(
         title="created_at",
+        default=None,
         description="User created datetime",
     )
     teams: set[PydanticObjectId] = Field(
@@ -86,3 +76,9 @@ class UserDocument(UserRead, Document):
                 unique=True,
             ),
         ]
+
+
+class DummyUserDocument(Document):
+    """Just for type checking"""
+
+    pass

@@ -1,14 +1,11 @@
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from pipes.common import exceptions as E
+from pipes.projects.contexts import ProjectTextContext
 from pipes.projects.managers import ProjectManager
-from pipes.projects.schemas import (
-    ProjectCreate,
-    ProjectUpdate,
-    ProjectReadBasic,
-    ProjectReadDetail,
-)
+from pipes.projects import schemas as S
 from pipes.users.auth import auth_required
 from pipes.users.schemas import UserDocument
 
@@ -16,66 +13,126 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/projects/", response_model=ProjectReadBasic)
+@router.post("/projects/", response_model=S.ProjectBasicRead)
 async def create_project(
-    p_create: ProjectCreate,
+    data: S.ProjectCreate,
     user: UserDocument = Depends(auth_required),
 ):
     """Create a new project"""
-    manager = ProjectManager()
-    manager.set_current_user(user)
-    p_doc = await manager.create_project(p_create)
-    p_read_basic = p_doc
-    return p_read_basic
+    context = ProjectTextContext(project=data.name)
+    manager = ProjectManager(user)
+
+    try:
+        await manager.validate_context(context)
+    except E.ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except E.ContextPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    try:
+        p_doc = await manager.create_project(data)
+    except E.DocumentAlreadyExists as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    return p_doc
 
 
-@router.get("/projects/basics/", response_model=list[ProjectReadBasic])
+@router.get("/projects/", response_model=list[S.ProjectBasicRead])
 async def get_projects(user: UserDocument = Depends(auth_required)):
     """Get all projects with basic information"""
-    manager = ProjectManager()
-    manager.set_current_user(user)
-    p_read_docs = await manager.get_projects_of_current_user()
+    context = ProjectTextContext(project="")
+    manager = ProjectManager(user)
+    try:
+        await manager.validate_context(context)
+    except E.ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except E.ContextPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    p_read_docs = await manager.get_user_projects()
     return p_read_docs
 
 
-@router.put("/projects/details/", response_model=ProjectReadDetail)
-async def put_project_detail(
-    pub_id: str,
-    p_update: ProjectUpdate,
+@router.put("/projects/detail/", response_model=S.ProjectDetailRead)
+async def update_project_detail(
+    project: str,
+    data: S.ProjectUpdate,
     user: UserDocument = Depends(auth_required),
 ):
     """Update project detail information"""
-    manager = ProjectManager()
-    manager.set_current_user(user)
+    context = ProjectTextContext(project=project)
+    manager = ProjectManager(user)
+    try:
+        await manager.validate_context(context)
+    except E.ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except E.ContextPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
 
-    p_doc = await manager.update_project_details(pub_id=pub_id, p_update=p_update)
+    try:
+        p_doc = await manager.update_project_detail(p_update=data)
+    except E.DocumentAlreadyExists as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
-    p_read_detail = p_doc  # FastAPI will ignore extra fields by default
-    return p_read_detail
+    return p_doc
 
 
-@router.get("/projects/details/", response_model=ProjectReadDetail)
+@router.get("/projects/detail/", response_model=S.ProjectDetailRead)
 async def get_project_detail(
-    pub_id: str,
+    project: str,
     user: UserDocument = Depends(auth_required),
 ):
     """Get project detail information"""
-    manager = ProjectManager()
-    manager.set_current_user(user)
+    context = ProjectTextContext(project=project)
+    manager = ProjectManager(user)
+    try:
+        await manager.validate_context(context)
+    except E.ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except E.ContextPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
 
-    p_doc = await manager.get_project_details(pub_id=pub_id)
-    p_read_detail = p_doc  # FastAPI will ignore extra fields by default
-    return p_read_detail
+    p_doc = await manager.get_project_detail()
+    return p_doc
 
 
-# @router.post("/projects/runs/", response_model=ProjectRunRead)
-# async def create_project_run(projectrun_create: ProjectRunCreate):
-#     pass
+@router.post("/projects/runs/", response_model=S.ProjectRunRead)
+async def create_project_run(projectrun_create: S.ProjectRunCreate):
+    pass
 
 
-# @router.get("/projects/runs/", response_model=ProjectRunRead)
-# async def get_project_run_by_name(projectrun_name: str):
-#     pass
+@router.get("/projects/runs/", response_model=S.ProjectRunRead)
+async def get_project_run_by_name(projectrun_name: str):
+    pass
 
 
 ##############################################################################

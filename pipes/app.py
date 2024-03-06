@@ -9,9 +9,13 @@ from fastapi.responses import RedirectResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from pipes.config.settings import settings
+from pipes.datasets.routes import router as DatasetRouter
 from pipes.health.routes import router as HealthRouter
+from pipes.models.routes import router as ModelRouter
 from pipes.projects import schemas as ProjectsSchemas
 from pipes.projects.routes import router as ProjectsRouter
+from pipes.teams import schemas as TeamsSchemas
+from pipes.teams.routes import router as TeamsRouter
 from pipes.users import schemas as UsersSchemas
 from pipes.users.routes import router as UsersRouter
 
@@ -37,7 +41,7 @@ async def lifespan(app: FastAPI):
     await init_beanie(
         database=motor_client[settings.PIPES_DOCDB_NAME],
         document_models=[
-            UsersSchemas.TeamDocument,
+            TeamsSchemas.TeamDocument,
             UsersSchemas.UserDocument,
             ProjectsSchemas.ProjectDocument,
         ],
@@ -68,6 +72,9 @@ app.include_router(ProjectGrpcRouter, prefix="/grpc", tags=["[grpc] projects"])
 # Routers
 app.include_router(HealthRouter, prefix="/api", tags=["health"])
 app.include_router(ProjectsRouter, prefix="/api", tags=["projects"])
+app.include_router(ModelRouter, prefix="/api", tags=["models"])
+app.include_router(DatasetRouter, prefix="/api", tags=["datasets"])
+app.include_router(TeamsRouter, prefix="/api", tags=["teams"])
 app.include_router(UsersRouter, prefix="/api", tags=["users"])
 
 
