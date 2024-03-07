@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from beanie import Document
 from pydantic import BaseModel
 
 from pipes.db.document import DocumentDB
@@ -16,9 +15,7 @@ class AbstractObjectManager(ABC):
         self.d = DocumentDB()
         self.g = GraphDB()
         self.user = user
-        self.validated_context = (
-            Document()
-        )  # NOTE: re-assign this value after context valiation
+        self.validated_context = None
 
     @abstractmethod
     async def validate_context(self, context: BaseModel) -> BaseModel:
