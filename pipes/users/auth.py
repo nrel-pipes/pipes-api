@@ -18,7 +18,6 @@ from pydantic import EmailStr
 from pipes.common.constants import DNS_ORG_MAPPING
 from pipes.config.settings import settings
 from pipes.common import exceptions as E
-from pipes.users.contexts import UserManagementContext
 from pipes.users.schemas import UserCreate, UserDocument
 from pipes.users.managers import UserManager
 
@@ -143,7 +142,7 @@ class CognitoAuth:
             return None
 
         # Get current user
-        manager = UserManager(UserManagementContext())
+        manager = UserManager()
         try:
             cognito_username = self.verifier._claims.get("username")
             user_doc = await manager.get_user_by_username(cognito_username)
