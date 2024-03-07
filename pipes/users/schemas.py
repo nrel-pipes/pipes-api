@@ -76,9 +76,3 @@ class UserDocument(UserRead, Document):
                 unique=True,
             ),
         ]
-
-
-class DummyUserDocument(Document):
-    """Just for type checking"""
-
-    pass

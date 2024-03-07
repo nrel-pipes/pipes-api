@@ -11,7 +11,7 @@ from pipes.common.managers import AbstractObjectManager
 from pipes.teams.schemas import TeamDocument
 from pipes.common.exceptions import DocumentDoesNotExist, DocumentAlreadyExists
 from pipes.users.contexts import UserManagementContext
-from pipes.users.schemas import UserCreate, UserRead, UserDocument, DummyUserDocument
+from pipes.users.schemas import UserCreate, UserRead, UserDocument
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +21,8 @@ class UserManager(AbstractObjectManager):
 
     def __init__(self, user: UserDocument | None = None) -> None:
         if user is None:
-            user = DummyUserDocument()
-        super().__init__(user)
+            dummyuser = UserDocument(email="dummy@example.com")
+        super().__init__(dummyuser)
 
     async def validate_context(
         self,
