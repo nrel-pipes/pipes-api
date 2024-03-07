@@ -104,9 +104,9 @@ class TeamManager(AbstractObjectManager):
             )
 
         # Validate users
-        manager = UserManager(self.user)
+        user_manager = UserManager()
         for u_create in u_creates:
-            u_doc = await manager.get_or_create_user(u_create)
+            u_doc = await user_manager.get_or_create_user(u_create)
             u_doc.teams.add(t_doc.id)
             await u_doc.save()
             logger.info(

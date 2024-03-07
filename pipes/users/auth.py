@@ -228,7 +228,7 @@ async def auth_required(
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated, exception happened.",
+            detail="Not authenticated, unexpected error.",
         )
 
     if user is None:

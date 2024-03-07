@@ -24,11 +24,7 @@ async def create_user(
         )
 
     try:
-        manager = UserManager(user)
-
-        # NOTE: No context validation for user management now
-        # await manager.validate_context(UserManagementContext())
-
+        manager = UserManager()
         u_doc = await manager.create_user(data)
     except DocumentAlreadyExists as e:
         raise HTTPException(
@@ -47,11 +43,7 @@ async def get_all_users(user: UserDocument = Depends(auth_required)):
             detail="Not permitted. Admin only.",
         )
 
-    manager = UserManager(user)
-
-    # NOTE: No context validation for user management now
-    # await manager.validate_context(UserManagementContext())
-
+    manager = UserManager()
     u_docs = await manager.get_users()
     return u_docs
 
@@ -73,11 +65,7 @@ async def get_user_by_email(
         )
 
     try:
-        manager = UserManager(user)
-
-        # NOTE: No context validation for user management now
-        # await manager.validate_context(UserManagementContext())
-
+        manager = UserManager()
         u_read = await manager.get_user_by_email(email)
     except DocumentDoesNotExist as e:
         raise HTTPException(

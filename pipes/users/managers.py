@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class UserManager(AbstractObjectManager):
     """Manager class for user management"""
 
-    def __init__(self, user: UserDocument | None) -> None:
+    def __init__(self, user: UserDocument | None = None) -> None:
         if user is None:
             user = DummyUserDocument()
         super().__init__(user)

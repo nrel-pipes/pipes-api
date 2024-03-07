@@ -94,7 +94,7 @@ class ProjectManager(AbstractObjectManager):
         p3_docs = await ProjectDocument.find({"leads": self.user.id}).to_list()
 
         # project team containing current user
-        user_manager = UserManager(user=None)
+        user_manager = UserManager()
         user_team_ids = await user_manager.get_user_team_ids(self.user)
         p4_docs = await ProjectDocument.find({"teams": user_team_ids}).to_list()
 
