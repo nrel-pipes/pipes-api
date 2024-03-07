@@ -19,21 +19,23 @@ async def create_project(
     user: UserDocument = Depends(auth_required),
 ):
     """Create a new project"""
-    context = ProjectTextContext(project=data.name)
     manager = ProjectManager(user)
 
-    try:
-        await manager.validate_context(context)
-    except E.ContextValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    except E.ContextPermissionDenied as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e),
-        )
+    # NOTE: Skip context validation for project creation.
+
+    # try:
+    #     context = ProjectTextContext(project=data.name)
+    #     await manager.validate_context(context)
+    # except E.ContextValidationError as e:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail=str(e),
+    #     )
+    # except E.ContextPermissionDenied as e:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_403_FORBIDDEN,
+    #         detail=str(e),
+    #     )
 
     try:
         p_doc = await manager.create_project(data)
