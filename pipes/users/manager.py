@@ -66,7 +66,7 @@ class UserManager(AbstractObjectManager):
         u_docs = await UserDocument.find().to_list()
         return u_docs
 
-    async def get_user_by_email(self, email: EmailStr) -> UserRead | None:
+    async def get_user_by_email(self, email: EmailStr) -> UserRead:
         """Get user by email"""
         email = email.lower()
         u_doc = await UserDocument.find_one(UserDocument.email == email)
@@ -86,21 +86,21 @@ class UserManager(AbstractObjectManager):
         )
         return u_read
 
-    async def get_user_by_username(self, username: str) -> UserDocument | None:
+    async def get_user_by_username(self, username: str) -> UserDocument:
         """Get user by cognito username decoded from access token"""
         u_doc = await UserDocument.find_one(UserDocument.username == username)
         if not u_doc:
             raise DocumentDoesNotExist(f"User not found - username: {username}")
         return u_doc
 
-    async def get_user_by_id(self, id: PydanticObjectId) -> UserDocument | None:
+    async def get_user_by_id(self, id: PydanticObjectId) -> UserDocument:
         """Get user by document id"""
         u_doc = await UserDocument.get(id)
         if not u_doc:
             raise DocumentDoesNotExist(f"User not found - user id: {id}")
         return u_doc
 
-    async def get_user_team_names(self, u_doc: UserDocument | None) -> list[str]:
+    async def get_user_team_names(self, u_doc: UserDocument) -> list[str]:
         """Given a user, return its team names"""
         if not u_doc:
             return []
