@@ -93,6 +93,13 @@ class UserManager(AbstractObjectManager):
             raise DocumentDoesNotExist(f"User not found - username: {username}")
         return u_doc
 
+    async def get_user_by_id(self, id: PydanticObjectId) -> UserDocument | None:
+        """Get user by document id"""
+        u_doc = await UserDocument.get(id)
+        if not u_doc:
+            raise DocumentDoesNotExist(f"User not found - user id: {id}")
+        return u_doc
+
     async def get_user_team_names(self, user_doc: UserDocument) -> list[str]:
         """Given a user, return its team names"""
         t_docs = TeamDocument.find({"_id": {"$in": user_doc.teams}})

@@ -37,6 +37,19 @@ class UserCreate(BaseModel):
 class UserRead(UserCreate):
     """Schema for user read"""
 
+    is_active: bool = Field(
+        title="is_active",
+        description="Active or inactive user",
+    )
+    is_superuser: bool = Field(
+        title="is_superuser",
+        description="Is superuser or not",
+    )
+
+
+class UserDocument(UserRead, Document):
+    """User document in db"""
+
     username: str | None = Field(
         title="username",
         default=None,
@@ -52,11 +65,6 @@ class UserRead(UserCreate):
         default=False,
         description="Is superuser or not",
     )
-
-
-class UserDocument(UserRead, Document):
-    """User document in db"""
-
     created_at: datetime | None = Field(
         title="created_at",
         default=None,
@@ -76,3 +84,7 @@ class UserDocument(UserRead, Document):
                 unique=True,
             ),
         ]
+
+    def read(self) -> UserRead:
+        data = self.model_dump()
+        return UserRead.model_validate(data)
