@@ -1,20 +1,22 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 
 
 class AbstractDatabase(ABC):
 
-    @abstractmethod
-    def get(self, query):
+    def __init__(self):
         pass
 
+    @property
     @abstractmethod
-    def create(self, query):
-        pass
+    def endpoint(self):
+        """database url"""
 
     @abstractmethod
-    def update(self):
-        pass
+    def connect(self):
+        """Connect to database"""
 
     @abstractmethod
-    def delete(self):
-        pass
+    def close(self):
+        """Close database connection"""
