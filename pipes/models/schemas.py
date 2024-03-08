@@ -7,38 +7,6 @@ from pymongo import IndexModel
 from beanie import Document
 from pydantic import BaseModel, Field
 
-from pipes.common.schemas import Assumption, Requirement, SourceCode
-from pipes.datasets.schemas import ScheduledDataset
-
-
-# Handoffs
-class Handoff(BaseModel):
-    """Handoff schema"""
-
-    id: str = Field(
-        title="id",
-        description="Unique handoff identifier",
-    )
-    description: str = Field(
-        title="description",
-        description="Description of this handoff",
-    )
-    scheduled_start: datetime | None = Field(
-        title="scheduled_start",
-        description="scheduled start date",
-        default=None,
-    )
-    scheduled_end: datetime | None = Field(
-        title="scheduled_end",
-        description="scheduled end date",
-        default=None,
-    )
-    notes: str = Field(
-        title="notes",
-        description="Handoff notes",
-        default="",
-    )
-
 
 # Model
 class ScenarioMapping(BaseModel):
@@ -89,7 +57,7 @@ class ModelCreate(BaseModel):
         title="description",
         description="Description of the model",
     )
-    assumptions: list[Assumption] = Field(
+    assumptions: list[str] = Field(
         title="assumptions",
         description="List of model assumptions",
         required=False,
@@ -109,9 +77,9 @@ class ModelCreate(BaseModel):
         title="scheduled_end",
         description="Schedule model end date in YYYY-MM-DD format",
     )
-    requirements: list[Requirement] = Field(
+    requirements: dict = Field(
         title="requirements",
-        default=[],
+        default={},
         description="Model specific requirements (if different from Project and Project-Run)",
     )
     scenario_mappings: list[ScenarioMapping] = Field(
@@ -154,64 +122,8 @@ class ModelRelation(BaseModel):
         title="to_model",
         description="the to_model name",
     )
-    handoffs: list[Handoff] = Field(
-        title="handoffs",
-        description="The handoffs from model to model",
-        default=[],
-    )
-
-
-# Model Run
-class ModelRunCreate(BaseModel):
-    """Model Run Schema"""
-
-    name: str = Field(
-        title="name",
-        description="Model run name",
-    )
-    version: str = Field(
-        title="version",
-        description="The version of model code",
-    )
-    description: list[str] = Field(
-        title="description",
-        default="The description of the model run",
-    )
-    assumptions: list[Assumption] = Field(
-        title="assumptions",
-        description="List of model run assumptions",
-        default=[],
-    )
-    notes: str = Field(
-        title="notes",
-        description="Model run notes",
-        default="",
-    )
-    source_code: SourceCode | None = Field(
-        title="source_code",
-        default=None,
-        description="The source code of the model run",
-    )
-    config: dict[str, str] = Field(
-        title="config",
-        description="Model run config",
-        default={},
-    )
-    env_deps: dict[str, str] = Field(
-        title="env_deps",
-        description="Model run environment dependencies",
-        default={},
-    )
-    datasets: list[ScheduledDataset] = Field(
-        title="datasets",
-        description="Scheduled datasets of the model run",
-        default=[],
-    )
-
-
-class ModelRunRead(ModelRunCreate):
-    pass
-
-
-class ModelRunDocument(ModelRunRead, Document):
-    pass
+    # handoffs: list[Handoff] = Field(
+    #     title="handoffs",
+    #     description="The handoffs from model to model",
+    #     default=[],
+    # )

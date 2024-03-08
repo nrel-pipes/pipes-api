@@ -9,18 +9,26 @@ from fastapi.responses import RedirectResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from pipes.config.settings import settings
-from pipes.datasets.routes import router as DatasetRouter
-from pipes.health.routes import router as HealthRouter
-from pipes.models.routes import router as ModelRouter
-from pipes.projects import schemas as ProjectsSchemas
-from pipes.projects.routes import router as ProjectsRouter
-from pipes.teams import schemas as TeamsSchemas
-from pipes.teams.routes import router as TeamsRouter
-from pipes.users import schemas as UsersSchemas
-from pipes.users.routes import router as UsersRouter
 
-# NOTE: Simulate GRPC API returns during MVP, will be removed later
-from pipes.projects.routes import grpcrouter as ProjectGrpcRouter
+# from pipes.datasets.schemas import DatasetDocument
+# from pipes.models.schemas import ModelDocument
+# from pipes.modelruns.schemas import ModelRunDocument
+from pipes.projects.schemas import ProjectDocument
+
+# from pipes.projectruns.schemas import ProjectRunDocument
+# from pipes.teams.schemas import TeamDocument
+from pipes.users.schemas import UserDocument
+
+# from pipes.datasets.routes import router as datasets_router
+from pipes.health.routes import router as health_router
+
+# from pipes.models.routes import router as models_router
+# from pipes.modelruns.routes import router as modelruns_router
+from pipes.projects.routes import router as projects_router
+
+# from pipes.projectruns.routes import router as projectruns_router
+# from pipes.teams.routes import router as teams_router
+from pipes.users.routes import router as users_router
 
 __version__ = "0.0.1"
 
@@ -41,9 +49,13 @@ async def lifespan(app: FastAPI):
     await init_beanie(
         database=motor_client[settings.PIPES_DOCDB_NAME],
         document_models=[
-            TeamsSchemas.TeamDocument,
-            UsersSchemas.UserDocument,
-            ProjectsSchemas.ProjectDocument,
+            # DatasetDocument,
+            # ModelDocument,
+            # ModelRunDocument,
+            ProjectDocument,
+            # ProjectRunDocument,
+            # TeamDocument,
+            UserDocument,
         ],
     )
 
@@ -66,16 +78,15 @@ app.add_middleware(
     allow_headers=settings.ALLOW_HEADERS,
 )
 
-# NOTE: Remove in the future
-app.include_router(ProjectGrpcRouter, prefix="/grpc", tags=["[grpc] projects"])
-
 # Routers
-app.include_router(HealthRouter, prefix="/api", tags=["health"])
-app.include_router(ProjectsRouter, prefix="/api", tags=["projects"])
-app.include_router(ModelRouter, prefix="/api", tags=["models"])
-app.include_router(DatasetRouter, prefix="/api", tags=["datasets"])
-app.include_router(TeamsRouter, prefix="/api", tags=["teams"])
-app.include_router(UsersRouter, prefix="/api", tags=["users"])
+app.include_router(health_router, prefix="/api", tags=["health"])
+app.include_router(projects_router, prefix="/api", tags=["projects"])
+# app.include_router(projectruns_router, prefix="/api", tags=["projects"])
+# app.include_router(models_router, prefix="/api", tags=["models"])
+# app.include_router(modelruns_router, prefix="/api", tags=["modelruns"])
+# app.include_router(datasets_router, prefix="/api", tags=["datasets"])
+# app.include_router(teams_router, prefix="/api", tags=["teams"])
+app.include_router(users_router, prefix="/api", tags=["users"])
 
 
 @app.get("/")
