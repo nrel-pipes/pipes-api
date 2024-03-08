@@ -100,11 +100,21 @@ class UserManager(AbstractObjectManager):
             raise DocumentDoesNotExist(f"User not found - user id: {id}")
         return u_doc
 
-    async def get_user_team_names(self, user_doc: UserDocument) -> list[str]:
+    async def get_user_team_names(self, u_doc: UserDocument | None) -> list[str]:
         """Given a user, return its team names"""
-        t_docs = TeamDocument.find({"_id": {"$in": user_doc.teams}})
+        if not u_doc:
+            return []
+
+        t_docs = TeamDocument.find({"_id": {"$in": u_doc.teams}})
         return [t_doc.name async for t_doc in t_docs]
 
-    async def get_user_team_ids(self, u_doc: UserDocument) -> list[PydanticObjectId]:
+    async def get_user_team_ids(
+        self,
+        u_doc: UserDocument | None,
+    ) -> list[PydanticObjectId]:
+        """Given a user, return its team ids"""
+        if not u_doc:
+            return []
+
         t_docs = TeamDocument.find({"_id": {"$in": u_doc.teams}})
         return [t_doc.id async for t_doc in t_docs]
