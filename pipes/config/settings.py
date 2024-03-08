@@ -35,7 +35,6 @@ class CommonSettings(BaseSettings):
     PIPES_NEPTUNE_HOST: str
     PIPES_NEPTUNE_PORT: str
     PIPES_NEPTUNE_SECURE: bool = True
-    PIPES_NEPTUNE_EVENT_LOOP: bool = True
 
 
 class DevelopmentSettings(CommonSettings):
