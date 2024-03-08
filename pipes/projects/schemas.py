@@ -7,14 +7,10 @@ from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field
 
-from pipes.common.schemas import (
-    Assumption,
-    Requirement,
-    Sensitivity,
-    Scenario,
-    Milestone,
-)
+from pipes.common.schemas import Milestone, Scenario, Sensitivity
 from pipes.models.schemas import ModelRelation
+from pipes.teams.schemas import TeamRead
+from pipes.users.schemas import UserCreate, UserRead
 
 
 # Project
@@ -34,17 +30,14 @@ class ProjectCreate(BaseModel):
         default="",
         description="project description",
     )
-
-
-class ProjectUpdate(ProjectCreate):
-    assumptions: list[Assumption] = Field(
+    assumptions: list[str] = Field(
         title="assumptions",
         default=[],
         description="project assumptions",
     )
-    requirements: list[Requirement] = Field(
+    requirements: dict = Field(
         title="requirements",
-        default=[],
+        default={},
         description="project requirements",
     )
     scenarios: list[Scenario] = Field(
@@ -62,19 +55,68 @@ class ProjectUpdate(ProjectCreate):
         default=[],
         description="project milestones",
     )
-    scheduled_start: datetime | None = Field(
+    scheduled_start: datetime = Field(
         title="scheduled_start",
-        default=None,
         description="project start datetime, format YYYY-MM-DD",
     )
-    scheduled_end: datetime | None = Field(
+    scheduled_end: datetime = Field(
         title="scheduled_end",
-        default=None,
         description="format YYYY-MM-DD",
     )
-    owner: PydanticObjectId | None = Field(
+    owner: UserCreate = Field(
         title="owner",
-        default=None,
+        description="project owner",
+    )
+    # leads: set[UserCreate] = Field(
+    #     title="leads",
+    #     default=[],
+    #     description="list of project lead",
+    # )
+    # teams: set[TeamCreate] = Field(
+    #     title="teams",
+    #     default=[],
+    #     description="list of project teams",
+    # )
+
+
+class ProjectBasicRead(BaseModel):
+    name: str = Field(
+        title="name",
+        min_length=2,
+        description="human-readable project id name, must be unique.",
+    )
+    title: str = Field(
+        title="title",
+        default="",
+        description="Project title",
+    )
+    description: str = Field(
+        title="description",
+        default="",
+        description="project description",
+    )
+
+
+class ProjectDetailRead(ProjectCreate):
+    owner: UserRead = Field(
+        title="owner",
+        description="project owner",
+    )
+    leads: set[UserRead] = Field(
+        title="leads",
+        default=[],
+        description="list of project lead",
+    )
+    teams: set[TeamRead] = Field(
+        title="teams",
+        default=[],
+        description="list of project teams",
+    )
+
+
+class ProjectDocument(ProjectDetailRead, Document):
+    owner: PydanticObjectId = Field(
+        title="owner",
         description="project owner",
     )
     leads: set[PydanticObjectId] = Field(
@@ -87,26 +129,12 @@ class ProjectUpdate(ProjectCreate):
         default=[],
         description="list of project teams",
     )
-
-
-class ProjectBasicRead(ProjectCreate):
-    pass
-
-
-class ProjectDetailRead(ProjectUpdate):
-    pass
-
-
-class ProjectDocument(ProjectDetailRead, Document):
-
-    created_at: datetime | None = Field(
+    created_at: datetime = Field(
         title="created_at",
-        default=None,
         description="project creation time",
     )
-    created_by: PydanticObjectId | None = Field(
+    created_by: PydanticObjectId = Field(
         title="created_by",
-        default=None,
         description="user who created the project",
     )
     last_modified: datetime = Field(
@@ -114,9 +142,8 @@ class ProjectDocument(ProjectDetailRead, Document):
         default=datetime.utcnow(),
         description="last modification datetime",
     )
-    modified_by: PydanticObjectId | None = Field(
+    modified_by: PydanticObjectId = Field(
         title="modified_by",
-        default=None,
         description="user who modified the project",
     )
 
@@ -142,14 +169,14 @@ class ProjectRunCreate(BaseModel):
         default="",
         description="the description of this project run",
     )
-    assumptions: list[Assumption] = Field(
+    assumptions: list[str] = Field(
         title="assumptions",
         description="Assumptions associated with project run that differ from project",
         default=[],
     )
-    requirements: list[Requirement] = Field(
+    requirements: dict = Field(
         title="requirements",
-        default=[],
+        default={},
         description="Requirements of the project run that differ from the project",
     )
     scenarios: list[str] = Field(

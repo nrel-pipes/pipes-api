@@ -1,170 +1,131 @@
+from __future__ import annotations
+
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from pipes.common import exceptions as E
-from pipes.projects.contexts import ProjectTextContext
-from pipes.projects.managers import ProjectManager
-from pipes.projects import schemas as S
+from pipes.common.exceptions import (
+    ContextPermissionDenied,
+    ContextValidationError,
+    DocumentAlreadyExists,
+)
+from pipes.projects.manager import ProjectManager
+from pipes.projects.schemas import ProjectCreate, ProjectBasicRead, ProjectDetailRead
 from pipes.users.auth import auth_required
+from pipes.users.manager import UserManager
 from pipes.users.schemas import UserDocument
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/projects/", response_model=S.ProjectBasicRead)
+@router.post("/projects/detail/", response_model=ProjectDetailRead)
 async def create_project(
-    data: S.ProjectCreate,
+    data: ProjectCreate,
     user: UserDocument = Depends(auth_required),
 ):
     """Create a new project"""
-    manager = ProjectManager(user)
-
-    # NOTE: Skip context validation for project creation.
-
-    # try:
-    #     context = ProjectTextContext(project=data.name)
-    #     await manager.validate_context(context)
-    # except E.ContextValidationError as e:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail=str(e),
-    #     )
-    # except E.ContextPermissionDenied as e:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail=str(e),
-    #     )
+    project_manager = ProjectManager()
+    await project_manager.validate_user_context(user=user, context={})
 
     try:
-        p_doc = await manager.create_project(data)
-    except E.DocumentAlreadyExists as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    return p_doc
-
-
-@router.get("/projects/", response_model=list[S.ProjectBasicRead])
-async def get_projects(user: UserDocument = Depends(auth_required)):
-    """Get all projects with basic information"""
-    context = ProjectTextContext(project="")
-    manager = ProjectManager(user)
-    try:
-        await manager.validate_context(context)
-    except E.ContextValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    except E.ContextPermissionDenied as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e),
-        )
-
-    p_read_docs = await manager.get_user_projects()
-    return p_read_docs
-
-
-@router.put("/projects/detail/", response_model=S.ProjectDetailRead)
-async def update_project_detail(
-    project: str,
-    data: S.ProjectUpdate,
-    user: UserDocument = Depends(auth_required),
-):
-    """Update project detail information"""
-    context = ProjectTextContext(project=project)
-    manager = ProjectManager(user)
-    try:
-        await manager.validate_context(context)
-    except E.ContextValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    except E.ContextPermissionDenied as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e),
-        )
-
-    try:
-        p_doc = await manager.update_project_detail(p_update=data)
-    except E.DocumentAlreadyExists as e:
+        p_doc = await project_manager.create_project(data)
+    except DocumentAlreadyExists as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
 
-    return p_doc
+    # Convert owner object into dictionary
+    user_manager = UserManager()
+    p_read = p_doc.model_dump()
+    owner_doc = await user_manager.get_user_by_id(p_read["owner"])
+    p_read["owner"] = owner_doc.read()
+
+    return p_read
 
 
-@router.get("/projects/detail/", response_model=S.ProjectDetailRead)
+@router.get("/projects/detail/", response_model=ProjectDetailRead)
 async def get_project_detail(
     project: str,
     user: UserDocument = Depends(auth_required),
 ):
     """Get project detail information"""
-    context = ProjectTextContext(project=project)
-    manager = ProjectManager(user)
+    manager = ProjectManager()
     try:
-        await manager.validate_context(context)
-    except E.ContextValidationError as e:
+        context = dict(project=project)
+        await manager.validate_user_context(user, context)
+    except ContextValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-    except E.ContextPermissionDenied as e:
+    except ContextPermissionDenied as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(e),
         )
 
     p_doc = await manager.get_project_detail()
-    return p_doc
+
+    # Convert owner object into dictionary
+    user_manager = UserManager()
+    p_read = p_doc.model_dump()
+    owner_doc = await user_manager.get_user_by_id(p_read["owner"])
+    p_read["owner"] = owner_doc.read()
+
+    return p_read
 
 
-@router.post("/projects/runs/", response_model=S.ProjectRunRead)
-async def create_project_run(projectrun_create: S.ProjectRunCreate):
-    pass
+@router.get("/projects/basic/", response_model=list[ProjectBasicRead])
+async def get_projects(user: UserDocument = Depends(auth_required)):
+    """Get all projects with basic information"""
+    manager = ProjectManager()
+    try:
+        await manager.validate_user_context(user, {})
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except ContextPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    p_read_docs = await manager.list_projects_of_current_user()
+    return p_read_docs
 
 
-@router.get("/projects/runs/", response_model=S.ProjectRunRead)
-async def get_project_run_by_name(projectrun_name: str):
-    pass
+# @router.put("/projects/detail/", response_model=ProjectDetailRead)
+# async def update_project_detail(
+#     project: str,
+#     data: ProjectUpdate,
+#     user: UserDocument = Depends(auth_required),
+# ):
+#     """Update project detail information"""
+#     context = dict(project=project)
+#     manager = ProjectManager(user)
+#     try:
+#         await manager.validate_context(context)
+#     except ContextValidationError as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail=str(e),
+#         )
+#     except ContextPermissionDenied as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail=str(e),
+#         )
 
+#     try:
+#         p_doc = await manager.update_project_detail(p_update=data)
+#     except DocumentAlreadyExists as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail=str(e),
+#         )
 
-##############################################################################
-# NOTE: Remove in the future, simulate GRPC returns in MVP
-##############################################################################
-grpcrouter = APIRouter()
-
-
-@grpcrouter.get("/projects/")
-async def get_grpc_projects():
-    """
-    Returns all projects that the current user has been participating in.
-    """
-    logger.info("Listing projects...")
-    # TODO:
-    projects = [
-        {
-            "name": "test1",
-            "full_name": "Test One Solar PV",
-            "description": "This is the test1 project about solar PV plant",
-        },
-        {
-            "name": "test2",
-            "full_name": "Test Two Biomass Energy",
-            "description": "This is the test2 project about bioenergy",
-        },
-        {
-            "name": "test3",
-            "full_name": "Test Three Geothermal Tech",
-            "description": "This is the test3 project about geothermal technology",
-        },
-    ]
-    return projects
+#     return p_doc
