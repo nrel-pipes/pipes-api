@@ -27,7 +27,7 @@ class UserManager(AbstractObjectManager):
         self,
         u_create: UserCreate,
         u_username: str = "",
-    ) -> UserDocument | None:
+    ) -> UserDocument:
         """Admin create new user"""
         u_doc = UserDocument(
             email=u_create.email,

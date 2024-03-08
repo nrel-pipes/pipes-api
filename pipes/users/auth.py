@@ -145,7 +145,7 @@ class CognitoAuth:
         manager = UserManager()
         try:
             cognito_username = self.verifier._claims.get("username")
-            user_doc = await manager.get_user_by_username(cognito_username)
+            u_doc = await manager.get_user_by_username(cognito_username)
         except E.DocumentDoesNotExist:
             cognito_user = await self._get_cognito_user_attributes(access_token)
             if not cognito_user:
@@ -160,17 +160,17 @@ class CognitoAuth:
             )
 
             try:
-                user_doc = await manager.create_user(
+                u_doc = await manager.create_user(
                     u_create=u_create,
                     u_username=cognito_user["username"],
                 )
             except E.DocumentAlreadyExists:
-                pass
+                u_doc = await manager.get_user_by_email(cognito_user["email"])
 
-        if (not user_doc) or (not user_doc.is_active):
+        if (not u_doc) or (not u_doc.is_active):
             return None
 
-        current_user = await self._authorize(user_doc)
+        current_user = await self._authorize(u_doc)
 
         return current_user
 
