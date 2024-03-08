@@ -19,6 +19,11 @@ class CommonSettings(BaseSettings):
     ALLOW_METHODS: list[str] = ["*"]
     ALLOW_HEADERS: list[str] = ["*"]
 
+    # Cognito
+    PIPES_REGION: str = "us-west-2"
+    PIPES_COGNITO_USER_POOL_ID: str
+    PIPES_COGNITO_CLIENT_ID: str
+
     # DocumentDB
     PIPES_DOCDB_HOST: str
     PIPES_DOCDB_PORT: str
@@ -26,10 +31,11 @@ class CommonSettings(BaseSettings):
     PIPES_DOCDB_USER: str | None
     PIPES_DOCDB_PASS: str | None
 
-    # Cognito
-    PIPES_REGION: str = "us-west-2"
-    PIPES_COGNITO_USER_POOL_ID: str
-    PIPES_COGNITO_CLIENT_ID: str
+    # NeptuneDB
+    PIPES_NEPTUNE_HOST: str
+    PIPES_NEPTUNE_PORT: str
+    PIPES_NEPTUNE_SECURE: bool = True
+    PIPES_NEPTUNE_EVENT_LOOP: bool = True
 
 
 class DevelopmentSettings(CommonSettings):
