@@ -1,7 +1,9 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from dateutil.parser import parse as parse_datetime
+
+from pydantic import BaseModel, Field, field_validator, ValidationError
 
 
 class Milestone(BaseModel):
@@ -9,14 +11,36 @@ class Milestone(BaseModel):
         title="name",
         description="milestone name must be unique from each other.",
     )
-    description: str = Field(
+    description: list[str] = Field(
         title="description",
         description="description of milestone",
     )
-    date: datetime = Field(
-        title="date",
+    milestone_date: datetime = Field(
+        title="milestone_date",
         description="format YYYY-MM-DD, it must be within the dates of the project.",
     )
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def convert_string_to_list(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
+
+    @field_validator("milestone_date", mode="before")
+    @classmethod
+    def convert_string_to_datetime(cls, value):
+        if isinstance(value, datetime):
+            return value
+        else:
+            value = str(value)
+
+        try:
+            value = parse_datetime(value)
+        except Exception as e:
+            raise ValidationError(f"Invalid milestone_date value: {value}; Error: {e}")
+
+        return value
 
 
 class Scenario(BaseModel):
@@ -24,16 +48,23 @@ class Scenario(BaseModel):
         title="name",
         description="scenario name",
     )
-    description: str = Field(
+    description: list[str] = Field(
         title="description",
         default="",
         description="scenario description",
     )
-    other: dict[str, str] = Field(
+    other: dict = Field(
         title="other",
         default={},
         description="other properties applied to scenario",
     )
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def convert_string_to_list(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
 
 
 class Sensitivity(BaseModel):
@@ -41,32 +72,17 @@ class Sensitivity(BaseModel):
         title="name",
         description="sensitivity name",
     )
-    description: str = Field(
+    description: list[str] = Field(
         titleee="description",
         description="sensitivity description",
     )
 
-
-class Assumption(BaseModel):
-    name: str = Field(
-        title="name",
-        description="project assumption name",
-    )
-    description: str = Field(
-        titleee="description",
-        description="project assumption description",
-    )
-
-
-class Requirement(BaseModel):
-    name: str = Field(
-        title="name",
-        description="project requirement name",
-    )
-    description: str = Field(
-        titleee="description",
-        description="project requirement description",
-    )
+    @field_validator("description", mode="before")
+    @classmethod
+    def convert_string_to_list(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
 
 
 class SourceCode(BaseModel):
