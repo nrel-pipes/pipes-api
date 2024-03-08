@@ -14,12 +14,12 @@ class AbstractObjectManager(ABC):
         self.docdb = DocumentDB()
         self.neptune = NeptuneDB()
         self.dynamo = DynamoDB()
-        self._current_user: UserDocument | None = None
+        self._current_user = None
         self._validated_context: dict = {}
 
     @property
-    def current_user(self) -> UserDocument | None:
-        return self._current_user
+    def current_user(self) -> UserDocument:
+        return self._current_user  # type: ignore
 
     @property
     def validated_context(self) -> dict:
@@ -32,7 +32,7 @@ class AbstractObjectManager(ABC):
         * the object exists in database
         * the user has access to the object
         """
-        self._current_user = user
+        self._current_user = user  # type: ignore
         # Validate context based on user
         # validated_context = {...}
         # self._validated_context = validated_context
