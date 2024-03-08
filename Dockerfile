@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=TRUE
 ENV PYTHONUNBUFFERED=TRUE
 
 # install system dependencies
-RUN apt-get update -y --fix-missing \
+RUN apt-get update -y --fix-missing && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
     build-essential \
     netcat-openbsd \
