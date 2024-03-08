@@ -7,10 +7,9 @@ from beanie import PydanticObjectId
 from pydantic import EmailStr
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.managers import AbstractObjectManager
+from pipes.db.manager import AbstractObjectManager
 from pipes.teams.schemas import TeamDocument
 from pipes.common.exceptions import DocumentDoesNotExist, DocumentAlreadyExists
-from pipes.users.contexts import UserManagementContext
 from pipes.users.schemas import UserCreate, UserRead, UserDocument
 
 logger = logging.getLogger(__name__)
@@ -19,18 +18,10 @@ logger = logging.getLogger(__name__)
 class UserManager(AbstractObjectManager):
     """Manager class for user management"""
 
-    def __init__(self, user: UserDocument | None = None) -> None:
-        if user is None:
-            dummyuser = UserDocument(email="dummy@example.com")
-        super().__init__(dummyuser)
-
-    async def validate_context(
-        self,
-        context: UserManagementContext,
-    ) -> UserManagementContext:
+    async def validate_user_context(self, user: UserDocument, context: dict) -> dict:
         """No need to validate the context for user management"""
         # Skip, no context validation required now.
-        return context
+        return {}
 
     async def create_user(
         self,

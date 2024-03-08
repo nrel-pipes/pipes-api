@@ -5,7 +5,7 @@ from pydantic import EmailStr
 
 from pipes.users.auth import auth_required
 from pipes.common.exceptions import DocumentDoesNotExist, DocumentAlreadyExists
-from pipes.users.managers import UserManager
+from pipes.users.manager import UserManager
 from pipes.users.schemas import UserCreate, UserRead, UserDocument
 
 router = APIRouter()

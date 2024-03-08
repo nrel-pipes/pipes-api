@@ -15,11 +15,11 @@ from jose.exceptions import JWTError
 from jose.utils import base64url_decode
 from pydantic import EmailStr
 
-from pipes.common.constants import DNS_ORG_MAPPING
+from pipes.common.mapping import DNS_ORG_MAPPING
 from pipes.config.settings import settings
 from pipes.common import exceptions as E
 from pipes.users.schemas import UserCreate, UserDocument
-from pipes.users.managers import UserManager
+from pipes.users.manager import UserManager
 
 http_bearer = HTTPBearer()
 
