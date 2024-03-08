@@ -28,11 +28,10 @@ class NeptuneDB(AbstractDatabase):
         return f"ws://{host}:{port}/gremlin"
 
     def connect(self) -> GraphTraversalSource:
-        event_loop = settings.PIPES_NEPTUNE_EVENT_LOOP
         connection = DriverRemoteConnection(
             self.endpoint,
             "g",
-            transport_factory=lambda: AiohttpTransport(call_from_event_loop=event_loop),
+            transport_factory=lambda: AiohttpTransport(call_from_event_loop=True),
         )
         self.connection = connection
         graph = Graph()
