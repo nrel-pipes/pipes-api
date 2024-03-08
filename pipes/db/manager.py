@@ -14,7 +14,7 @@ class AbstractObjectManager(ABC):
         self.docdb = DocumentDB()
         self.neptune = NeptuneDB()
         self.dynamo = DynamoDB()
-        self._current_user = None
+        self._current_user: UserDocument | None = None
         self._validated_context: dict = {}
 
     @property

@@ -5,7 +5,7 @@ from pymongo import IndexModel
 from beanie import Document
 from pydantic import BaseModel, Field
 
-from pipes.projects.contexts import ProjectTextContext, ProjectObjectContext
+from pipes.common.contexts import ProjectContext, ProjectRefContext
 from pipes.users.schemas import UserRead
 
 
@@ -23,7 +23,7 @@ class TeamCreate(BaseModel):
 
 
 class TeamRead(TeamCreate):
-    context: ProjectTextContext = Field(
+    context: ProjectContext = Field(
         title="context",
         description="The context in string",
     )
@@ -37,7 +37,7 @@ class TeamRead(TeamCreate):
 class TeamDocument(TeamRead, Document):
     """Team document in db"""
 
-    context: ProjectObjectContext = Field(
+    context: ProjectRefContext = Field(
         title="context",
         description="project referenced context",
     )

@@ -10,24 +10,36 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from pipes.config.settings import settings
 
-# from pipes.datasets.schemas import DatasetDocument
-# from pipes.models.schemas import ModelDocument
-# from pipes.modelruns.schemas import ModelRunDocument
-from pipes.projects.schemas import ProjectDocument
 
-# from pipes.projectruns.schemas import ProjectRunDocument
-# from pipes.teams.schemas import TeamDocument
-from pipes.users.schemas import UserDocument
-
-# from pipes.datasets.routes import router as datasets_router
+# Health
 from pipes.health.routes import router as health_router
 
-# from pipes.models.routes import router as models_router
-# from pipes.modelruns.routes import router as modelruns_router
+# Projects
+from pipes.projects.schemas import ProjectDocument
 from pipes.projects.routes import router as projects_router
 
+# Projectruns
+# from pipes.projectruns.schemas import ProjectRunDocument
 # from pipes.projectruns.routes import router as projectruns_router
-# from pipes.teams.routes import router as teams_router
+
+# Models
+# from pipes.models.routes import router as models_router
+# from pipes.models.schemas import ModelDocument
+
+# Modelruns
+# from pipes.modelruns.schemas import ModelRunDocument
+# from pipes.modelruns.routes import router as modelruns_router
+
+# Datasets
+# from pipes.datasets.schemas import DatasetDocument
+# from pipes.datasets.routes import router as datasets_router
+
+# Teams
+from pipes.teams.routes import router as teams_router
+from pipes.teams.schemas import TeamDocument
+
+# Users
+from pipes.users.schemas import UserDocument
 from pipes.users.routes import router as users_router
 
 __version__ = "0.0.1"
@@ -54,7 +66,7 @@ async def lifespan(app: FastAPI):
             # ModelRunDocument,
             ProjectDocument,
             # ProjectRunDocument,
-            # TeamDocument,
+            TeamDocument,
             UserDocument,
         ],
     )
@@ -85,7 +97,7 @@ app.include_router(projects_router, prefix="/api", tags=["projects"])
 # app.include_router(models_router, prefix="/api", tags=["models"])
 # app.include_router(modelruns_router, prefix="/api", tags=["modelruns"])
 # app.include_router(datasets_router, prefix="/api", tags=["datasets"])
-# app.include_router(teams_router, prefix="/api", tags=["teams"])
+app.include_router(teams_router, prefix="/api", tags=["teams"])
 app.include_router(users_router, prefix="/api", tags=["users"])
 
 
