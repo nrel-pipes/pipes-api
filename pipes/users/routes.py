@@ -11,7 +11,7 @@ from pipes.users.schemas import UserCreate, UserRead, UserDocument
 router = APIRouter()
 
 
-@router.post("/users/", response_model=UserRead)
+@router.post("/users/", response_model=UserRead, status_code=201)
 async def create_user(
     data: UserCreate,
     user: UserDocument = Depends(auth_required),
@@ -66,11 +66,11 @@ async def get_user_by_email(
 
     try:
         manager = UserManager()
-        u_read = await manager.get_user_by_email(email)
+        u_doc = await manager.get_user_by_email(email)
     except DocumentDoesNotExist as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
         )
 
-    return u_read
+    return u_doc

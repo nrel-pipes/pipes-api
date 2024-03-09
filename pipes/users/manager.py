@@ -8,9 +8,8 @@ from pydantic import EmailStr
 from pymongo.errors import DuplicateKeyError
 
 from pipes.db.manager import AbstractObjectManager
-from pipes.teams.schemas import TeamDocument
 from pipes.common.exceptions import DocumentDoesNotExist, DocumentAlreadyExists
-from pipes.users.schemas import UserCreate, UserRead, UserDocument
+from pipes.users.schemas import UserCreate, UserDocument
 
 logger = logging.getLogger(__name__)
 
@@ -66,25 +65,13 @@ class UserManager(AbstractObjectManager):
         u_docs = await UserDocument.find().to_list()
         return u_docs
 
-    async def get_user_by_email(self, email: EmailStr) -> UserRead:
+    async def get_user_by_email(self, email: EmailStr) -> UserDocument:
         """Get user by email"""
         email = email.lower()
         u_doc = await UserDocument.find_one(UserDocument.email == email)
         if not u_doc:
             raise DocumentDoesNotExist(f"User '{email}' not found")
-
-        team_names = await self.get_user_team_names(u_doc)
-        u_read = UserRead(
-            username=u_doc.username,
-            email=u_doc.email,
-            first_name=u_doc.first_name,
-            last_name=u_doc.last_name,
-            organization=u_doc.organization,
-            teams=team_names,
-            is_active=u_doc.is_active,
-            is_superuser=u_doc.is_superuser,
-        )
-        return u_read
+        return u_doc
 
     async def get_user_by_username(self, username: str) -> UserDocument:
         """Get user by cognito username decoded from access token"""
@@ -99,22 +86,3 @@ class UserManager(AbstractObjectManager):
         if not u_doc:
             raise DocumentDoesNotExist(f"User not found - user id: {id}")
         return u_doc
-
-    async def get_user_team_names(self, u_doc: UserDocument) -> list[str]:
-        """Given a user, return its team names"""
-        if not u_doc:
-            return []
-
-        t_docs = TeamDocument.find({"_id": {"$in": u_doc.teams}})
-        return [t_doc.name async for t_doc in t_docs]
-
-    async def get_user_team_ids(
-        self,
-        u_doc: UserDocument | None,
-    ) -> list[PydanticObjectId]:
-        """Given a user, return its team ids"""
-        if not u_doc:
-            return []
-
-        t_docs = TeamDocument.find({"_id": {"$in": u_doc.teams}})
-        return [t_doc.id async for t_doc in t_docs]

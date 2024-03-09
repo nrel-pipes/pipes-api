@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pymongo
 from pymongo import IndexModel
-from beanie import Document, PydanticObjectId
+from beanie import Document
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -69,11 +69,6 @@ class UserDocument(UserRead, Document):
         title="created_at",
         default=None,
         description="User created datetime",
-    )
-    teams: set[PydanticObjectId] = Field(
-        title="teams",
-        default=set(),
-        description="ObjectIds of teams",
     )
 
     class Settings:
