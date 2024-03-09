@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/projects/detail/", response_model=ProjectDetailRead)
+@router.post("/projects/detail/", response_model=ProjectDetailRead, status_code=201)
 async def create_project(
     data: ProjectCreate,
     user: UserDocument = Depends(auth_required),
@@ -77,8 +77,8 @@ async def get_project_detail(
     return p_read
 
 
-@router.get("/projects/basic/", response_model=list[ProjectBasicRead])
-async def get_projects(user: UserDocument = Depends(auth_required)):
+@router.get("/projects/basics/", response_model=list[ProjectBasicRead])
+async def get_basic_projects(user: UserDocument = Depends(auth_required)):
     """Get all projects with basic information"""
     manager = ProjectManager()
     try:
@@ -94,7 +94,7 @@ async def get_projects(user: UserDocument = Depends(auth_required)):
             detail=str(e),
         )
 
-    p_read_docs = await manager.list_projects_of_current_user()
+    p_read_docs = await manager.get_basic_projects()
     return p_read_docs
 
 

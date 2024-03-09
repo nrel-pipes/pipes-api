@@ -12,12 +12,8 @@ from pipes.common.exceptions import (
     DocumentAlreadyExists,
 )
 from pipes.db.manager import AbstractObjectManager
-from pipes.projects.schemas import (
-    ProjectCreate,
-    ProjectDocument,
-    ProjectRunCreate,
-    ProjectRunRead,
-)
+from pipes.projects.schemas import ProjectCreate, ProjectDocument
+from pipes.teams.schemas import TeamDocument
 from pipes.users.manager import UserManager
 from pipes.users.schemas import UserDocument
 
@@ -95,7 +91,7 @@ class ProjectManager(AbstractObjectManager):
         logger.info("New project '%s' created successfully", p_create.name)
         return p_doc
 
-    async def list_projects_of_current_user(self) -> list[ProjectDocument]:
+    async def get_basic_projects(self) -> list[ProjectDocument]:
         """Get all projects of current user, basic information only."""
         # project created by current user
         p1_docs = await ProjectDocument.find(
@@ -111,9 +107,11 @@ class ProjectManager(AbstractObjectManager):
         p3_docs = await ProjectDocument.find({"leads": self.current_user.id}).to_list()
 
         # project team containing current user
-        user_manager = UserManager()
-        user_team_ids = await user_manager.get_user_team_ids(self.current_user)
-        p4_docs = await ProjectDocument.find({"teams": user_team_ids}).to_list()
+        u_team_docs = await TeamDocument.find(
+            {"members": self.current_user.id},
+        ).to_list()
+        p_ids = [t_doc.context.project for t_doc in u_team_docs]
+        p4_docs = await ProjectDocument.find({"_id": {"$in": p_ids}}).to_list()
 
         # return projects
         p_docs = {}
@@ -154,21 +152,3 @@ class ProjectManager(AbstractObjectManager):
     #     """Get project details"""
     #     p_doc = self.validated_context.project
     #     return p_doc
-
-
-class ProjectRunManager(AbstractObjectManager):
-
-    def create_projectrun(
-        self,
-        projectrun_create: ProjectRunCreate,
-    ) -> ProjectRunRead | None:
-        pass
-
-    def get_projectrun_by_name(self, projectrun_name: str) -> ProjectRunRead | None:
-        pass
-
-    def get_projectruns_under_project(
-        self,
-        project_name: str,
-    ) -> list[ProjectRunRead] | None:
-        pass
