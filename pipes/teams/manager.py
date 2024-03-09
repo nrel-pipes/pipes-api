@@ -12,9 +12,9 @@ from pipes.common.exceptions import (
 )
 from pipes.db.manager import AbstractObjectManager
 from pipes.projects.schemas import ProjectDocument
-from pipes.teams.schemas import TeamCreate, TeamDocument
+from pipes.teams.schemas import TeamCreate, TeamRead, TeamUpdate, TeamDocument
 from pipes.users.manager import UserManager
-from pipes.users.schemas import UserCreate, UserRead, UserDocument
+from pipes.users.schemas import UserDocument
 
 logger = logging.getLogger(__name__)
 
@@ -61,10 +61,17 @@ class TeamManager(AbstractObjectManager):
     ) -> TeamDocument:
         """Create new team"""
         p_doc = self.validated_context["project"]
+
+        user_manager = UserManager()
+        u_docs = [
+            await user_manager.get_or_create_user(u_create)
+            for u_create in t_create.members
+        ]
         t_doc = TeamDocument(
             context={"project": p_doc.id},
             name=t_create.name,
             description=t_create.description,
+            members=[u_doc.id for u_doc in u_docs],
         )
 
         try:
@@ -81,23 +88,18 @@ class TeamManager(AbstractObjectManager):
         )
         return t_doc
 
-    async def get_project_team_by_name(
-        self,
-        team: str,
-    ) -> TeamDocument | None:
-        """Get team by name"""
+    async def get_project_teams(self) -> list[TeamRead]:
+        """Get all teams of given project."""
         p_doc = self.validated_context["project"]
-        t_doc = await TeamDocument.find_one(
-            {"context.project": p_doc.id, "name": team},
-        )
-        return t_doc
+        t_docs = await TeamDocument.find({"context.project": p_doc.id}).to_list()
+        return t_docs
 
-    async def update_project_team_members(
+    async def update_project_team(
         self,
         team: str,
-        u_creates: list[UserCreate],
-    ) -> None:
-        """Add team members"""
+        data: TeamUpdate,
+    ) -> TeamDocument:
+        """Update team"""
         p_doc = self.validated_context["project"]
 
         # Validate team
@@ -106,33 +108,26 @@ class TeamManager(AbstractObjectManager):
         )
         if t_doc is None:
             raise DocumentDoesNotExist(
-                f"Team '{team}' not exist under project '{p_doc.name}'",
+                f"Team '{team}' not exist in project '{p_doc.name}'",
             )
 
-        # Validate users
-        user_manager = UserManager()
-        for u_create in u_creates:
-            u_doc = await user_manager.get_or_create_user(u_create)
-            u_doc.teams.add(t_doc.id)
-            await u_doc.save()
-            logger.info(
-                "Add user '%s' into team '%s' under project '%s'.",
-                u_doc.email,
-                team,
-                p_doc.name,
-            )
-
-    async def get_project_team_members(self, team: str) -> list[UserRead]:
-        """Given a team, return all team members"""
-        p_doc = self.validated_context["project"]
-
-        t_doc = await TeamDocument.find_one(
-            {"context.project": p_doc.id, "name": team},
+        other_t_doc = await TeamDocument.find_one(
+            {"context.project": p_doc.id, "name": data.name},
         )
-        if t_doc is None:
-            raise DocumentDoesNotExist(
-                f"Team '{team}' not exist under project '{p_doc.name}'.",
+        if other_t_doc and (t_doc.name == other_t_doc.name):
+            raise DocumentAlreadyExists(
+                f"Team '{data.name}' already exists in project '{p_doc.name}'",
             )
 
-        members = await UserDocument.find({"teams": t_doc.id}).to_list()
-        return members
+        user_manager = UserManager()
+        member_doc_ids = set()
+        for member in data.members:
+            u_doc = await user_manager.get_or_create_user(member)
+            member_doc_ids.add(u_doc.id)
+
+        t_doc.name = data.name
+        t_doc.description = data.description
+        t_doc.members = member_doc_ids
+        await t_doc.save()
+
+        return t_doc

@@ -10,15 +10,15 @@ from pipes.common.exceptions import (
     DocumentDoesNotExist,
 )
 from pipes.teams.manager import TeamManager
-from pipes.teams.schemas import TeamCreate, TeamRead
+from pipes.teams.schemas import TeamCreate, TeamRead, TeamUpdate
 from pipes.users.auth import auth_required
-from pipes.users.schemas import UserCreate, UserRead, UserDocument
+from pipes.users.schemas import UserDocument
 
 router = APIRouter()
 
 
 # Teams
-@router.post("/teams/", response_model=TeamRead)
+@router.post("/teams/", response_model=TeamRead, status_code=201)
 async def create_project_team(
     project: str,
     data: TeamCreate,
@@ -55,20 +55,25 @@ async def create_project_team(
             detail=str(e),
         )
 
-    data = t_doc.model_dump()
-    data["context"] = {"project": p_doc.name}
+    # Query members
+    u_docs = await UserDocument.find({"_id": {"$in": t_doc.members}}).to_list()
 
-    t_read = TeamRead.model_validate(data)
+    t_read = TeamRead(
+        name=t_doc.name,
+        description=t_doc.description,
+        context={"project": p_doc.name},
+        members=u_docs,
+    )
+
     return t_read
 
 
-@router.get("/teams/", response_model=TeamRead)
-async def get_project_team_by_name(
+@router.get("/teams/", response_model=list[TeamRead])
+async def get_project_teams(
     project: str,
-    team: str,
     user: UserDocument = Depends(auth_required),
 ):
-    """Get the team by name"""
+    """Get the teams of given project"""
     context = dict(project=project)
     try:
         manager = TeamManager()
@@ -84,15 +89,59 @@ async def get_project_team_by_name(
             detail=str(e),
         )
 
-    t_doc = await manager.get_project_team_by_name(team)
-    if t_doc is None:
+    t_docs = await manager.get_project_teams()
+    if not t_docs:
+        return []
+
+    t_reads = []
+    p_doc = validated_context["project"]
+    for t_doc in t_docs:
+        u_docs = await UserDocument.find({"_id": {"$in": t_doc.members}}).to_list()
+        t_reads.append(
+            TeamRead(
+                name=t_doc.name,
+                description=t_doc.description,
+                members=u_docs,
+                context=ProjectContext(project=p_doc.name),
+            ),
+        )
+    return t_reads
+
+
+@router.put("/teams/detail/")
+async def update_project_team(
+    project: str,
+    team: str,
+    data: TeamUpdate,
+    user: UserDocument = Depends(auth_required),
+):
+    """Update project team"""
+    context = dict(project=project)
+
+    try:
+        manager = TeamManager()
+        validated_context = await manager.validate_user_context(user, context)
+    except ContextValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Could not find team '{team}' of project '{project}'.",
+            detail=str(e),
+        )
+    except ContextPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    try:
+        t_doc = await manager.update_project_team(team, data)
+    except (DocumentDoesNotExist, DocumentAlreadyExists) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
         )
 
     p_doc = validated_context["project"]
-    u_docs = await UserDocument.find({"teams": t_doc.id}).to_list()
+    u_docs = await UserDocument.find({"_id": {"$in": t_doc.members}}).to_list()
     t_read = TeamRead(
         name=t_doc.name,
         description=t_doc.description,
@@ -100,68 +149,3 @@ async def get_project_team_by_name(
         context=ProjectContext(project=p_doc.name),
     )
     return t_read
-
-
-@router.put("/teams/members/")
-async def update_project_team_members(
-    project: str,
-    team: str,
-    data: list[UserCreate],
-    user: UserDocument = Depends(auth_required),
-):
-    """Put one or more users to a team"""
-    context = dict(project=project)
-
-    try:
-        manager = TeamManager()
-        validated_context = await manager.validate_user_context(user, context)
-    except ContextValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    except ContextPermissionDenied as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e),
-        )
-
-    try:
-        await manager.update_project_team_members(team, data)
-    except DocumentDoesNotExist as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-
-    emails = [u.email for u in data]
-    p_doc = validated_context["project"]
-    return {
-        "message": f"Added users {emails} into team '{team}' of project '{p_doc.name}'",
-    }
-
-
-@router.get("/teams/members/", response_model=list[UserRead])
-async def get_project_team_members(
-    project: str,
-    team: str,
-    user: UserDocument = Depends(auth_required),
-):
-    """Given team name, get the team members"""
-    context = dict(project=project)
-    try:
-        manager = TeamManager()
-        await manager.validate_user_context(user, context)
-    except ContextValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    except ContextPermissionDenied as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e),
-        )
-
-    team_members = await manager.get_project_team_members(team)
-    return team_members

@@ -8,8 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 
+# Settings
 from pipes.config.settings import settings
-
 
 # Health
 from pipes.health.routes import router as health_router
