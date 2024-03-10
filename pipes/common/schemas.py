@@ -29,12 +29,7 @@ class Milestone(BaseModel):
 
     @field_validator("milestone_date", mode="before")
     @classmethod
-    def convert_string_to_datetime(cls, value):
-        if isinstance(value, datetime):
-            return value
-        else:
-            value = str(value)
-
+    def convert_to_datetime(cls, value):
         try:
             value = parse_datetime(value)
         except Exception as e:
@@ -61,7 +56,7 @@ class Scenario(BaseModel):
 
     @field_validator("description", mode="before")
     @classmethod
-    def convert_string_to_list(cls, value):
+    def convert_to_list(cls, value):
         if isinstance(value, str):
             return [value]
         return value

@@ -6,8 +6,8 @@ class ContextValidationError(Exception):
     """Raise when given context validation failed"""
 
 
-class ContextPermissionDenied(Exception):
-    """Raise when user does not have permission in context"""
+class UserPermissionDenied(Exception):
+    """Raise when user does not have permission"""
 
 
 class DocumentDoesNotExist(Exception):
