@@ -5,9 +5,10 @@ from datetime import datetime
 import pymongo
 from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, ValidationError
 
 from pipes.common.schemas import Milestone, Scenario, Sensitivity
+from pipes.common.utilities import parse_datatime
 from pipes.teams.schemas import TeamBasicRead
 from pipes.users.schemas import UserCreate, UserRead
 
@@ -76,6 +77,24 @@ class ProjectCreate(BaseModel):
     #     default=[],
     #     description="list of project teams",
     # )
+
+    @field_validator("scheduled_start", mode="before")
+    @classmethod
+    def validate_scheduled_start(cls, value):
+        try:
+            value = parse_datatime(value)
+        except Exception as e:
+            raise ValidationError(f"Invalid scheduled_start value: {value}; Error: {e}")
+        return value
+
+    @field_validator("scheduled_end", mode="before")
+    @classmethod
+    def validate_scheduled_end(cls, value):
+        try:
+            value = parse_datatime(value)
+        except Exception as e:
+            raise ValidationError(f"Invalid scheduled_end value: {value}; Error: {e}")
+        return value
 
 
 class ProjectBasicRead(BaseModel):
