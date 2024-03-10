@@ -8,8 +8,7 @@ from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field
 
 from pipes.common.schemas import Milestone, Scenario, Sensitivity
-from pipes.models.schemas import ModelRelation
-from pipes.teams.schemas import TeamRead
+from pipes.teams.schemas import TeamBasicRead
 from pipes.users.schemas import UserCreate, UserRead
 
 
@@ -102,12 +101,12 @@ class ProjectDetailRead(ProjectCreate):
         title="owner",
         description="project owner",
     )
-    leads: set[UserRead] = Field(
+    leads: list[UserRead] = Field(
         title="leads",
         default=[],
         description="list of project lead",
     )
-    teams: set[TeamRead] = Field(
+    teams: list[TeamBasicRead] = Field(
         title="teams",
         default=[],
         description="list of project teams",
@@ -119,12 +118,12 @@ class ProjectDocument(ProjectDetailRead, Document):
         title="owner",
         description="project owner",
     )
-    leads: set[PydanticObjectId] = Field(
+    leads: list[PydanticObjectId] = Field(
         title="leads",
         default=[],
         description="list of project lead",
     )
-    teams: set[PydanticObjectId] = Field(
+    teams: list[PydanticObjectId] = Field(
         title="teams",
         default=[],
         description="list of project teams",
@@ -155,67 +154,3 @@ class ProjectDocument(ProjectDetailRead, Document):
                 unique=True,
             ),
         ]
-
-
-# Project Run
-class ProjectRunCreate(BaseModel):
-    name: str = Field(
-        title="name",
-        min_length=2,
-        description="Project run name",
-    )
-    description: str = Field(
-        title="description",
-        default="",
-        description="the description of this project run",
-    )
-    assumptions: list[str] = Field(
-        title="assumptions",
-        description="Assumptions associated with project run that differ from project",
-        default=[],
-    )
-    requirements: dict = Field(
-        title="requirements",
-        default={},
-        description="Requirements of the project run that differ from the project",
-    )
-    scenarios: list[str] = Field(
-        title="scenarios",
-        description="the scenarios of this prject run",
-        default=[],
-    )
-    scheduled_start: datetime = Field(
-        title="scheduled_start",
-        description="Schedule project run start date in YYYY-MM-DD format",
-    )
-    scheduled_end: datetime = Field(
-        title="scheduled_end",
-        description="Schedule project run end date in YYYY-MM-DD format",
-    )
-    models: list[str] = Field(
-        title="models",
-        description="Model names",
-    )
-    topology: list[ModelRelation] = Field(
-        title="topology",
-        default=[],
-        description="model relations within pipeline run",
-    )
-
-
-class ProjectRunRead(ProjectRunCreate):
-    pass
-
-
-class ProjectRunDocument(ProjectRunRead, Document):
-    models: list[PydanticObjectId] = Field(
-        title="models",
-        description="Models",
-    )
-
-    class Settings:
-        name = "projectruns"
-
-    def validate_scenarios(self, value):
-        """Project run scenarios must be a subset of project scenarios."""
-        pass

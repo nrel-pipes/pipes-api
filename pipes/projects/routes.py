@@ -5,74 +5,69 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from pipes.common.exceptions import (
-    ContextPermissionDenied,
+    UserPermissionDenied,
     ContextValidationError,
     DocumentAlreadyExists,
 )
+from pipes.projects.contexts import ProjectSimpleContext
 from pipes.projects.manager import ProjectManager
 from pipes.projects.schemas import ProjectCreate, ProjectBasicRead, ProjectDetailRead
+from pipes.projects.validators import ProjectContextValidator
 from pipes.users.auth import auth_required
-from pipes.users.manager import UserManager
 from pipes.users.schemas import UserDocument
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/projects/detail/", response_model=ProjectDetailRead, status_code=201)
+@router.post("/projects/", response_model=ProjectDetailRead, status_code=201)
 async def create_project(
     data: ProjectCreate,
     user: UserDocument = Depends(auth_required),
 ):
     """Create a new project"""
-    project_manager = ProjectManager()
-    await project_manager.validate_user_context(user=user, context={})
-
     try:
-        p_doc = await project_manager.create_project(data)
+        manager = ProjectManager()
+        p_doc = await manager.create_project(data, user)
     except DocumentAlreadyExists as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
 
-    # Convert owner object into dictionary
-    user_manager = UserManager()
-    p_read = p_doc.model_dump()
-    owner_doc = await user_manager.get_user_by_id(p_read["owner"])
-    p_read["owner"] = owner_doc.read()
+    # Read referenced documents
+    p_read = await manager.read_project_detail(p_doc)
 
     return p_read
 
 
-@router.get("/projects/detail/", response_model=ProjectDetailRead)
+@router.get("/projects/", response_model=ProjectDetailRead)
 async def get_project_detail(
     project: str,
     user: UserDocument = Depends(auth_required),
 ):
     """Get project detail information"""
-    manager = ProjectManager()
+    context = ProjectSimpleContext(project=project)
+
     try:
-        context = dict(project=project)
-        await manager.validate_user_context(user, context)
+        validator = ProjectContextValidator()
+        validated_context = await validator.validate(user, context)
     except ContextValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-    except ContextPermissionDenied as e:
+    except UserPermissionDenied as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=str(e),
         )
 
-    p_doc = await manager.get_project_detail()
+    p_doc = validated_context.project
 
-    # Convert owner object into dictionary
-    user_manager = UserManager()
-    p_read = p_doc.model_dump()
-    owner_doc = await user_manager.get_user_by_id(p_read["owner"])
-    p_read["owner"] = owner_doc.read()
+    # Read referenced documents
+    manager = ProjectManager()
+    p_read = await manager.read_project_detail(p_doc)
 
     return p_read
 
@@ -81,20 +76,7 @@ async def get_project_detail(
 async def get_basic_projects(user: UserDocument = Depends(auth_required)):
     """Get all projects with basic information"""
     manager = ProjectManager()
-    try:
-        await manager.validate_user_context(user, {})
-    except ContextValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    except ContextPermissionDenied as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e),
-        )
-
-    p_read_docs = await manager.get_basic_projects()
+    p_read_docs = await manager.get_basic_projects(user)
     return p_read_docs
 
 
