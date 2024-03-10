@@ -6,7 +6,7 @@ from pymongo import IndexModel
 from beanie import Document
 from pydantic import BaseModel, Field
 
-from pipes.common.contexts import ProjectContext, ProjectRefContext
+from pipes.projects.contexts import ProjectSimpleContext, ProjectObjectContext
 from pipes.users.schemas import UserRead, UserCreate
 
 
@@ -58,7 +58,7 @@ class TeamUpdate(TeamCreate):
 
 
 class TeamRead(TeamCreate):
-    context: ProjectContext = Field(
+    context: ProjectSimpleContext = Field(
         title="context",
         description="project context of team",
     )
@@ -69,10 +69,22 @@ class TeamRead(TeamCreate):
     )
 
 
+class TeamBasicRead(BaseModel):
+    name: str = Field(
+        title="name",
+        description="The team name",
+    )
+    description: str | None = Field(
+        title="description",
+        default=None,
+        description="The team description",
+    )
+
+
 class TeamDocument(TeamRead, Document):
     """Team document in db"""
 
-    context: ProjectRefContext = Field(
+    context: ProjectObjectContext = Field(
         title="context",
         description="project referenced context",
     )

@@ -4,17 +4,12 @@ import logging
 
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import (
-    ContextPermissionDenied,
-    ContextValidationError,
-    DocumentAlreadyExists,
-    DocumentDoesNotExist,
-)
+from pipes.common.exceptions import DocumentAlreadyExists, DocumentDoesNotExist
 from pipes.db.manager import AbstractObjectManager
 from pipes.projects.schemas import ProjectDocument
 from pipes.teams.schemas import TeamCreate, TeamRead, TeamUpdate, TeamDocument
 from pipes.users.manager import UserManager
-from pipes.users.schemas import UserDocument
+from pipes.users.schemas import UserDocument, UserRead
 
 logger = logging.getLogger(__name__)
 
@@ -22,46 +17,12 @@ logger = logging.getLogger(__name__)
 class TeamManager(AbstractObjectManager):
     """Manager class for team anagement"""
 
-    async def validate_user_context(
-        self,
-        user: UserDocument,
-        context: dict,
-    ) -> dict:
-        """Validate under project user context"""
-        self._current_user = user
-
-        # Check if project exists or not
-        p_name = context["project"]
-        p_doc = await ProjectDocument.find_one(ProjectDocument.name == p_name)
-
-        if not p_doc:
-            raise ContextValidationError(
-                f"Invalid context, project '{p_name}' does not exist",
-            )
-
-        # Check user permission on p_doc
-        is_superuser = self.current_user.is_superuser
-        is_owner = self.current_user.id == p_doc.owner
-        is_lead = self.current_user.id in p_doc.leads
-        is_creator = self.current_user.id == p_doc.created_by
-
-        if not (is_superuser or is_owner or is_lead or is_creator):
-            raise ContextPermissionDenied(
-                f"Invalid context, no access to project '{p_name}'.",
-            )
-
-        validated_context = dict(project=p_doc)
-        self._validated_context = validated_context
-
-        return validated_context
-
     async def create_project_team(
         self,
+        p_doc: ProjectDocument,
         t_create: TeamCreate,
     ) -> TeamDocument:
         """Create new team"""
-        p_doc = self.validated_context["project"]
-
         user_manager = UserManager()
         u_docs = [
             await user_manager.get_or_create_user(u_create)
@@ -75,11 +36,15 @@ class TeamManager(AbstractObjectManager):
         )
 
         try:
-            await t_doc.insert()
+            t_doc = await t_doc.insert()
         except DuplicateKeyError:
             raise DocumentAlreadyExists(
                 f"Team '{t_create.name}' already exists under project '{p_doc.name}'.",
             )
+
+        # Update project teams reference
+        p_doc.teams.add(t_doc.id)
+        await p_doc.save()
 
         logger.info(
             "New team '%s' created successfully under project '%s'.",
@@ -88,21 +53,30 @@ class TeamManager(AbstractObjectManager):
         )
         return t_doc
 
-    async def get_project_teams(self) -> list[TeamRead]:
+    async def get_project_teams(self, p_doc: ProjectDocument) -> list[TeamRead]:
         """Get all teams of given project."""
-        p_doc = self.validated_context["project"]
-        t_docs = await TeamDocument.find({"context.project": p_doc.id}).to_list()
-        return t_docs
+        t_docs = TeamDocument.find({"context.project": p_doc.id})
+
+        teams = []
+        async for t_doc in t_docs:
+            data = t_doc.model_dump()
+            data["members"] = await self.get_team_members(t_doc)
+            t_read = TeamRead.model_validate(data)
+            teams.append(t_read)
+        return teams
+
+    async def get_team_members(self, t_doc: TeamDocument) -> list[UserRead]:
+        u_docs = await UserDocument.find({"_id": {"$in": t_doc.members}}).to_list()
+        members = [UserRead.model_validate(u_doc.model_dump()) for u_doc in u_docs]
+        return members
 
     async def update_project_team(
         self,
+        p_doc: ProjectDocument,
         team: str,
         data: TeamUpdate,
     ) -> TeamDocument:
         """Update team"""
-        p_doc = self.validated_context["project"]
-
-        # Validate team
         t_doc = await TeamDocument.find_one(
             {"context.project": p_doc.id, "name": team},
         )
