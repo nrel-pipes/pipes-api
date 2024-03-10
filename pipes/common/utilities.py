@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from dateutil import parser
@@ -21,4 +21,8 @@ def parse_datatime(value: Any) -> datetime:
         value = str(value)
 
     value = parser.parse(value)
-    return value
+
+    # remove tzinfo
+    native_value = value.astimezone(timezone.utc).replace(tzinfo=None)
+
+    return native_value

@@ -9,6 +9,7 @@ from pymongo.errors import DuplicateKeyError
 from pipes.common.exceptions import DocumentAlreadyExists
 from pipes.db.manager import AbstractObjectManager
 from pipes.projects.schemas import ProjectCreate, ProjectDocument, ProjectDetailRead
+from pipes.projects.validators import ProjectDomainValidator
 from pipes.teams.schemas import TeamDocument, TeamBasicRead
 from pipes.users.manager import UserManager
 from pipes.users.schemas import UserDocument, UserRead
@@ -46,6 +47,9 @@ class ProjectManager(AbstractObjectManager):
             last_modified=datetime.utcnow(),
             modified_by=user.id,
         )
+
+        domain_validator = ProjectDomainValidator()
+        p_doc = await domain_validator.validate(p_doc)
 
         try:
             await p_doc.insert()

@@ -6,6 +6,10 @@ class ContextValidationError(Exception):
     """Raise when given context validation failed"""
 
 
+class DomainValidationError(Exception):
+    """Raise when given domain validation failed"""
+
+
 class UserPermissionDenied(Exception):
     """Raise when user does not have permission"""
 
