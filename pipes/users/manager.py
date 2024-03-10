@@ -17,11 +17,6 @@ logger = logging.getLogger(__name__)
 class UserManager(AbstractObjectManager):
     """Manager class for user management"""
 
-    async def validate_user_context(self, user: UserDocument, context: dict) -> dict:
-        """No need to validate the context for user management"""
-        # Skip, no context validation required now.
-        return {}
-
     async def create_user(
         self,
         u_create: UserCreate,
