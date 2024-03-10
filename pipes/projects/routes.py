@@ -8,7 +8,7 @@ from pipes.common.exceptions import (
     UserPermissionDenied,
     ContextValidationError,
     DocumentAlreadyExists,
-    DomainValidationError
+    DomainValidationError,
 )
 from pipes.projects.contexts import ProjectSimpleContext
 from pipes.projects.manager import ProjectManager

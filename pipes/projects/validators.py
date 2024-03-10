@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from pipes.common.exceptions import ContextValidationError, DomainValidationError, UserPermissionDenied
+from pipes.common.exceptions import (
+    ContextValidationError,
+    DomainValidationError,
+    UserPermissionDenied,
+)
 from pipes.common.validators import ContextValidator, DomainValidator
 from pipes.projects.contexts import ProjectSimpleContext, ProjectDocumentContext
 from pipes.projects.schemas import ProjectDocument
