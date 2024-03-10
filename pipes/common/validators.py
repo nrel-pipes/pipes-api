@@ -13,7 +13,7 @@ class ContextValidator:
     def __init__(self) -> None:
         self._validated_context: BaseModel | None = None
 
-    async def validate(self, user: UserDocument, context: BaseModel) -> dict:
+    async def validate(self, user: UserDocument, context: BaseModel) -> BaseModel:
         """Validate context existence and user permissions"""
         # Object existence
         validated_context = await self.validate_document(context)
