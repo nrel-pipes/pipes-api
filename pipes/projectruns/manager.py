@@ -31,6 +31,15 @@ class ProjectRunManager(AbstractObjectManager):
     ) -> ProjectRunDocument:
         """Create a new project run under given project"""
         pr_name = pr_create.name
+        pr_doc_exists = await ProjectRunDocument.find_one(
+            {"context.project": p_doc.id, "name": pr_name},
+        )
+        if pr_doc_exists:
+            raise DocumentAlreadyExists(
+                f"Project run '{pr_name}' already exists under project '{p_doc.name}'.",
+            )
+
+        pr_name = pr_create.name
         context = ProjectObjectContext(project=p_doc.id)
 
         # Project run document
