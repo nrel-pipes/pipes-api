@@ -3,9 +3,14 @@ from __future__ import annotations
 from datetime import datetime
 
 import pymongo
+from beanie import PydanticObjectId
 from pymongo import IndexModel
 from beanie import Document
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from pipes.common.utilities import parse_datetime
+from pipes.projectruns.contexts import ProjectRunSimpleContext, ProjectRunObjectContext
+from pipes.teams.schemas import TeamRead
 
 
 # Model
@@ -25,7 +30,7 @@ class ScenarioMapping(BaseModel):
         default="",
         description="Model scenario description",
     )
-    other: dict[str, str] = Field(
+    other: dict = Field(
         title="other",
         default={},
         description="other metadata info about the model scenario mapping in dictionary",
@@ -35,14 +40,10 @@ class ScenarioMapping(BaseModel):
 class ModelCreate(BaseModel):
     """Model schema"""
 
-    model: str = Field(
+    name: str = Field(
         title="model",
         min_length=2,
         description="the model name",
-    )
-    modeling_team: str | None = Field(
-        title="modeling_team",
-        description="Which modeling team to link this model to.",
     )
     display_name: str | None = Field(
         title="display_name",
@@ -57,17 +58,19 @@ class ModelCreate(BaseModel):
         title="description",
         description="Description of the model",
     )
+    modeling_team: str = Field(
+        title="modeling_team",
+        description="Which modeling team to link this model to.",
+    )
     assumptions: list[str] = Field(
         title="assumptions",
         description="List of model assumptions",
-        required=False,
         default=[],
     )
-    # TODO: if missing from TOML, populate with project-run or project scenarios
-    expected_scenarios: list[str] = Field(
-        title="assumptions",
-        description="List of expected model scenarios",
-        default=[],  # TODO: default to the list from project or project run
+    requirements: dict = Field(
+        title="requirements",
+        default={},
+        description="Model specific requirements (if different from Project and Project-Run)",
     )
     scheduled_start: datetime = Field(
         title="scheduled_start",
@@ -77,53 +80,71 @@ class ModelCreate(BaseModel):
         title="scheduled_end",
         description="Schedule model end date in YYYY-MM-DD format",
     )
-    requirements: dict = Field(
-        title="requirements",
-        default={},
-        description="Model specific requirements (if different from Project and Project-Run)",
+    # TODO: if missing from TOML, populate with project-run or project scenarios
+    expected_scenarios: list[str] = Field(
+        title="assumptions",
+        description="List of expected model scenarios",
+        default=[],  # TODO: default to the list from project or project run
     )
     scenario_mappings: list[ScenarioMapping] = Field(
         title="scenario_mappings",
         description="Model scenarios (if different) and how they map to the project scenarios",
         default=[],
     )
-    other: dict[str, str] = Field(
+    other: dict = Field(
         title="other",
         default={},
         description="other metadata info about the model in dictionary",
     )
 
+    @field_validator("scheduled_start", mode="before")
+    @classmethod
+    def validate_scheduled_start(cls, value):
+        try:
+            value = parse_datetime(value)
+        except Exception as e:
+            raise ValueError(f"Invalid scheduled_start value: {value}; Error: {e}")
+        return value
+
+    @field_validator("scheduled_end", mode="before")
+    @classmethod
+    def validate_scheduled_end(cls, value):
+        try:
+            value = parse_datetime(value)
+        except Exception as e:
+            raise ValueError(f"Invalid scheduled_end value: {value}; Error: {e}")
+        return value
+
 
 class ModelRead(ModelCreate):
-    pass
+    context: ProjectRunSimpleContext = Field(
+        title="context",
+        description="project run context",
+    )
+    modeling_team: TeamRead = Field(
+        title="model",
+        description="The modeling team object",
+    )
 
 
 class ModelDocument(ModelRead, Document):
+    context: ProjectRunObjectContext = Field(
+        title="context",
+        description="the project run object id",
+    )
+    modeling_team: PydanticObjectId = Field(
+        title="model_team",
+        description="the modeling team object id",
+    )
 
     class Settings:
         name = "models"
-        # TODO: should model names unique globally?
         indexes = [
             IndexModel(
-                [("name", pymongo.ASCENDING)],
+                [
+                    ("context", pymongo.ASCENDING),
+                    ("name", pymongo.ASCENDING),
+                ],
                 unique=True,
             ),
         ]
-
-
-class ModelRelation(BaseModel):
-    """Model Connection Schema"""
-
-    from_model: str = Field(
-        title="from_model",
-        description="the from_model name",
-    )
-    to_model: str = Field(
-        title="to_model",
-        description="the to_model name",
-    )
-    # handoffs: list[Handoff] = Field(
-    #     title="handoffs",
-    #     description="The handoffs from model to model",
-    #     default=[],
-    # )
