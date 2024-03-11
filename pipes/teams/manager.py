@@ -25,11 +25,11 @@ class TeamManager(AbstractObjectManager):
         """Create new team"""
         t_name = t_create.name
         t_doc_exists = await TeamDocument.find_one(
-            {"context.project": p_doc.id, "name": t_name}
+            {"context.project": p_doc.id, "name": t_name},
         )
         if t_doc_exists:
             raise DocumentAlreadyExists(
-                f"Team '{t_name}' already exists under project '{p_doc.name}'."
+                f"Team '{t_name}' already exists under project '{p_doc.name}'.",
             )
 
         # Create tem
