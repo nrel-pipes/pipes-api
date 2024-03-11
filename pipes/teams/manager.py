@@ -23,6 +23,16 @@ class TeamManager(AbstractObjectManager):
         t_create: TeamCreate,
     ) -> TeamDocument:
         """Create new team"""
+        t_name = t_create.name
+        t_doc_exists = await TeamDocument.find_one(
+            {"context.project": p_doc.id, "name": t_name}
+        )
+        if t_doc_exists:
+            raise DocumentAlreadyExists(
+                f"Team '{t_name}' already exists under project '{p_doc.name}'."
+            )
+
+        # Create tem
         user_manager = UserManager()
         u_docs = [
             await user_manager.get_or_create_user(u_create)
@@ -43,7 +53,7 @@ class TeamManager(AbstractObjectManager):
             )
 
         # Update project teams reference
-        p_doc.teams.add(t_doc.id)
+        p_doc.teams.append(t_doc.id)
         await p_doc.save()
 
         logger.info(
