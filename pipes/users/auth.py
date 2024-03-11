@@ -13,11 +13,14 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwk, jwt
 from jose.exceptions import JWTError
 from jose.utils import base64url_decode
-from pydantic import EmailStr
 
-from pipes.common.mapping import DNS_ORG_MAPPING
 from pipes.config.settings import settings
-from pipes.common import exceptions as E
+from pipes.common.exceptions import (
+    CognitoAuthError,
+    DocumentAlreadyExists,
+    DocumentDoesNotExist,
+)
+from pipes.common.utilities import parse_organization
 from pipes.users.schemas import UserCreate, UserDocument
 from pipes.users.manager import UserManager
 
@@ -60,29 +63,29 @@ class CognitoJWKsVerifier:
         try:
             headers = jwt.get_unverified_headers(access_token)
         except jwt.JWTError:
-            raise E.CognitoAuthError(
+            raise CognitoAuthError(
                 "Not authenticated. Invalid access token - headers.",
             )
 
         kid = headers.get("kid")
         if not kid:
-            raise E.CognitoAuthError("Not authenticated. Invalid access token - kid.")
+            raise CognitoAuthError("Not authenticated. Invalid access token - kid.")
 
         try:
             key = self.keys.get(kid)
             publickey = jwk.construct(key)
         except KeyError:
-            raise E.CognitoAuthError("Not authenticated. Invalid access token - key.")
+            raise CognitoAuthError("Not authenticated. Invalid access token - key.")
         return publickey
 
     def _verify_claims(self, claims: dict) -> bool:
         # Check token expiration time
         if claims["exp"] < time.time():
-            raise E.CognitoAuthError("Not authenticated. Access token expired.")
+            raise CognitoAuthError("Not authenticated. Access token expired.")
 
         # Check issuer client
         if claims["client_id"] != self.aud:
-            raise E.CognitoAuthError(
+            raise CognitoAuthError(
                 "Not authenticated. Invalid access token - issuer.",
             )
 
@@ -90,7 +93,7 @@ class CognitoJWKsVerifier:
         now = timegm(datetime.utcnow().utctimetuple())
         iat = int(claims.get("iat"))  # type: ignore
         if now < iat:
-            raise E.CognitoAuthError("Not authenticated. Invalid access token - iat.")
+            raise CognitoAuthError("Not authenticated. Invalid access token - iat.")
 
         self._claims = claims
 
@@ -100,12 +103,12 @@ class CognitoJWKsVerifier:
         try:
             claims = jwt.get_unverified_claims(access_token)
         except JWTError:
-            raise E.CognitoAuthError(
+            raise CognitoAuthError(
                 "Not authenticated. Invalid access token - claims.",
             )
 
         if claims["token_use"] != "access":
-            raise E.CognitoAuthError("Not authenticated. Invalid access token - use.")
+            raise CognitoAuthError("Not authenticated. Invalid access token - use.")
 
         message, signature = str(access_token).rsplit(".", 1)
         decoded_signature = base64url_decode(signature.encode("utf-8"))
@@ -113,7 +116,7 @@ class CognitoJWKsVerifier:
         publickey = self._get_publickey(access_token)
         is_verified = publickey.verify(message.encode("utf-8"), decoded_signature)
         if not is_verified:
-            raise E.CognitoAuthError(
+            raise CognitoAuthError(
                 "Not authenticated. Invalid access token - not verified.",
             )
 
@@ -146,12 +149,12 @@ class CognitoAuth:
         try:
             cognito_username = self.verifier._claims.get("username")
             u_doc = await manager.get_user_by_username(cognito_username)
-        except E.DocumentDoesNotExist:
+        except DocumentDoesNotExist:
             cognito_user = await self._get_cognito_user_attributes(access_token)
             if not cognito_user:
-                raise E.CognitoAuthError("Invalid access token.")
+                raise CognitoAuthError("Invalid access token.")
 
-            organization = await self._parse_organization(cognito_user["email"])
+            organization = parse_organization(cognito_user["email"])
             u_create = UserCreate(
                 email=cognito_user["email"],
                 first_name=cognito_user["first_name"],
@@ -164,7 +167,7 @@ class CognitoAuth:
                     u_create=u_create,
                     u_username=cognito_user["username"],
                 )
-            except E.DocumentAlreadyExists:
+            except DocumentAlreadyExists:
                 u_doc = await manager.get_user_by_email(cognito_user["email"])
 
         if (not u_doc) or (not u_doc.is_active):
@@ -204,13 +207,6 @@ class CognitoAuth:
 
         return user_attrs
 
-    async def _parse_organization(self, email: EmailStr) -> str | None:
-        """Parse organization based on email domain"""
-        domain = email.lower().split("@")[1]
-        if domain in DNS_ORG_MAPPING:
-            return DNS_ORG_MAPPING[domain]
-        return None
-
 
 async def auth_required(
     auth_creds: HTTPAuthorizationCredentials = Depends(http_bearer),
@@ -219,7 +215,7 @@ async def auth_required(
     try:
         auth = CognitoAuth()
         user = await auth.authenticate(auth_creds)
-    except E.CognitoAuthError as e:
+    except CognitoAuthError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),

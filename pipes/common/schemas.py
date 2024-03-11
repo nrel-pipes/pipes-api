@@ -1,9 +1,9 @@
 from datetime import datetime
 from enum import Enum
 
-from dateutil.parser import parse as parse_datetime
+from pydantic import BaseModel, Field, field_validator
 
-from pydantic import BaseModel, Field, field_validator, ValidationError
+from pipes.common.utilities import parse_datetime
 
 
 class Milestone(BaseModel):
@@ -22,18 +22,18 @@ class Milestone(BaseModel):
 
     @field_validator("description", mode="before")
     @classmethod
-    def convert_string_to_list(cls, value):
+    def validate_description(cls, value):
         if isinstance(value, str):
             return [value]
         return value
 
     @field_validator("milestone_date", mode="before")
     @classmethod
-    def convert_to_datetime(cls, value):
+    def validate_milestone_date(cls, value):
         try:
             value = parse_datetime(value)
         except Exception as e:
-            raise ValidationError(f"Invalid milestone_date value: {value}; Error: {e}")
+            raise ValueError(f"Invalid milestone_date value: {value}; Error: {e}")
 
         return value
 

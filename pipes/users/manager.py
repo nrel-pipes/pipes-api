@@ -9,6 +9,7 @@ from pymongo.errors import DuplicateKeyError
 
 from pipes.db.manager import AbstractObjectManager
 from pipes.common.exceptions import DocumentDoesNotExist, DocumentAlreadyExists
+from pipes.common.utilities import parse_organization
 from pipes.users.schemas import UserCreate, UserDocument
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,11 @@ class UserManager(AbstractObjectManager):
         u_username: str = "",
     ) -> UserDocument:
         """Admin create new user"""
+        u_email = u_create.email
+        u_doc_exists = await UserDocument.find_one(UserDocument.email == u_email)
+        if u_doc_exists:
+            raise DocumentAlreadyExists(f"User '{u_email}' already exists.")
+
         u_doc = UserDocument(
             email=u_create.email,
             first_name=u_create.first_name,
@@ -45,11 +51,15 @@ class UserManager(AbstractObjectManager):
         """Get or create user"""
         u_doc = await UserDocument.find_one(UserDocument.email == u_create.email)
         if not u_doc:
+            organization = u_create.organization
+            if not organization:
+                organization = parse_organization(u_create.email)
+
             u_doc = UserDocument(
                 email=u_create.email,
                 first_name=u_create.first_name,
                 last_name=u_create.last_name,
-                organization=u_create.organization,
+                organization=organization,
                 created_at=datetime.utcnow(),
             )
             u_doc = await u_doc.insert()
