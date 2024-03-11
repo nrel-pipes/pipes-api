@@ -8,7 +8,7 @@ from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field, field_validator, ValidationError
 
 from pipes.common.schemas import Milestone, Scenario, Sensitivity
-from pipes.common.utilities import parse_datatime
+from pipes.common.utilities import parse_datetime
 from pipes.teams.schemas import TeamBasicRead
 from pipes.users.schemas import UserCreate, UserRead
 
@@ -82,7 +82,7 @@ class ProjectCreate(BaseModel):
     @classmethod
     def validate_scheduled_start(cls, value):
         try:
-            value = parse_datatime(value)
+            value = parse_datetime(value)
         except Exception as e:
             raise ValidationError(f"Invalid scheduled_start value: {value}; Error: {e}")
         return value
@@ -91,7 +91,7 @@ class ProjectCreate(BaseModel):
     @classmethod
     def validate_scheduled_end(cls, value):
         try:
-            value = parse_datatime(value)
+            value = parse_datetime(value)
         except Exception as e:
             raise ValidationError(f"Invalid scheduled_end value: {value}; Error: {e}")
         return value

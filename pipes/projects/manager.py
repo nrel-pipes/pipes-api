@@ -25,6 +25,13 @@ class ProjectManager(AbstractObjectManager):
         user: UserDocument,
     ) -> ProjectDocument:
         """Create a new project"""
+        # NOTE: avoid db collection issue introduced from manual operations, like db.projects.drop()
+        p_name = p_create.name
+        p_doc_exists = await ProjectDocument.find_one(ProjectDocument.name == p_name)
+        if p_doc_exists:
+            raise DocumentAlreadyExists(f"Project '{p_create.name}' already exists.")
+
+        # Get user object
         user_manager = UserManager()
         p_owner_doc = await user_manager.get_or_create_user(p_create.owner)
 
