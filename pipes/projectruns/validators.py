@@ -50,11 +50,10 @@ class ProjectRunDomainValidator(DomainValidator):
 
     async def _get_parent_project(self, pr_doc: ProjectRunDocument) -> ProjectDocument:
         """Get project document"""
-        p_id = pr_doc.context.project
-
         if self._cached_p_doc:
             p_doc = self._cached_p_doc
         else:
+            p_id = pr_doc.context.project
             p_doc = await ProjectDocument.get(p_id)
             self._cached_p_doc = p_doc
 
@@ -66,9 +65,9 @@ class ProjectRunDomainValidator(DomainValidator):
     ) -> ProjectRunDocument:
         """Project run scenarios should be within project scenarios"""
         p_doc = await self._get_parent_project(pr_doc)
+        p_scneario_pool = {s_obj.name for s_obj in p_doc.scenarios}
 
-        p_scenarios = {s_obj.name for s_obj in p_doc.scenarios}
-        diff = set(pr_doc.scenarios).difference(p_scenarios)
+        diff = set(pr_doc.scenarios).difference(p_scneario_pool)
 
         if diff:
             raise DomainValidationError(

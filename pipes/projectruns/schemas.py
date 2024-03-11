@@ -5,11 +5,10 @@ from datetime import datetime
 import pymongo
 from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field, field_validator, ValidationError
+from pydantic import BaseModel, Field, field_validator
 
 from pipes.common.utilities import parse_datetime
 from pipes.projects.contexts import ProjectSimpleContext, ProjectObjectContext
-from pipes.projects.schemas import ProjectDocument
 
 
 # Project Run
@@ -63,7 +62,7 @@ class ProjectRunCreate(BaseModel):
         try:
             value = parse_datetime(value)
         except Exception as e:
-            raise ValidationError(f"Invalid scheduled_start value: {value}; Error: {e}")
+            raise ValueError(f"Invalid scheduled_start value: {value}; Error: {e}")
         return value
 
     @field_validator("scheduled_end", mode="before")
@@ -72,7 +71,7 @@ class ProjectRunCreate(BaseModel):
         try:
             value = parse_datetime(value)
         except Exception as e:
-            raise ValidationError(f"Invalid scheduled_end value: {value}; Error: {e}")
+            raise ValueError(f"Invalid scheduled_end value: {value}; Error: {e}")
         return value
 
 
@@ -81,13 +80,6 @@ class ProjectRunRead(ProjectRunCreate):
         title="context",
         description="project context of team",
     )
-
-
-# FastAPI and beanie Document are running async
-
-
-async def get_project(p_name):
-    return await ProjectDocument.find_one(ProjectDocument.name == p_name)
 
 
 class ProjectRunDocument(ProjectRunRead, Document):

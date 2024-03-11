@@ -83,12 +83,6 @@ async def get_projectruns(
 
     p_doc = validated_context.project
     manager = ProjectRunManager()
-    try:
-        pr_docs = await manager.get_projectruns(p_doc)
-    except DocumentAlreadyExists as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+    pr_docs = await manager.get_projectruns(p_doc)
 
     return pr_docs
