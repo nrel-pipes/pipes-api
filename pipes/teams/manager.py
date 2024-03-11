@@ -69,9 +69,7 @@ class TeamManager(AbstractObjectManager):
 
         teams = []
         async for t_doc in t_docs:
-            data = t_doc.model_dump()
-            data["members"] = await self.get_team_members(t_doc)
-            t_read = TeamRead.model_validate(data)
+            t_read = await self.read_team(t_doc)
             teams.append(t_read)
         return teams
 
@@ -115,3 +113,9 @@ class TeamManager(AbstractObjectManager):
         await t_doc.save()
 
         return t_doc
+
+    async def read_team(self, t_doc: TeamDocument) -> TeamRead:
+        """Convert team document to read object"""
+        data = t_doc.model_dump()
+        data["members"] = await self.get_team_members(t_doc)
+        return TeamRead.model_validate(data)
