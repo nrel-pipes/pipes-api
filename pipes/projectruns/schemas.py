@@ -15,7 +15,7 @@ from pipes.projects.contexts import ProjectSimpleContext, ProjectObjectContext
 class ProjectRunCreate(BaseModel):
     name: str = Field(
         title="name",
-        min_length=2,
+        min_length=1,
         description="Project run name",
     )
     description: str = Field(
