@@ -23,6 +23,9 @@ class ModelRunSimpleContext(BaseModel):
         description="modelrun name",
     )
 
+    def __str__(self) -> str:
+        return f"[project:{self.project} | projectrun:{self.projectrun} | model:{self.model} | modelrun:{self.modelrun}]"  # noqa: E501
+
 
 class ModelRunDocumentContext(BaseModel):
     project: Document = Field(
@@ -41,6 +44,9 @@ class ModelRunDocumentContext(BaseModel):
         title="modelrun",
         description="modelrun document",
     )
+
+    def __str__(self) -> str:
+        return f"[project:{self.project.name} | projectrun:{self.projectrun.name} | model:{self.model.name} | modelrun:{self.modelrun.name}]"  # noqa: E501
 
 
 class ModelRunObjectContext(BaseModel):
