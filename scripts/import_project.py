@@ -31,10 +31,10 @@ raw_projectruns = data["project_runs"]
 raw_teams = data["model_teams"]
 
 # Create project
-project_name = raw_project["name"]
+p_name = raw_project["name"]
 
 clean_project = dict(
-    name=project_name,
+    name=p_name,
     title=raw_project["full_name"],
     description=raw_project["description"],
     assumptions=raw_project["assumptions"],
@@ -47,29 +47,36 @@ clean_project = dict(
     owner=raw_project["owner"],
 )
 
-url = f"{host}/api/projects/"
-response = requests.post(url, data=json.dumps(clean_project), headers=headers)
+url1 = f"{host}/api/projects/"
+response = requests.post(url1, data=json.dumps(clean_project), headers=headers)
 if response.status_code != 201:
-    print(response.text)
-else:
-    print(json.dumps(response.json(), indent=2))
+    print(url1, response.text)
 
 
 # Create project teams
-url = f"{host}/api/teams/?project={project_name}"
+url2 = f"{host}/api/teams/?project={p_name}"
 for team in raw_teams:
-    response = requests.post(url, data=json.dumps(team), headers=headers)
+    response = requests.post(url2, data=json.dumps(team), headers=headers)
     if response.status_code != 201:
-        print(response.text)
-    else:
-        print(response.status_code, url, response.json())
+        print(url2, response.text)
 
 
 # Create project runs
-url = f"{host}/api/projectruns/?project={project_name}"
+url3 = f"{host}/api/projectruns/?project={p_name}"
 for projectrun in raw_projectruns:
-    response = requests.post(url, data=json.dumps(projectrun), headers=headers)
+    response = requests.post(url3, data=json.dumps(projectrun), headers=headers)
     if response.status_code != 201:
-        print(response.text)
-    else:
-        print(response.status_code, url, response.json())
+        print(url3, response.text)
+
+    # Add models to project runs
+    pr_name = projectrun["name"]
+    url4 = f"{host}/api/models/?project={p_name}&projectrun={pr_name}"
+    for raw_model in projectrun["models"]:
+        clean_model = raw_model.copy()
+        clean_model["name"] = raw_model["model"]
+        if not clean_model.get("modeling_team", None):
+            clean_model["modeling_team"] = raw_model["model"]
+
+        response = requests.post(url4, data=json.dumps(clean_model), headers=headers)
+        if response.status_code != 201:
+            print(url4, response.text)
