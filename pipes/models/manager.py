@@ -48,7 +48,6 @@ class ModelManager(AbstractObjectManager):
             )
 
         # context
-        m_name = m_create.name
         context = ProjectRunObjectContext(project=p_doc.id, projectrun=pr_doc.id)
 
         # modeling team

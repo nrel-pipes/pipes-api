@@ -25,17 +25,14 @@ class ModelSimpleContext(BaseModel):
 class ModelDocumentContext(BaseModel):
     project: Document = Field(
         title="project",
-        min_length=1,
         description="project document",
     )
     projectrun: Document = Field(
         title="projectrun",
-        min_length=1,
         description="projectrun document",
     )
     model: Document = Field(
         title="model",
-        min_length=1,
         description="model document",
     )
 
