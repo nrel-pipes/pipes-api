@@ -65,7 +65,7 @@ async def create_model(
     return m_read
 
 
-@router.get("/models/")
+@router.get("/models/", response_model=list[ModelRead])
 async def get_models(
     project: str,
     projectrun: str,
@@ -90,6 +90,6 @@ async def get_models(
 
     manager = ModelManager()
     p_doc, pr_doc = validated_context.project, validated_context.projectrun
-    m_docs = await manager.get_models(p_doc, pr_doc)
+    m_reads = await manager.get_models(p_doc, pr_doc)
 
-    return m_docs
+    return m_reads

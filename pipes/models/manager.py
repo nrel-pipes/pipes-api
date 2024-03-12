@@ -110,7 +110,7 @@ class ModelManager(AbstractObjectManager):
         pr_doc: ProjectRunDocument,
     ) -> list[ModelRead]:
         """Get all models under given project and project run"""
-        m_docs = ProjectRunDocument.find(
+        m_docs = ModelDocument.find(
             {
                 "context.project": p_doc.id,
                 "context.projectrun": pr_doc.id,
@@ -118,7 +118,6 @@ class ModelManager(AbstractObjectManager):
         )
 
         team_manager = TeamManager()
-
         m_reads = []
         async for m_doc in m_docs:
             data = m_doc.model_dump()
