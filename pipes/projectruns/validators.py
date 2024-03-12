@@ -107,7 +107,7 @@ class ProjectRunDomainValidator(DomainValidator):
     ) -> ProjectRunDocument:
         """Project run scheduled end dates should be within project schedules"""
 
-        if pr_doc.scheduled_end > pr_doc.scheduled_start:
+        if pr_doc.scheduled_end < pr_doc.scheduled_start:
             raise DomainValidationError(
                 "Project run 'scheduled_end' could not be smaller than 'scheduled_start'.",
             )
