@@ -22,7 +22,7 @@ headers = {
 
 # Read template
 template_file = templates_dir.joinpath("test_project.toml")
-with open(template_file, "r") as f:
+with open(template_file) as f:
     data = toml.load(f)
 
 
@@ -34,17 +34,17 @@ raw_teams = data["model_teams"]
 project_name = raw_project["name"]
 
 clean_project = dict(
-    name = project_name,
-    title = raw_project["full_name"],
-    description = raw_project["description"],
-    assumptions = raw_project["assumptions"],
-    requirements = raw_project["requirements"],
+    name=project_name,
+    title=raw_project["full_name"],
+    description=raw_project["description"],
+    assumptions=raw_project["assumptions"],
+    requirements=raw_project["requirements"],
     scenarios=raw_project["scenarios"],
-    sensitivities = raw_project["sensitivities"],
-    milestones = raw_project["milestones"],
+    sensitivities=raw_project["sensitivities"],
+    milestones=raw_project["milestones"],
     scheduled_start=raw_project["scheduled_start"],
     scheduled_end=raw_project["scheduled_end"],
-    owner=raw_project["owner"]
+    owner=raw_project["owner"],
 )
 
 url = f"{host}/api/projects/"
