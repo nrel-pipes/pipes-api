@@ -21,10 +21,9 @@ headers = {
 
 
 # Read template
-template_file = templates_dir.joinpath("test_project.toml")
-with open(template_file) as f:
+p_template_file = templates_dir.joinpath("test_project.toml")
+with open(p_template_file) as f:
     data = toml.load(f)
-
 
 raw_project = data["project"]
 raw_projectruns = data["project_runs"]
@@ -80,3 +79,26 @@ for projectrun in raw_projectruns:
         response = requests.post(url4, data=json.dumps(clean_model), headers=headers)
         if response.status_code != 201:
             print(url4, response.text)
+
+
+# Model runs
+mr_template_file = templates_dir.joinpath("test_model_run.toml")
+with open(mr_template_file) as f:
+    raw_modelrun = toml.load(f)
+
+modelrun_name = raw_modelrun["name"]
+clean_modelrun = {
+    "name": modelrun_name,
+    "description": raw_modelrun["description"],
+    "version": raw_modelrun["version"],
+    "assumptions": raw_modelrun["assumptions"],
+    "notes": ";".join(raw_modelrun["notes"]),
+    "source_code": raw_modelrun["source_code"],
+    "config": raw_modelrun["config"],
+    "env_deps": raw_modelrun["config"],
+    "datasets": [],
+}
+url5 = f"{host}/api/modelruns/?project={p_name}&projectrun={pr_name}&model=dsgrid"
+response = requests.post(url5, data=json.dumps(clean_modelrun), headers=headers)
+if response.status_code != 201:
+    print(url4, response.text)
