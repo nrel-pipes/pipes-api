@@ -23,8 +23,8 @@ from pipes.projectruns.schemas import ProjectRunDocument
 from pipes.projectruns.routes import router as projectruns_router
 
 # Models
-# from pipes.models.routes import router as models_router
-# from pipes.models.schemas import ModelDocument
+from pipes.models.routes import router as models_router
+from pipes.models.schemas import ModelDocument
 
 # Modelruns
 # from pipes.modelruns.schemas import ModelRunDocument
@@ -61,11 +61,11 @@ async def lifespan(app: FastAPI):
     await init_beanie(
         database=motor_client[settings.PIPES_DOCDB_NAME],
         document_models=[
-            # DatasetDocument,
-            # ModelDocument,
-            # ModelRunDocument,
             ProjectDocument,
             ProjectRunDocument,
+            ModelDocument,
+            # ModelRunDocument,
+            # DatasetDocument,
             TeamDocument,
             UserDocument,
         ],
@@ -94,7 +94,7 @@ app.add_middleware(
 app.include_router(health_router, prefix="/api", tags=["health"])
 app.include_router(projects_router, prefix="/api", tags=["projects"])
 app.include_router(projectruns_router, prefix="/api", tags=["projectruns"])
-# app.include_router(models_router, prefix="/api", tags=["models"])
+app.include_router(models_router, prefix="/api", tags=["models"])
 # app.include_router(modelruns_router, prefix="/api", tags=["modelruns"])
 # app.include_router(datasets_router, prefix="/api", tags=["datasets"])
 app.include_router(teams_router, prefix="/api", tags=["teams"])
