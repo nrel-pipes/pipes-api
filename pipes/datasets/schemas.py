@@ -2,10 +2,38 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from beanie import Document
 from pydantic import BaseModel, Field
 
 from pipes.common.schemas import SourceCode, VersionStatus
 from pipes.users.schemas import UserCreate
+
+
+class DatasetCreate(BaseModel):
+    """The expected dataset output from model run"""
+
+    name: str = Field(
+        title="name",
+        description="A short name",
+    )
+    display_name: str | None = Field(
+        title="display_name",
+        default=None,
+        description="The dataset display name",
+    )
+    description: str = Field(
+        title="description",
+        description="The description of the scheduled dataset",
+        default="",
+    )
+
+
+class DatasetSchedule(DatasetCreate):
+    scheduled_checkin: datetime | None = Field(
+        title="scheduled_checkin",
+        default=None,
+        description="Scheduled checkin date in YYYY-MM-DD format",
+    )
 
 
 class TemporalInfo(BaseModel):
@@ -21,7 +49,7 @@ class TemporalInfo(BaseModel):
         default=None,
         description="The fidelity of the dataset in time",
     )
-    other: dict[str, str] = Field(
+    other: dict = Field(
         title="other",
         default={},
         description="other info about temporal characteristics of data",
@@ -39,24 +67,19 @@ class SpatialInfo(BaseModel):
         title="fidelity",
         description="The fidelity of the dataset in space",
     )
-    other: dict[str, str] = Field(
+    other: dict = Field(
         title="other",
         default={},
         description="other info about spatial characteristics of data",
     )
 
 
-class DatasetCreate(BaseModel):
-    """Dataset Schema"""
+class DatasetCheckin(DatasetSchedule):
+    """Dataset Checkin Schema"""
 
-    name: str = Field(
-        title="name",
-        description="Human-readable short name, unique per model run",
-    )
-    full_name: str | None = Field(
-        title="full_name",
-        default=None,
-        description="Dataset full name",
+    checkin_date: datetime = Field(
+        title="checkin_date",
+        description="Scheduled checkin date in YYYY-MM-DD format",
     )
     version: str = Field(
         title="version",
@@ -86,7 +109,7 @@ class DatasetCreate(BaseModel):
         default="",
         description="The schema description of the dataset",
     )
-    location: dict[str, str] = Field(  # NOTE: validate based on specific system.
+    location: dict = Field(  # NOTE: validate based on specific system.
         title="location",
         description="The dataset location on data system",
     )
@@ -152,40 +175,21 @@ class DatasetCreate(BaseModel):
         default="",
         description="The resource URL for this dataset",
     )
-    input_datasets: list[str] = Field(
-        title="input_datasets",
-        default=[],
-        description="List of dataset names",
-    )
-    other: dict[str, str] = Field(
+    # input_datasets: list[str] = Field(
+    #     title="input_datasets",
+    #     default=[],
+    #     description="List of dataset names",
+    # )
+    other: dict = Field(
         title="other",
         default={},
         description="other metadata info about the dataset",
     )
-    metadata_validated: bool = Field(
-        title="metadata_validated",
-        default=False,
-        description="Whether the metadata of this dataset has been validated",
-    )
 
 
-class ScheduledDataset(BaseModel):
-    name: str = Field(
-        title="name",
-        description="A short name",
-    )
-    full_name: str | None = Field(
-        title="full_name",
-        default=None,
-        description="The dataset full name",
-    )
-    description: str = Field(
-        title="description",
-        description="The description of the scheduled dataset",
-        default="",
-    )
-    scheduled_checkin: datetime | None = Field(
-        title="scheduled_checkin",
-        default=None,
-        description="Scheduled checkin date in YYYY-MM-DD format",
-    )
+class DatasetRead(DatasetCreate):
+    pass
+
+
+class DatasetDocument(DatasetRead, Document):
+    pass
