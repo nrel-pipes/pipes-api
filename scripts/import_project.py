@@ -22,7 +22,7 @@ headers = {
 
 # Read template
 template_file = templates_dir.joinpath("test_project.toml")
-with open(template_file) as f:
+with open(template_file, "r") as f:
     data = toml.load(f)
 
 
@@ -30,24 +30,46 @@ raw_project = data["project"]
 raw_projectruns = data["project_runs"]
 raw_teams = data["model_teams"]
 
-# Create a project
+# Create project
 project_name = raw_project["name"]
 
 clean_project = dict(
-    name=project_name,
-    title=raw_project["full_name"],
-    description=raw_project["description"],
-    assumptions=raw_project["assumptions"],
-    requirements=raw_project["requirements"],
+    name = project_name,
+    title = raw_project["full_name"],
+    description = raw_project["description"],
+    assumptions = raw_project["assumptions"],
+    requirements = raw_project["requirements"],
     scenarios=raw_project["scenarios"],
-    sensitivities=raw_project["sensitivities"],
-    milestones=raw_project["milestones"],
+    sensitivities = raw_project["sensitivities"],
+    milestones = raw_project["milestones"],
     scheduled_start=raw_project["scheduled_start"],
     scheduled_end=raw_project["scheduled_end"],
-    owner=raw_project["owner"],
+    owner=raw_project["owner"]
 )
 
-url = f"{host}/api/projects/detail/"
+url = f"{host}/api/projects/"
 response = requests.post(url, data=json.dumps(clean_project), headers=headers)
-print(response.status_code, url)
-print(json.dumps(response.json(), indent=2))
+if response.status_code != 201:
+    print(response.text)
+else:
+    print(json.dumps(response.json(), indent=2))
+
+
+# Create project teams
+url = f"{host}/api/teams/?project={project_name}"
+for team in raw_teams:
+    response = requests.post(url, data=json.dumps(team), headers=headers)
+    if response.status_code != 201:
+        print(response.text)
+    else:
+        print(response.status_code, url, response.json())
+
+
+# Create project runs
+url = f"{host}/api/projectruns/?project={project_name}"
+for projectrun in raw_projectruns:
+    response = requests.post(url, data=json.dumps(projectrun), headers=headers)
+    if response.status_code != 201:
+        print(response.text)
+    else:
+        print(response.status_code, url, response.json())
