@@ -80,10 +80,11 @@ class ModelDomainValidator(DomainValidator):
                 m_s_name = scenario_mapping.model_scenario
                 if m_s_name not in m_scenario_pool:
                     m_scenario_pool.add(m_s_name)
-                raise ValueError(
-                    f"Model scneario name '{m_s_name}' already defined in "
-                    f"model '{_m_doc.name}' under same project and project run.",
-                )
+                else:
+                    raise DomainValidationError(
+                        f"Model scneario name '{m_s_name}' already defined in "
+                        f"model '{_m_doc.name}' under same project and project run.",
+                    )
 
         # Validate project scenarios
         pr_doc = await self._get_parent_projectrun(m_doc)
@@ -132,7 +133,7 @@ class ModelDomainValidator(DomainValidator):
     ) -> ModelDocument:
         """Model scheduled end dates should be within project run schedules"""
 
-        if m_doc.scheduled_end > m_doc.scheduled_start:
+        if m_doc.scheduled_end < m_doc.scheduled_start:
             raise DomainValidationError(
                 "Model 'scheduled_end' could not be smaller than 'scheduled_start'.",
             )

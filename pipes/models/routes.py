@@ -6,6 +6,7 @@ from pipes.common.exceptions import (
     ContextValidationError,
     UserPermissionDenied,
     DocumentAlreadyExists,
+    DocumentDoesNotExist,
     DomainValidationError,
 )
 from pipes.models.manager import ModelManager
@@ -53,13 +54,13 @@ async def create_model(
     try:
 
         m_doc = await manager.create_model(p_doc, pr_doc, data, user)
-    except (DocumentAlreadyExists, DomainValidationError) as e:
+    except (DocumentAlreadyExists, DomainValidationError, DocumentDoesNotExist) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
 
-    m_read = manager.read_model(m_doc)
+    m_read = await manager.read_model(m_doc)
 
     return m_read
 

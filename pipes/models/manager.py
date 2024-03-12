@@ -5,7 +5,10 @@ from datetime import datetime
 
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import DocumentAlreadyExists
+from pipes.common.exceptions import (
+    DocumentAlreadyExists,
+    DocumentDoesNotExist,
+)
 from pipes.db.manager import AbstractObjectManager
 from pipes.projects.schemas import ProjectDocument
 from pipes.projectruns.contexts import ProjectRunObjectContext, ProjectRunSimpleContext
@@ -44,8 +47,20 @@ class ModelManager(AbstractObjectManager):
                 f"project run '{pr_doc.name}' under project '{p_doc.name}'.",
             )
 
+        # context
         m_name = m_create.name
         context = ProjectRunObjectContext(project=p_doc.id, projectrun=pr_doc.id)
+
+        # modeling team
+        t_name = m_create.modeling_team
+        t_doc = await TeamDocument.find_one(
+            {"context.project": p_doc.id, "name": t_name},
+        )
+        if not t_doc:
+            raise DocumentDoesNotExist(
+                f"Modeling team '{t_name}' does not exist under project '{p_doc.name}'.",
+            )
+
         m_doc = ModelDocument(
             context=context,
             # model information
@@ -53,12 +68,13 @@ class ModelManager(AbstractObjectManager):
             display_name=m_create.display_name,
             type=m_create.type,
             description=m_create.description,
+            modeling_team=t_doc.id,
             assumptions=m_create.assumptions,
             requirements=m_create.requirements,
             # TODO: default to the list from project or project run
             scheduled_start=m_create.scheduled_start,
             scheduled_end=m_create.scheduled_end,
-            expected_scenarios=m_create.scenarios,
+            expected_scenarios=m_create.expected_scenarios,
             scenario_mappings=m_create.scenario_mappings,
             other=m_create.other,
             # document information

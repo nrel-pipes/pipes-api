@@ -25,9 +25,9 @@ class ScenarioMapping(BaseModel):
         title="project_scenarios",
         description="List of project scenario names that the model scenario maps to",
     )
-    description: str = Field(
+    description: list[str] = Field(
         title="description",
-        default="",
+        default=[],
         description="Model scenario description",
     )
     other: dict = Field(
@@ -35,6 +35,13 @@ class ScenarioMapping(BaseModel):
         default={},
         description="other metadata info about the model scenario mapping in dictionary",
     )
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def validate_description(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
 
 
 class ModelCreate(BaseModel):
@@ -54,7 +61,7 @@ class ModelCreate(BaseModel):
         title="type",
         description="Type of model to use in graphic headers (e.g, 'Capacity Expansion')",
     )
-    description: str = Field(
+    description: list[str] = Field(
         title="description",
         description="Description of the model",
     )
@@ -96,6 +103,13 @@ class ModelCreate(BaseModel):
         default={},
         description="other metadata info about the model in dictionary",
     )
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def validate_description(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
 
     @field_validator("scheduled_start", mode="before")
     @classmethod
