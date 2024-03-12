@@ -42,7 +42,7 @@ class ModelCreate(BaseModel):
 
     name: str = Field(
         title="model",
-        min_length=2,
+        min_length=1,
         description="the model name",
     )
     display_name: str | None = Field(

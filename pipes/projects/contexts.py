@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 class ProjectSimpleContext(BaseModel):
     project: str = Field(
         title="project",
-        min_length=2,
+        min_length=1,
         description="project name",
     )
 

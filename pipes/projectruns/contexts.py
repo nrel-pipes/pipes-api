@@ -8,12 +8,12 @@ from pydantic import BaseModel, Field
 class ProjectRunSimpleContext(BaseModel):
     project: str = Field(
         title="project",
-        min_length=2,
+        min_length=1,
         description="project name",
     )
     projectrun: str = Field(
         title="projectrun",
-        min_length=2,
+        min_length=1,
         description="projectrun name",
     )
 

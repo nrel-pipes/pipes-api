@@ -64,7 +64,7 @@ async def create_model(
     return m_read
 
 
-@router.post("/models/")
+@router.get("/models/")
 async def get_models(
     project: str,
     projectrun: str,

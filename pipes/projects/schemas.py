@@ -17,7 +17,7 @@ from pipes.users.schemas import UserCreate, UserRead
 class ProjectCreate(BaseModel):
     name: str = Field(
         title="name",
-        min_length=2,
+        min_length=1,
         description="human-readable project id name, must be unique.",
     )
     title: str = Field(
@@ -100,7 +100,7 @@ class ProjectCreate(BaseModel):
 class ProjectBasicRead(BaseModel):
     name: str = Field(
         title="name",
-        min_length=2,
+        min_length=1,
         description="human-readable project id name, must be unique.",
     )
     title: str = Field(
