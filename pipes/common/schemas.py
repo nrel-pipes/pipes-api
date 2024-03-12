@@ -56,7 +56,7 @@ class Scenario(BaseModel):
 
     @field_validator("description", mode="before")
     @classmethod
-    def convert_to_list(cls, value):
+    def validate_description(cls, value):
         if isinstance(value, str):
             return [value]
         return value
@@ -74,7 +74,7 @@ class Sensitivity(BaseModel):
 
     @field_validator("description", mode="before")
     @classmethod
-    def convert_string_to_list(cls, value):
+    def validate_description(cls, value):
         if isinstance(value, str):
             return [value]
         return value
