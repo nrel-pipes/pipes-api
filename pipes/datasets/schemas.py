@@ -2,15 +2,82 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from beanie import Document
+import pymongo
+from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field
+from pymongo import IndexModel
 
 from pipes.common.schemas import SourceCode, VersionStatus
-from pipes.users.schemas import UserCreate
+from pipes.modelruns.contexts import ModelRunSimpleContext, ModelRunObjectContext
+from pipes.users.schemas import UserCreate, UserRead
+
+
+class DatasetSchedule(BaseModel):
+    """The expected dataset output from model run"""
+
+    name: str = Field(
+        title="name",
+        description="A short dataset name",
+    )
+    display_name: str | None = Field(
+        title="display_name",
+        default=None,
+        description="The dataset display name",
+    )
+    description: str = Field(
+        title="description",
+        description="The description of the scheduled dataset",
+        default="",
+    )
+    scheduled_checkin: datetime | None = Field(
+        title="scheduled_checkin",
+        default=None,
+        description="Scheduled checkin date in YYYY-MM-DD format",
+    )
+
+
+class TemporalInfo(BaseModel):
+    """Dataset temporal information"""
+
+    extent: str = Field(
+        title="extent",
+        default="",
+        description="The temporal extent of the dataset",
+    )
+    fidelity: str = Field(
+        title="fidelity",
+        default="",
+        description="The fidelity of the dataset in time",
+    )
+    other: dict = Field(
+        title="other",
+        default={},
+        description="other info about temporal characteristics of data",
+    )
+
+
+class SpatialInfo(BaseModel):
+    """Dataset spatial information"""
+
+    extent: str = Field(
+        title="extent",
+        default="",
+        description="The spatial extent of the dataset",
+    )
+    fidelity: str = Field(
+        title="fidelity",
+        default="",
+        description="The fidelity of the dataset in space",
+    )
+    other: dict = Field(
+        title="other",
+        default={},
+        description="other info about spatial characteristics of data",
+    )
 
 
 class DatasetCreate(BaseModel):
-    """The expected dataset output from model run"""
+    """Dataset Checkin Schema"""
 
     name: str = Field(
         title="name",
@@ -25,61 +92,6 @@ class DatasetCreate(BaseModel):
         title="description",
         description="The description of the scheduled dataset",
         default="",
-    )
-
-
-class DatasetSchedule(DatasetCreate):
-    scheduled_checkin: datetime | None = Field(
-        title="scheduled_checkin",
-        default=None,
-        description="Scheduled checkin date in YYYY-MM-DD format",
-    )
-
-
-class TemporalInfo(BaseModel):
-    """Dataset temporal information"""
-
-    extent: str | None = Field(
-        title="extent",
-        default=None,
-        description="The temporal extent of the dataset",
-    )
-    fidelity: str | None = Field(
-        title="fidelity",
-        default=None,
-        description="The fidelity of the dataset in time",
-    )
-    other: dict = Field(
-        title="other",
-        default={},
-        description="other info about temporal characteristics of data",
-    )
-
-
-class SpatialInfo(BaseModel):
-    """Dataset spatial information"""
-
-    extent: str | None = Field(
-        title="extent",
-        description="The spatial extent of the dataset",
-    )
-    fidelity: str | None = Field(
-        title="fidelity",
-        description="The fidelity of the dataset in space",
-    )
-    other: dict = Field(
-        title="other",
-        default={},
-        description="other info about spatial characteristics of data",
-    )
-
-
-class DatasetCheckin(DatasetSchedule):
-    """Dataset Checkin Schema"""
-
-    checkin_date: datetime = Field(
-        title="checkin_date",
-        description="Scheduled checkin date in YYYY-MM-DD format",
     )
     version: str = Field(
         title="version",
@@ -129,7 +141,7 @@ class DatasetCheckin(DatasetSchedule):
     )
     units: list[str] = Field(
         title="units",
-        default="",
+        default=[],
         description="The units of the dataset",
     )
     temporal_info: TemporalInfo = Field(
@@ -160,11 +172,6 @@ class DatasetCheckin(DatasetSchedule):
         default=[],
         description="Relevant links to this dataset",
     )
-    description: str = Field(
-        title="description",
-        default="",
-        description="Description about this dataset",
-    )
     comments: str = Field(
         title="comments",
         default="",
@@ -188,8 +195,34 @@ class DatasetCheckin(DatasetSchedule):
 
 
 class DatasetRead(DatasetCreate):
-    pass
+    context: ModelRunSimpleContext = Field(
+        title="context",
+        description="model run context",
+    )
+    registration_author: UserRead = Field(
+        title="registration_author",
+        description="registration author of this dataset",
+    )
 
 
 class DatasetDocument(DatasetRead, Document):
-    pass
+    context: ModelRunObjectContext = Field(
+        title="context",
+        description="model run context reference",
+    )
+    registration_author: PydanticObjectId = Field(
+        title="registration_author",
+        description="registration author reference",
+    )
+
+    class Settings:
+        name = "datasets"
+        indexes = [
+            IndexModel(
+                [
+                    ("context", pymongo.ASCENDING),
+                    ("name", pymongo.ASCENDING),
+                ],
+                unique=True,
+            ),
+        ]
