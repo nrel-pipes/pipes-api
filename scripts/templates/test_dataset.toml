@@ -1,0 +1,51 @@
+[dataset]
+  name = "dsg_rpm_2_v2.1"
+  # name = "unknown1"
+  dataset_id = "load-profiles"
+  version = "2.1"
+  version_status = "Active"
+  data_format = "parquet"
+  schema_info = "columns: scenario_year, timestamp, rs_number, rpm_bus_num, total_electricity_kwh"
+  weather_years = [2012]
+  model_years = [2020, 2025, 2030, 2035, 2040, 2045]
+  units = ["kWh"]
+  scenarios = ["demand_high", "demand_moderate", "demand_stress"]
+  sensitivities = []
+  relevant_links = ["https://testlink1.com"] # e.g., an external transformation script
+  description = """
+      run 2 dsgrid handoff to rpm with climate-adjusted rld and cld loads.
+      version 2.1 rs-level disaggregated loads for all load types with 8% assumed losses;
+      v2.1 has fixed cld to RS node allocations
+  """
+  comments = "long_format with scenario_year for each scenario and year"
+  resource_url = "https://api.hpc.nrel.gov/esif/docs/repo.html"
+  geographic_extent = "RS-A"
+
+  [dataset.location]
+    system = "ESIFRepoAPI"
+    description = "API docs can be found here https://api.hpc.nrel.gov/esif/docs/repo.html"
+    url = "https://esif.hpc.nrel.gov/esif/api/repo/files"
+    project = "1d3562e0-2a60-4e0a-9496-1032ee4b7db6"
+    dataset = "7732b2af-f8fa-48c4-a0d9-a618ca3c374f"
+    keyword = ""
+    tag = []
+    classification = []
+    ids = []
+
+  [dataset.registration_author]
+    username = "mmooney"
+    first_name = "Meghan"
+    last_name = "Mooney"
+    email = "Meghan.Mooney@nrel.gov"
+
+  [dataset.source_code] # source code related to data
+    location = "https://github.com/NREL/mycode/"  # e.g. github url
+    branch = "test"
+
+  [dataset.temporal_info]
+    extent = "8760 for all project model years"
+    fidelity = "hourly"
+
+  [dataset.spatial_info]
+    extent = "LA City"
+    fidelity = "receiving station level (nodal within the city)"

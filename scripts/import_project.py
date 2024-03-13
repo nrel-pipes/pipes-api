@@ -101,4 +101,18 @@ clean_modelrun = {
 url5 = f"{host}/api/modelruns/?project={p_name}&projectrun={pr_name}&model=dsgrid"
 response = requests.post(url5, data=json.dumps(clean_modelrun), headers=headers)
 if response.status_code != 201:
-    print(url4, response.text)
+    print(url5, response.text)
+
+
+# Checkin dataset
+d_template_file = templates_dir.joinpath("test_dataset.toml")
+with open(d_template_file) as f:
+    data = toml.load(f)
+
+raw_dataset = data["dataset"]
+clean_dataset = raw_dataset.copy()
+
+url6 = f"{host}/api/datasets/?project={p_name}&projectrun={pr_name}&model=dsgrid&modelrun={modelrun_name}"
+response = requests.post(url6, data=json.dumps(clean_dataset), headers=headers)
+if response.status_code != 201:
+    print(url6, response.text)
