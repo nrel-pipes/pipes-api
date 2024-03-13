@@ -31,8 +31,8 @@ from pipes.modelruns.schemas import ModelRunDocument
 from pipes.modelruns.routes import router as modelruns_router
 
 # Datasets
-# from pipes.datasets.schemas import DatasetDocument
-# from pipes.datasets.routes import router as datasets_router
+from pipes.datasets.schemas import DatasetDocument
+from pipes.datasets.routes import router as datasets_router
 
 # Teams
 from pipes.teams.routes import router as teams_router
@@ -65,7 +65,7 @@ async def lifespan(app: FastAPI):
             ProjectRunDocument,
             ModelDocument,
             ModelRunDocument,
-            # DatasetDocument,
+            DatasetDocument,
             TeamDocument,
             UserDocument,
         ],
@@ -96,7 +96,7 @@ app.include_router(projects_router, prefix="/api", tags=["projects"])
 app.include_router(projectruns_router, prefix="/api", tags=["projectruns"])
 app.include_router(models_router, prefix="/api", tags=["models"])
 app.include_router(modelruns_router, prefix="/api", tags=["modelruns"])
-# app.include_router(datasets_router, prefix="/api", tags=["datasets"])
+app.include_router(datasets_router, prefix="/api", tags=["datasets"])
 app.include_router(teams_router, prefix="/api", tags=["teams"])
 app.include_router(users_router, prefix="/api", tags=["users"])
 
