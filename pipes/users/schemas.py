@@ -37,6 +37,13 @@ class UserCreate(BaseModel):
     )
 
 
+class CognitoUserCreate(UserCreate):
+    username: UUID | None = Field(
+        title="username",
+        description="Cognito username in uuid",
+    )
+
+
 class UserRead(UserCreate):
     """Schema for user read"""
 

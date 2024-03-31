@@ -21,7 +21,7 @@ from pipes.common.exceptions import (
     DocumentDoesNotExist,
 )
 from pipes.common.utilities import parse_organization
-from pipes.users.schemas import UserCreate, UserDocument
+from pipes.users.schemas import CognitoUserCreate, UserDocument
 from pipes.users.manager import UserManager
 
 http_bearer = HTTPBearer()
@@ -155,7 +155,8 @@ class CognitoAuth:
                 raise CognitoAuthError("Invalid access token.")
 
             organization = parse_organization(cognito_user["email"])
-            u_create = UserCreate(
+            u_create = CognitoUserCreate(
+                username=cognito_user["username"],
                 email=cognito_user["email"],
                 first_name=cognito_user["first_name"],
                 last_name=cognito_user["last_name"],
@@ -163,10 +164,7 @@ class CognitoAuth:
             )
 
             try:
-                u_doc = await manager.create_user(
-                    u_create=u_create,
-                    u_username=cognito_user["username"],
-                )
+                u_doc = await manager.create_user(u_create=u_create)
             except DocumentAlreadyExists:
                 u_doc = await manager.get_user_by_email(cognito_user["email"])
 

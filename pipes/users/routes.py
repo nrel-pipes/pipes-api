@@ -4,7 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import EmailStr
 
 from pipes.users.auth import auth_required
-from pipes.common.exceptions import DocumentDoesNotExist, DocumentAlreadyExists
+from pipes.common.exceptions import (
+    DocumentDoesNotExist,
+    DocumentAlreadyExists,
+    VertexAlreadyExists,
+)
 from pipes.users.manager import UserManager
 from pipes.users.schemas import UserCreate, UserRead, UserDocument
 
@@ -26,7 +30,7 @@ async def create_user(
     try:
         manager = UserManager()
         u_doc = await manager.create_user(data)
-    except DocumentAlreadyExists as e:
+    except (VertexAlreadyExists, DocumentAlreadyExists) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -44,7 +48,7 @@ async def get_all_users(user: UserDocument = Depends(auth_required)):
         )
 
     manager = UserManager()
-    u_docs = await manager.get_users()
+    u_docs = await manager.get_all_users()
     return u_docs
 
 
