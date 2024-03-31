@@ -54,7 +54,7 @@ def access_token(pipes_settings):
             expires_in = cached_auth_result["AuthenticationResult"]["ExpiresIn"]
 
             auth_datetime = parse(auth_date)
-            now = datetime.utcnow()
+            now = datetime.now()
             expiration_datetime = auth_datetime + timedelta(seconds=int(expires_in))
             expiration_datetime = expiration_datetime.astimezone(pytz.utc).replace(
                 tzinfo=None,
