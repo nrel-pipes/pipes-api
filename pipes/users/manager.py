@@ -7,12 +7,12 @@ from beanie import PydanticObjectId
 from pydantic import EmailStr
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.constants import VertexLabel
 from pipes.common.exceptions import (
     DocumentDoesNotExist,
     DocumentAlreadyExists,
     VertexAlreadyExists,
 )
+from pipes.common.graph import VertexLabel
 from pipes.common.utilities import parse_organization
 from pipes.db.manager import AbstractObjectManager, NeptuneDB
 from pipes.users.schemas import (

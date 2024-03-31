@@ -8,7 +8,7 @@ from pymongo import IndexModel
 from beanie import Document
 from pydantic import BaseModel, EmailStr, Field
 
-from pipes.common.constants import VertexLabel
+from pipes.common.graph import VertexLabel
 
 
 # User
@@ -72,6 +72,7 @@ class UserVertexModel(BaseModel):
     )
     label: VertexLabel = Field(
         title="label",
+        default=VertexLabel.User.value,
         description="The Neptune vertex label",
     )
     properties: UserVertexProperties = Field(
