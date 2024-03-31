@@ -31,9 +31,10 @@ class UserManager(AbstractObjectManager):
 
     __label__ = VertexLabel.User.value
 
-    def __init__(self) -> None:
-        neptune = NeptuneDB()
-        neptune.connect()
+    def __init__(self, neptune: NeptuneDB | None = None) -> None:
+        if not neptune:
+            neptune = NeptuneDB()
+            neptune.connect()
         super().__init__(UserDocument, neptune)
 
     async def create_user(
@@ -45,7 +46,7 @@ class UserManager(AbstractObjectManager):
         return await self._create_user_document(u_create, u_vertex)
 
     async def _get_user_vertex(self, email: EmailStr) -> UserVertexModel | None:
-        vlist = self.g.get_v(self.label, email=email)
+        vlist = self.n.get_v(self.label, email=email)
         if not vlist:
             return None
 
@@ -59,13 +60,13 @@ class UserManager(AbstractObjectManager):
         return user_vertex_model
 
     async def _create_user_vertex(self, email: EmailStr) -> UserVertexModel | None:
-        if self.g.exists(self.label, email=email):
+        if self.n.exists(self.label, email=email):
             raise VertexAlreadyExists(f"User vertex ({email}) already exists.")
 
         try:
             properties_model = UserVertexProperties(email=email)
             properties = properties_model.model_dump()
-            u_vtx = self.g.add_v(self.label, **properties)
+            u_vtx = self.n.add_v(self.label, **properties)
         except Exception as e:
             logger.error("Failed to add User vertex <email: %s>, reason: %s", email, e)
             u_vtx = None
