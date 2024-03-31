@@ -1,5 +1,3 @@
-from enum import Enum
-
 DNS_ORG_MAPPING = {
     "lbl.gov": "Lawrence Berkeley National Laboratory (LBNL)",
     "ornl.gov": "Oak Ridge National Laboratory (ORNL)",
@@ -19,19 +17,3 @@ DNS_ORG_MAPPING = {
     "netl.doe.gov": "National Energy Technology Laboratory (NETL)",
     "inl.gov": "Idaho National Laboratory (INL)",
 }
-
-
-class VersionStatus(str, Enum):
-    Active = "Active"
-    Inactivate = "Inactivate"
-    Unresolved = "Unresolved"
-
-
-class VertexLabel(str, Enum):
-    User = "User"
-    Team = "Team"
-    Project = "Project"
-    ProjectRun = "ProjectRun"
-    Model = "Model"
-    ModelRun = "ModelRun"
-    Task = "Task"

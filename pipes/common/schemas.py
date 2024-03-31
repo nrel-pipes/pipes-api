@@ -1,6 +1,14 @@
 from __future__ import annotations
 
+from enum import Enum
+
 from pydantic import BaseModel, Field
+
+
+class VersionStatus(str, Enum):
+    Active = "Active"
+    Inactivate = "Inactivate"
+    Unresolved = "Unresolved"
 
 
 class SourceCode(BaseModel):
