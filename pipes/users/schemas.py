@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
 
 import pymongo
 from pymongo import IndexModel
 from beanie import Document
 from pydantic import BaseModel, EmailStr, Field
+
+from pipes.common.constants import VertexLabel
 
 
 # User
@@ -47,10 +50,37 @@ class UserRead(UserCreate):
     )
 
 
+class UserVertexProperties(BaseModel):
+    email: EmailStr = Field(
+        title="email",
+        to_lower=True,
+        description="Email address",
+    )
+
+
+class UserVertexModel(BaseModel):
+    id: UUID = Field(
+        title="id",
+        description="The Neptune vertex id",
+    )
+    label: VertexLabel = Field(
+        title="label",
+        description="The Neptune vertex label",
+    )
+    properties: UserVertexProperties = Field(
+        title="properties",
+        description="The user vertex properties",
+    )
+
+
 class UserDocument(UserRead, Document):
     """User document in db"""
 
-    username: str | None = Field(
+    vertex: UserVertexModel = Field(
+        title="vertex",
+        description="The neptune vertex model",
+    )
+    username: UUID | None = Field(
         title="username",
         default=None,
         description="Cognito username",

@@ -5,18 +5,13 @@ from abc import ABC, abstractmethod
 
 class AbstractDatabase(ABC):
 
-    def __init__(self):
-        pass
-
-    @property
-    @abstractmethod
-    def endpoint(self):
-        """database url"""
-
     @abstractmethod
     def connect(self):
-        """Connect to database"""
+        pass
 
     @abstractmethod
     def close(self):
-        """Close database connection"""
+        pass
+
+    def __delete__(self):
+        self.close()
