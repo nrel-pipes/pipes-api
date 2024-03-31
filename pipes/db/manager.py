@@ -24,16 +24,16 @@ class AbstractObjectManager(ABC):
         neptune : NeptuneDB
             The neptune instance
         """
-        self._document = document
-        self._neptune = neptune
+        self.document = document
+        self.neptune = neptune
 
     @property
     def d(self):
-        return DocumentDB(self._document)
+        return DocumentDB(self.document)
 
     @property
-    def g(self):
-        return self._neptune
+    def n(self):
+        return self.neptune
 
     @property
     def label(self):

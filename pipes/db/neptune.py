@@ -59,11 +59,11 @@ class NeptuneDB(AbstractDatabase):
 
     def ping(self) -> list:
         """Query graph and avoid Neptune disconnection due to long idle."""
-        return self._g.V().limit(1).toList()
+        return self.g.V().limit(1).toList()
 
     def v(self, id):
         """Get graph vertex by id"""
-        return self._g.V(id)
+        return self.g.V(id)
 
     def exists(self, label, **properties):
         """Check if a given label exists in the graph or not"""
@@ -73,14 +73,14 @@ class NeptuneDB(AbstractDatabase):
 
     def get_v(self, label, **properties):
         """Get graph vertex"""
-        traversal = self._g.V().has_label(label)
+        traversal = self.g.V().has_label(label)
         for k, v in properties.items():
             traversal = traversal.has(k, v)
         return traversal.to_list()
 
     def add_v(self, label, **properties):
         """Create graph vertex"""
-        traversal = self._g.add_v(label)
+        traversal = self.g.add_v(label)
         for k, v in properties.items():
             traversal = traversal.property(k, v)
         return traversal.next()
