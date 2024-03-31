@@ -115,20 +115,27 @@ class UserManager(AbstractObjectManager):
 
     async def get_or_create_user(self, u_create: UserCreate) -> UserDocument:
         """Get or create user"""
-        u_doc = await UserDocument.find_one(UserDocument.email == u_create.email)
-        if not u_doc:
-            organization = u_create.organization
-            if not organization:
-                organization = parse_organization(u_create.email)
+        u_doc = await self.d.find_one({"email": u_create.email})
 
-            u_doc = UserDocument(
-                email=u_create.email,
-                first_name=u_create.first_name,
-                last_name=u_create.last_name,
-                organization=organization,
-                created_at=datetime.now(),
-            )
-            u_doc = await u_doc.insert()
+        if u_doc:
+            return u_doc
+
+        # Create a new user
+        organization = u_create.organization
+        if not organization:
+            organization = parse_organization(u_create.email)
+
+        u_vertex = await self._create_user_vertex(u_create.email)
+
+        u_doc = UserDocument(
+            vertex=u_vertex,
+            email=u_create.email,
+            first_name=u_create.first_name,
+            last_name=u_create.last_name,
+            organization=organization,
+            created_at=datetime.now(),
+        )
+        u_doc = await self.d.insert(u_doc)
         return u_doc
 
     async def get_all_users(self) -> list[UserDocument]:
