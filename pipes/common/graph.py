@@ -9,3 +9,7 @@ class VertexLabel(str, Enum):
     Model = "Model"
     ModelRun = "ModelRun"
     Task = "Task"
+
+
+class EdgeLabel(str, Enum):
+    owns = "owns"
