@@ -6,7 +6,7 @@ from uuid import UUID
 import pymongo
 from pymongo import IndexModel
 from beanie import Document
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from pipes.common.graph import VertexLabel
 
@@ -38,10 +38,25 @@ class UserCreate(BaseModel):
 
 
 class CognitoUserCreate(UserCreate):
-    username: UUID | None = Field(
+    username: str | None = Field(
         title="username",
-        description="Cognito username in uuid",
+        description="Cognito username in uuid string",
     )
+
+    @field_validator("username", mode="before")
+    @classmethod
+    def validate_username(cls, value):
+        """Ensure the value is valid UUID string"""
+        if not value:
+            return None
+
+        value = str(value)
+        try:
+            UUID(value)
+        except ValueError as e:
+            raise e
+
+        return value
 
 
 class UserRead(UserCreate):
@@ -66,7 +81,7 @@ class UserVertexProperties(BaseModel):
 
 
 class UserVertexModel(BaseModel):
-    id: UUID = Field(
+    id: str = Field(
         title="id",
         description="The Neptune vertex id",
     )
@@ -80,6 +95,21 @@ class UserVertexModel(BaseModel):
         description="The user vertex properties",
     )
 
+    @field_validator("id", mode="before")
+    @classmethod
+    def validate_id(cls, value):
+        """Ensure the value is valid UUID string"""
+        if not value:
+            return None
+
+        value = str(value)
+        try:
+            UUID(value)
+        except ValueError as e:
+            raise e
+
+        return value
+
 
 class UserDocument(UserRead, Document):
     """User document in db"""
@@ -88,7 +118,7 @@ class UserDocument(UserRead, Document):
         title="vertex",
         description="The neptune vertex model",
     )
-    username: UUID | None = Field(
+    username: str | None = Field(
         title="username",
         default=None,
         description="Cognito username",
@@ -121,3 +151,18 @@ class UserDocument(UserRead, Document):
     def read(self) -> UserRead:
         data = self.model_dump()
         return UserRead.model_validate(data)
+
+    @field_validator("username", mode="before")
+    @classmethod
+    def validate_username(cls, value):
+        """Ensure the value is valid UUID string"""
+        if not value:
+            return None
+
+        value = str(value)
+        try:
+            UUID(value)
+        except ValueError as e:
+            raise e
+
+        return value
