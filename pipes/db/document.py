@@ -29,5 +29,9 @@ class DocumentDB(AbstractDatabase):
         doc = await self.find_one(query)
         return True if doc else False
 
-    async def find_all(self) -> list[Document]:
-        return await self.document.find().to_list()
+    async def find_all(self, query: dict | None = None) -> list[Document]:
+        if query:
+            docs = await self.document.find(query).to_list()
+        else:
+            docs = await self.document.find().to_list()
+        return docs
