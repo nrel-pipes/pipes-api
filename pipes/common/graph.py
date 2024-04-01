@@ -13,3 +13,4 @@ class VertexLabel(str, Enum):
 
 class EdgeLabel(str, Enum):
     owns = "owns"
+    member = "member"
