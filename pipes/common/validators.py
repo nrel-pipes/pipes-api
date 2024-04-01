@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from beanie import Document
 from pydantic import BaseModel
 
 from pipes.common.exceptions import UserPermissionDenied
@@ -43,13 +42,13 @@ class ContextValidator:
 class DomainValidator:
     """PIPES domain validator class"""
 
-    async def validate(self, document: Document) -> Document:
+    async def validate(self, instance: BaseModel) -> BaseModel:
         """Call validation methods with names starting with validate_"""
         for attr_name in dir(self):
             if not attr_name.startswith("validate_"):
                 continue
 
             validate_method = getattr(self, attr_name)
-            document = await validate_method(document)
+            instance = await validate_method(instance)
 
-        return document
+        return instance

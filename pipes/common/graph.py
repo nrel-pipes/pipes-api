@@ -12,5 +12,6 @@ class VertexLabel(str, Enum):
 
 
 class EdgeLabel(str, Enum):
-    owns = "owns"
-    member = "member"
+    owns = "owns"  # User owns project
+    member = "member"  # User is member of team
+    runs = "runs"  # Project runs projectrun
