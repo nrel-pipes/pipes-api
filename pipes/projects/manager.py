@@ -6,22 +6,81 @@ from itertools import chain
 
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import DocumentAlreadyExists
-from pipes.db.manager import AbstractObjectManager
-from pipes.projects.schemas import ProjectCreate, ProjectDocument, ProjectDetailRead
+from pipes.common.exceptions import DocumentAlreadyExists, VertexAlreadyExists
+from pipes.common.graph import VertexLabel, EdgeLabel
+from pipes.db.manager import AbstractObjectManager, NeptuneDB
+from pipes.projects.schemas import (
+    ProjectCreate,
+    ProjectDocument,
+    ProjectDetailRead,
+    ProjectVertexProperties,
+    ProjectVertexModel,
+)
 from pipes.projects.validators import ProjectDomainValidator
 from pipes.teams.schemas import TeamDocument, TeamBasicRead
 from pipes.users.manager import UserManager
-from pipes.users.schemas import UserDocument, UserRead
+from pipes.users.schemas import UserCreate, UserDocument, UserRead
 
 logger = logging.getLogger(__name__)
 
 
 class ProjectManager(AbstractObjectManager):
 
+    __label__ = VertexLabel.Project.value
+
+    def __init__(self, neptune: NeptuneDB | None = None) -> None:
+        if not neptune:
+            neptune = NeptuneDB()
+            neptune.connect()
+        super().__init__(ProjectDocument, neptune)
+
     async def create_project(
         self,
         p_create: ProjectCreate,
+        user: UserDocument,
+    ) -> ProjectDocument:
+        # Get or create user vertex & document
+        p_owner = await self._get_or_create_project_owner(p_create.owner)
+
+        # Create project vertex & document
+        p_vertex = await self._create_project_vertex(p_create.name)
+        p_doc = await self._create_project_document(p_create, p_vertex, p_owner, user)
+
+        # Add edget: user owns project
+        u_vtx_id = str(p_owner.vertex.id)
+        p_vtx_id = str(p_vertex.id)
+        self.n.add_edge(u_vtx_id, p_vtx_id, EdgeLabel.owns.value)
+
+        return p_doc
+
+    async def _create_project_vertex(self, p_name: str) -> ProjectVertexModel:
+        properties = {"name": p_name}
+        if self.n.exists(self.label, **properties):
+            raise VertexAlreadyExists(f"Project vertex {properties} already exists.")
+
+        properties_model = ProjectVertexProperties(**properties)
+        properties = properties_model.model_dump()
+        p_vtx = self.n.add_v(self.label, **properties)
+
+        # Dcoument creation
+        p_vtx_model = ProjectVertexModel(
+            id=p_vtx.id,
+            label=self.label,
+            properties=properties_model,
+        )
+        return p_vtx_model
+
+    async def _get_or_create_project_owner(self, owner: UserCreate) -> UserDocument:
+        # Get or create user object
+        user_manager = UserManager()
+        p_owner_doc = await user_manager.get_or_create_user(owner)
+        return p_owner_doc
+
+    async def _create_project_document(
+        self,
+        p_create: ProjectCreate,
+        p_vertex: ProjectVertexModel,
+        p_owner: UserDocument,
         user: UserDocument,
     ) -> ProjectDocument:
         """Create a new project"""
@@ -31,11 +90,8 @@ class ProjectManager(AbstractObjectManager):
         if p_doc_exists:
             raise DocumentAlreadyExists(f"Project '{p_create.name}' already exists.")
 
-        # Get user object
-        user_manager = UserManager()
-        p_owner_doc = await user_manager.get_or_create_user(p_create.owner)
-
         p_doc = ProjectDocument(
+            vertex=p_vertex,
             # project information
             name=p_create.name,
             title=p_create.title,
@@ -47,11 +103,11 @@ class ProjectManager(AbstractObjectManager):
             milestones=p_create.milestones,
             scheduled_start=p_create.scheduled_start,
             scheduled_end=p_create.scheduled_end,
-            owner=p_owner_doc.id,
+            owner=p_owner.id,
             # document information
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(),
             created_by=user.id,
-            last_modified=datetime.utcnow(),
+            last_modified=datetime.now(),
             modified_by=user.id,
         )
 

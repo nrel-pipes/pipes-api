@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
 
 import pymongo
 from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field, field_validator
 
+from pipes.common.graph import VertexLabel
 from pipes.common.utilities import parse_datetime
 from pipes.teams.schemas import TeamBasicRead
 from pipes.users.schemas import UserCreate, UserRead
@@ -205,7 +207,35 @@ class ProjectDetailRead(ProjectCreate):
     )
 
 
+class ProjectVertexProperties(BaseModel):
+    name: str = Field(
+        title="name",
+        min_length=1,
+        description="human-readable project id name, must be unique.",
+    )
+
+
+class ProjectVertexModel(BaseModel):
+    id: UUID = Field(
+        title="id",
+        description="The Neptune vertex id",
+    )
+    label: VertexLabel = Field(
+        title="label",
+        default=VertexLabel.Project.value,
+        description="The Neptune vertex label",
+    )
+    properties: ProjectVertexProperties = Field(
+        title="properties",
+        description="The project vertex properties",
+    )
+
+
 class ProjectDocument(ProjectDetailRead, Document):
+    vertex: ProjectVertexModel = Field(
+        title="vertex",
+        description="The project vertex model",
+    )
     owner: PydanticObjectId = Field(
         title="owner",
         description="project owner",
