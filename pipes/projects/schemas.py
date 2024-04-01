@@ -216,7 +216,7 @@ class ProjectVertexProperties(BaseModel):
 
 
 class ProjectVertexModel(BaseModel):
-    id: UUID = Field(
+    id: str = Field(
         title="id",
         description="The Neptune vertex id",
     )
@@ -229,6 +229,21 @@ class ProjectVertexModel(BaseModel):
         title="properties",
         description="The project vertex properties",
     )
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def validate_id(cls, value):
+        """Ensure the value is valid UUID string"""
+        if not value:
+            return None
+
+        value = str(value)
+        try:
+            UUID(value)
+        except ValueError as e:
+            raise e
+
+        return value
 
 
 class ProjectDocument(ProjectDetailRead, Document):
