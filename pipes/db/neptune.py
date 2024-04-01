@@ -93,8 +93,17 @@ class NeptuneDB(AbstractDatabase):
 
         return self.add_v(label, **properties)
 
-    def add_edge(self, v1, v2, label, **properties):
-        pass
+    def add_edge(self, id1, id2, label, **properties):
+        """Add edge from v1 to v2"""
+        traversal = (
+            self.g.V(id1).as_("v1").V(id2).as_("v2").add_e(label).from_("v1").to("v2")
+        )
+
+        for k, v in properties.items():
+            traversal = traversal.property(k, v)
+
+        result = [r for r in traversal.to_list()]
+        return result
 
 
 def get_neptune():
