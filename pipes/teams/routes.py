@@ -7,6 +7,7 @@ from pipes.common.exceptions import (
     UserPermissionDenied,
     DocumentAlreadyExists,
     DocumentDoesNotExist,
+    VertexAlreadyExists,
 )
 from pipes.projects.contexts import ProjectSimpleContext
 from pipes.projects.validators import ProjectContextValidator
@@ -20,7 +21,7 @@ router = APIRouter()
 
 # Teams
 @router.post("/teams/", response_model=TeamRead, status_code=201)
-async def create_project_team(
+async def create_team(
     project: str,
     data: TeamCreate,
     user: UserDocument = Depends(auth_required),
@@ -46,8 +47,8 @@ async def create_project_team(
 
     try:
         manager = TeamManager()
-        t_doc = await manager.create_project_team(p_doc, data)
-    except DocumentAlreadyExists as e:
+        t_doc = await manager.create_team(p_doc, data)
+    except (VertexAlreadyExists, DocumentAlreadyExists) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -67,7 +68,7 @@ async def create_project_team(
 
 
 @router.get("/teams/", response_model=list[TeamRead])
-async def get_project_teams(
+async def get_teams(
     project: str,
     user: UserDocument = Depends(auth_required),
 ):
@@ -91,12 +92,12 @@ async def get_project_teams(
     p_doc = validated_context.project
 
     manager = TeamManager()
-    p_teams = await manager.get_project_teams(p_doc)
+    p_teams = await manager.get_all_project_teams(p_doc)
     return p_teams
 
 
 @router.put("/teams/detail/")
-async def update_project_team(
+async def update_team(
     project: str,
     team: str,
     data: TeamUpdate,
@@ -123,8 +124,8 @@ async def update_project_team(
 
     try:
         manager = TeamManager()
-        t_doc = await manager.update_project_team(p_doc, team, data)
-    except (DocumentDoesNotExist, DocumentAlreadyExists) as e:
+        t_doc = await manager.update_team(p_doc, team, data)
+    except (VertexAlreadyExists, DocumentDoesNotExist, DocumentAlreadyExists) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),

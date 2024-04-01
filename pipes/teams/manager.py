@@ -4,12 +4,25 @@ import logging
 
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import DocumentAlreadyExists, DocumentDoesNotExist
+from pipes.common.exceptions import (
+    DocumentAlreadyExists,
+    DocumentDoesNotExist,
+    VertexAlreadyExists,
+)
+from pipes.common.graph import VertexLabel, EdgeLabel
 from pipes.db.manager import AbstractObjectManager
+from pipes.db.neptune import NeptuneDB
 from pipes.projects.schemas import ProjectDocument
-from pipes.teams.schemas import TeamCreate, TeamRead, TeamUpdate, TeamDocument
+from pipes.teams.schemas import (
+    TeamCreate,
+    TeamRead,
+    TeamUpdate,
+    TeamDocument,
+    TeamVertexModel,
+    TeamVertexProperties,
+)
 from pipes.users.manager import UserManager
-from pipes.users.schemas import UserDocument, UserRead
+from pipes.users.schemas import UserCreate, UserDocument, UserRead
 
 logger = logging.getLogger(__name__)
 
@@ -17,36 +30,117 @@ logger = logging.getLogger(__name__)
 class TeamManager(AbstractObjectManager):
     """Manager class for team anagement"""
 
-    async def create_project_team(
+    __label__ = VertexLabel.Team.value
+
+    def __init__(self, neptune: NeptuneDB | None = None) -> None:
+        if not neptune:
+            neptune = NeptuneDB()
+            neptune.connect()
+        super().__init__(TeamDocument, neptune)
+
+    async def create_team(
         self,
         p_doc: ProjectDocument,
         t_create: TeamCreate,
     ) -> TeamDocument:
-        """Create new team"""
-        t_name = t_create.name
-        t_doc_exists = await TeamDocument.find_one(
-            {"context.project": p_doc.id, "name": t_name},
+        """Create vetex in neptune, then create document in docdb"""
+        # Add team vertex
+        t_vertex = await self._create_team_vertex(p_doc.name, t_create.name)
+
+        # Add team member vertexes and edges (member to Team)
+        t_members = await self._add_team_members(t_vertex, t_create.members)
+
+        t_doc = await self._create_team_document(
+            p_doc,
+            t_create,
+            t_members,
+            t_vertex,
         )
-        if t_doc_exists:
-            raise DocumentAlreadyExists(
-                f"Team '{t_name}' already exists under project '{p_doc.name}'.",
+        return t_doc
+
+    async def _add_team_members(
+        self,
+        t_vertex: TeamVertexModel,
+        t_members: list[UserCreate],
+    ) -> list[UserDocument]:
+        """Create user vertexes in neptune"""
+        user_manager = UserManager()
+        member_docs = []
+        for u_create in t_members:
+            u_doc = await user_manager.get_or_create_user(u_create)
+            self.n.add_edge(u_doc.vertex.id, t_vertex.id, EdgeLabel.member.value)
+            member_docs.append(u_doc)
+        return member_docs
+
+    async def _create_team_vertex(
+        self,
+        p_name: str,
+        t_name: str,
+    ) -> TeamVertexModel:
+        properties = {"project": p_name, "name": t_name}
+        if self.n.exists(self.label, **properties):
+            raise VertexAlreadyExists(
+                f"Team vertex {properties} already exists under project {p_name}.",
             )
 
-        # Create tem
-        user_manager = UserManager()
-        u_docs = [
-            await user_manager.get_or_create_user(u_create)
-            for u_create in t_create.members
-        ]
+        properties_model = TeamVertexProperties(**properties)
+        properties = properties_model.model_dump()
+        t_vtx = self.n.add_v(self.label, **properties)
+
+        # Dcoument creation
+        team_vertex_model = TeamVertexModel(
+            id=t_vtx.id,
+            label=self.label,
+            properties=properties_model,
+        )
+        return team_vertex_model
+
+    async def _get_team_vertex(
+        self,
+        p_name: str,
+        t_name: str,
+    ) -> TeamVertexModel | None:
+        """Create vetex in neptune"""
+        properties = {"project": p_name, "name": t_name}
+        vlist = self.n.get_v(self.label, **properties)
+        if not vlist:
+            return None
+
+        t_vtx = vlist[0]
+        properties_model = TeamVertexProperties(**properties)
+        team_vertex_model = TeamVertexModel(
+            id=t_vtx.id,
+            label=self.label,
+            properties=properties_model,
+        )
+        return team_vertex_model
+
+    async def _create_team_document(
+        self,
+        p_doc: ProjectDocument,
+        t_create: TeamCreate,
+        t_members: list[UserDocument],
+        t_vertex: TeamVertexModel,
+    ) -> TeamDocument:
+        """Create new team"""
+        t_name = t_create.name
+        if await self.d.exists({"context.project": p_doc.id, "name": t_name}):
+            raise DocumentAlreadyExists(
+                f"Team document '{t_name}' already exists under project '{p_doc.name}'.",
+            )
+
+        u_doc_ids = [u_doc.id for u_doc in t_members]
+
         t_doc = TeamDocument(
+            vertex=t_vertex,
             context={"project": p_doc.id},
             name=t_create.name,
             description=t_create.description,
-            members=[u_doc.id for u_doc in u_docs],
+            members=list(u_doc_ids),
         )
 
         try:
-            t_doc = await t_doc.insert()
+            t_doc = await self.d.insert(t_doc)
         except DuplicateKeyError:
             raise DocumentAlreadyExists(
                 f"Team '{t_create.name}' already exists under project '{p_doc.name}'.",
@@ -63,12 +157,12 @@ class TeamManager(AbstractObjectManager):
         )
         return t_doc
 
-    async def get_project_teams(self, p_doc: ProjectDocument) -> list[TeamRead]:
+    async def get_all_project_teams(self, p_doc: ProjectDocument) -> list[TeamRead]:
         """Get all teams of given project."""
-        t_docs = TeamDocument.find({"context.project": p_doc.id})
+        t_docs = await self.d.find_all({"context.project": p_doc.id})
 
         teams = []
-        async for t_doc in t_docs:
+        for t_doc in t_docs:
             t_read = await self.read_team(t_doc)
             teams.append(t_read)
         return teams
@@ -78,22 +172,20 @@ class TeamManager(AbstractObjectManager):
         members = [UserRead.model_validate(u_doc.model_dump()) for u_doc in u_docs]
         return members
 
-    async def update_project_team(
+    async def update_team(
         self,
         p_doc: ProjectDocument,
         team: str,
         data: TeamUpdate,
     ) -> TeamDocument:
         """Update team"""
-        t_doc = await TeamDocument.find_one(
-            {"context.project": p_doc.id, "name": team},
-        )
+        t_doc = await self.d.find_one({"context.project": p_doc.id, "name": team})
         if t_doc is None:
             raise DocumentDoesNotExist(
                 f"Team '{team}' not exist in project '{p_doc.name}'",
             )
 
-        other_t_doc = await TeamDocument.find_one(
+        other_t_doc = await self.d.find_one(
             {"context.project": p_doc.id, "name": data.name},
         )
         if other_t_doc and (t_doc.name == other_t_doc.name):
@@ -105,11 +197,16 @@ class TeamManager(AbstractObjectManager):
         member_doc_ids = set()
         for member in data.members:
             u_doc = await user_manager.get_or_create_user(member)
+
+            # Add edge (member of Team)
+            # TODO: may case duplicated edges?
+            self.n.add_edge(u_doc.vertex.id, t_doc.vertex.id, EdgeLabel.member.value)
+
             member_doc_ids.add(u_doc.id)
 
         t_doc.name = data.name
         t_doc.description = data.description
-        t_doc.members = member_doc_ids
+        t_doc.members = list(member_doc_ids)
         await t_doc.save()
 
         return t_doc
