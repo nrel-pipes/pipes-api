@@ -63,18 +63,24 @@ class UserManager(AbstractObjectManager):
         if self.n.exists(self.label, email=email):
             raise VertexAlreadyExists(f"User vertex ({email}) already exists.")
 
-        try:
-            properties_model = UserVertexProperties(email=email)
-            properties = properties_model.model_dump()
-            u_vtx = self.n.add_v(self.label, **properties)
-        except Exception as e:
-            logger.error("Failed to add User vertex <email: %s>, reason: %s", email, e)
-            u_vtx = None
-
-        if not u_vtx:
-            return None
+        properties_model = UserVertexProperties(email=email)
+        properties = properties_model.model_dump()
+        u_vtx = self.n.add_v(self.label, **properties)
 
         # Dcoument creation
+        user_vertex_model = UserVertexModel(
+            id=u_vtx.id,
+            label=self.label,
+            properties=properties_model,
+        )
+        return user_vertex_model
+
+    async def _get_or_create_user_vertex(self, email: EmailStr) -> UserVertexModel:
+        properties_model = UserVertexProperties(email=email)
+        properties = properties_model.model_dump()
+
+        u_vtx = self.n.get_or_add_v(self.label, **properties)
+
         user_vertex_model = UserVertexModel(
             id=u_vtx.id,
             label=self.label,
@@ -125,7 +131,7 @@ class UserManager(AbstractObjectManager):
         if not organization:
             organization = parse_organization(u_create.email)
 
-        u_vertex = await self._create_user_vertex(u_create.email)
+        u_vertex = await self._get_or_create_user_vertex(u_create.email)
 
         u_doc = UserDocument(
             vertex=u_vertex,
