@@ -47,13 +47,10 @@ async def create_model(
             detail=str(e),
         )
 
-    p_doc = validated_context.project
-    pr_doc = validated_context.projectrun
-
-    manager = ModelManager()
+    manager = ModelManager(context=validated_context)
     try:
 
-        m_doc = await manager.create_model(p_doc, pr_doc, data, user)
+        m_doc = await manager.create_model(data, user)
     except (DocumentAlreadyExists, DomainValidationError, DocumentDoesNotExist) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -88,8 +85,7 @@ async def get_models(
             detail=str(e),
         )
 
-    manager = ModelManager()
-    p_doc, pr_doc = validated_context.project, validated_context.projectrun
-    m_reads = await manager.get_models(p_doc, pr_doc)
+    manager = ModelManager(context=validated_context)
+    m_reads = await manager.get_models()
 
     return m_reads

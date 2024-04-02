@@ -9,9 +9,14 @@ from pipes.common.exceptions import (
     DocumentAlreadyExists,
     DocumentDoesNotExist,
 )
+from pipes.common.graph import VertexLabel
 from pipes.db.manager import AbstractObjectManager
 from pipes.projects.schemas import ProjectDocument
-from pipes.projectruns.contexts import ProjectRunObjectContext, ProjectRunSimpleContext
+from pipes.projectruns.contexts import (
+    ProjectRunDocumentContext,
+    ProjectRunObjectContext,
+    ProjectRunSimpleContext,
+)
 from pipes.projectruns.schemas import ProjectRunDocument
 from pipes.models.schemas import ModelCreate, ModelDocument, ModelRead
 from pipes.models.validators import ModelDomainValidator
@@ -25,15 +30,28 @@ logger = logging.getLogger(__name__)
 class ModelManager(AbstractObjectManager):
     """Model object manager class"""
 
+    __label__ = VertexLabel.Model.value
+
+    def __init__(self, context: ProjectRunDocumentContext) -> None:
+        self.context = context
+        super().__init__(ProjectRunDocument)
+
     async def create_model(
         self,
-        p_doc: ProjectDocument,
-        pr_doc: ProjectRunDocument,
         m_create: ModelCreate,
         user: UserDocument,
     ) -> ModelDocument:
         """Create a new model under given project and project run"""
+
+        # Validate model domain business
+        domain_validator = ModelDomainValidator(self.context)
+        m_create = await domain_validator.validate(m_create)
+
+        # Check if model already exists or not
         m_name = m_create.name
+        p_doc = self.context.project
+        pr_doc = self.context.projectrun
+
         m_doc_exists = await ModelDocument.find_one(
             {
                 "context.project": p_doc.id,
@@ -47,7 +65,7 @@ class ModelManager(AbstractObjectManager):
                 f"project run '{pr_doc.name}' under project '{p_doc.name}'.",
             )
 
-        # context
+        # object context
         context = ProjectRunObjectContext(project=p_doc.id, projectrun=pr_doc.id)
 
         # modeling team
@@ -83,9 +101,6 @@ class ModelManager(AbstractObjectManager):
             modified_by=user.id,
         )
 
-        domain_validator = ModelDomainValidator()
-        m_doc = await domain_validator.validate(m_doc)
-
         # Create document
         try:
             m_doc = await m_doc.insert()
@@ -103,12 +118,11 @@ class ModelManager(AbstractObjectManager):
         )
         return m_doc
 
-    async def get_models(
-        self,
-        p_doc: ProjectDocument,
-        pr_doc: ProjectRunDocument,
-    ) -> list[ModelRead]:
+    async def get_models(self) -> list[ModelRead]:
         """Get all models under given project and project run"""
+        p_doc = self.context.project
+        pr_doc = self.context.projectrun
+
         m_docs = ModelDocument.find(
             {
                 "context.project": p_doc.id,
@@ -116,7 +130,7 @@ class ModelManager(AbstractObjectManager):
             },
         )
 
-        team_manager = TeamManager()
+        team_manager = TeamManager(self.context)
         m_reads = []
         async for m_doc in m_docs:
             data = m_doc.model_dump()
@@ -137,7 +151,7 @@ class ModelManager(AbstractObjectManager):
         pr_id = m_doc.context.projectrun
         pr_doc = await ProjectRunDocument.get(pr_id)
 
-        team_manager = TeamManager()
+        team_manager = TeamManager(context=self.context)
 
         data = m_doc.model_dump()
         data["context"] = ProjectRunSimpleContext(
