@@ -90,7 +90,7 @@ class CognitoJWKsVerifier:
             )
 
         # verify issuer auth time
-        now = timegm(datetime.utcnow().utctimetuple())
+        now = timegm(datetime.now().utctimetuple())
         iat = int(claims.get("iat"))  # type: ignore
         if now < iat:
             raise CognitoAuthError("Not authenticated. Invalid access token - iat.")

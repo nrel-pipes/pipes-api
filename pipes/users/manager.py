@@ -12,16 +12,11 @@ from pipes.common.exceptions import (
     DocumentAlreadyExists,
     VertexAlreadyExists,
 )
-from pipes.common.graph import VertexLabel
 from pipes.common.utilities import parse_organization
 from pipes.db.manager import AbstractObjectManager
-from pipes.users.schemas import (
-    UserCreate,
-    CognitoUserCreate,
-    UserDocument,
-    UserVertexProperties,
-    UserVertexModel,
-)
+from pipes.graph.constants import VertexLabel
+from pipes.graph.schemas import UserVertexProperties, UserVertex
+from pipes.users.schemas import UserCreate, CognitoUserCreate, UserDocument
 
 logger = logging.getLogger(__name__)
 
@@ -42,21 +37,21 @@ class UserManager(AbstractObjectManager):
         u_vertex = await self._create_user_vertex(u_create.email)
         return await self._create_user_document(u_create, u_vertex)
 
-    async def _get_user_vertex(self, email: EmailStr) -> UserVertexModel | None:
+    async def _get_user_vertex(self, email: EmailStr) -> UserVertex | None:
         vlist = self.n.get_v(self.label, email=email)
         if not vlist:
             return None
 
         u_vtx = vlist[0]
         properties_model = UserVertexProperties(email=email)
-        user_vertex_model = UserVertexModel(
+        user_vertex_model = UserVertex(
             id=u_vtx.id,
             label=self.label,
             properties=properties_model,
         )
         return user_vertex_model
 
-    async def _create_user_vertex(self, email: EmailStr) -> UserVertexModel | None:
+    async def _create_user_vertex(self, email: EmailStr) -> UserVertex | None:
         if self.n.exists(self.label, email=email):
             raise VertexAlreadyExists(f"User vertex ({email}) already exists.")
 
@@ -65,20 +60,20 @@ class UserManager(AbstractObjectManager):
         u_vtx = self.n.add_v(self.label, **properties)
 
         # Dcoument creation
-        user_vertex_model = UserVertexModel(
+        user_vertex_model = UserVertex(
             id=u_vtx.id,
             label=self.label,
             properties=properties_model,
         )
         return user_vertex_model
 
-    async def _get_or_create_user_vertex(self, email: EmailStr) -> UserVertexModel:
+    async def _get_or_create_user_vertex(self, email: EmailStr) -> UserVertex:
         properties_model = UserVertexProperties(email=email)
         properties = properties_model.model_dump()
 
         u_vtx = self.n.get_or_add_v(self.label, **properties)
 
-        user_vertex_model = UserVertexModel(
+        user_vertex_model = UserVertex(
             id=u_vtx.id,
             label=self.label,
             properties=properties_model,

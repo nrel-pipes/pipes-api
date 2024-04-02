@@ -8,7 +8,7 @@ from pymongo import IndexModel
 from beanie import Document
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from pipes.common.graph import VertexLabel
+from pipes.graph.schemas import UserVertex
 
 
 # User
@@ -72,49 +72,10 @@ class UserRead(UserCreate):
     )
 
 
-class UserVertexProperties(BaseModel):
-    email: EmailStr = Field(
-        title="email",
-        to_lower=True,
-        description="Email address",
-    )
-
-
-class UserVertexModel(BaseModel):
-    id: str = Field(
-        title="id",
-        description="The Neptune vertex id",
-    )
-    label: VertexLabel = Field(
-        title="label",
-        default=VertexLabel.User.value,
-        description="The Neptune vertex label",
-    )
-    properties: UserVertexProperties = Field(
-        title="properties",
-        description="The user vertex properties",
-    )
-
-    @field_validator("id", mode="before")
-    @classmethod
-    def validate_id(cls, value):
-        """Ensure the value is valid UUID string"""
-        if not value:
-            return None
-
-        value = str(value)
-        try:
-            UUID(value)
-        except ValueError as e:
-            raise e
-
-        return value
-
-
 class UserDocument(UserRead, Document):
     """User document in db"""
 
-    vertex: UserVertexModel = Field(
+    vertex: UserVertex = Field(
         title="vertex",
         description="The neptune vertex model",
     )
