@@ -8,7 +8,7 @@ from pymongo.errors import DuplicateKeyError
 
 from pipes.common.exceptions import DocumentAlreadyExists, VertexAlreadyExists
 from pipes.common.graph import VertexLabel, EdgeLabel
-from pipes.db.manager import AbstractObjectManager, NeptuneDB
+from pipes.db.manager import AbstractObjectManager
 from pipes.projects.schemas import (
     ProjectCreate,
     ProjectDocument,
@@ -28,17 +28,19 @@ class ProjectManager(AbstractObjectManager):
 
     __label__ = VertexLabel.Project.value
 
-    def __init__(self, neptune: NeptuneDB | None = None) -> None:
-        if not neptune:
-            neptune = NeptuneDB()
-            neptune.connect()
-        super().__init__(ProjectDocument, neptune)
+    def __init__(self) -> None:
+        super().__init__(ProjectDocument)
 
     async def create_project(
         self,
         p_create: ProjectCreate,
         user: UserDocument,
     ) -> ProjectDocument:
+        # Validate project domain business
+
+        domain_validator = ProjectDomainValidator()
+        p_create = await domain_validator.validate(p_create)
+
         # Get or create user vertex & document
         p_owner = await self._get_or_create_project_owner(p_create.owner)
 
@@ -47,8 +49,8 @@ class ProjectManager(AbstractObjectManager):
         p_doc = await self._create_project_document(p_create, p_vertex, p_owner, user)
 
         # Add edget: user owns project
-        u_vtx_id = str(p_owner.vertex.id)
-        p_vtx_id = str(p_vertex.id)
+        u_vtx_id = p_owner.vertex.id
+        p_vtx_id = p_vertex.id
         self.n.add_edge(u_vtx_id, p_vtx_id, EdgeLabel.owns.value)
 
         return p_doc
@@ -110,9 +112,6 @@ class ProjectManager(AbstractObjectManager):
             last_modified=datetime.now(),
             modified_by=user.id,
         )
-
-        domain_validator = ProjectDomainValidator()
-        p_doc = await domain_validator.validate(p_doc)
 
         try:
             await p_doc.insert()

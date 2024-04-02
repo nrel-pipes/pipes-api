@@ -7,7 +7,7 @@ from pipes.common.exceptions import (
 )
 from pipes.common.validators import ContextValidator, DomainValidator
 from pipes.projects.contexts import ProjectSimpleContext, ProjectDocumentContext
-from pipes.projects.schemas import ProjectDocument
+from pipes.projects.schemas import ProjectCreate, ProjectDocument
 from pipes.users.schemas import UserDocument
 
 
@@ -57,22 +57,22 @@ class ProjectContextValidator(ContextValidator):
 class ProjectDomainValidator(DomainValidator):
     """Project run domain validator class"""
 
-    async def validate_scheduled_start(self, p_doc: ProjectDocument) -> ProjectDocument:
+    async def validate_scheduled_start(self, p_create: ProjectCreate) -> ProjectCreate:
         """Project scheduled start <= scheduled_end"""
 
-        if p_doc.scheduled_start > p_doc.scheduled_end:
+        if p_create.scheduled_start > p_create.scheduled_end:
             raise DomainValidationError(
                 "Project 'scheduled_start' could not be larger than 'scheduled_end'.",
             )
 
-        return p_doc
+        return p_create
 
-    async def validate_scheduled_end(self, p_doc: ProjectDocument) -> ProjectDocument:
+    async def validate_scheduled_end(self, p_create: ProjectCreate) -> ProjectCreate:
         """Project scheduled start <= scheduled_end"""
 
-        if p_doc.scheduled_end < p_doc.scheduled_start:
+        if p_create.scheduled_end < p_create.scheduled_start:
             raise DomainValidationError(
                 "Project 'scheduled_end' could not be smaller than 'scheduled_start'.",
             )
 
-        return p_doc
+        return p_create
