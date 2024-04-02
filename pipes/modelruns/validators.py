@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-
 from pipes.common.exceptions import ContextValidationError
 from pipes.common.validators import DomainValidator
-from pipes.models.schemas import ModelDocument
+from pipes.models.contexts import ModelDocumentContext
 from pipes.models.validators import ModelContextValidator
 from pipes.modelruns.contexts import ModelRunSimpleContext, ModelRunDocumentContext
 from pipes.modelruns.schemas import ModelRunDocument
@@ -46,18 +45,7 @@ class ModelRunContextValidator(ModelContextValidator):
 
 class ModelRunDomainValidator(DomainValidator):
 
-    def __init__(self) -> None:
-        self._cached_m_doc = None
-
-    async def _get_parent(self, mr_doc: ModelRunDocument) -> ModelDocument:
-        """Get the parent document, here is model doc"""
-        m_doc = self._cached_m_doc
-
-        if m_doc is None:
-            m_id = mr_doc.context.model
-            m_doc = await ModelDocument.get(m_id)
-            self._cached_m_doc = m_doc
-
-        return m_doc
+    def __init__(self, context: ModelDocumentContext) -> None:
+        self.context = context
 
     # TODO: model domain validation

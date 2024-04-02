@@ -10,6 +10,7 @@ from pipes.common.exceptions import (
     DocumentDoesNotExist,
     DomainValidationError,
     UserPermissionDenied,
+    VertexAlreadyExists,
 )
 from pipes.models.contexts import ModelSimpleContext
 from pipes.models.validators import ModelContextValidator
@@ -51,14 +52,15 @@ async def create_modelrun(
             detail=str(e),
         )
 
-    p_doc = validated_context.project
-    pr_doc = validated_context.projectrun
-    m_doc = validated_context.model
-
-    manager = ModelRunManager()
+    manager = ModelRunManager(context=validated_context)
     try:
-        mr_doc = await manager.create_modelrun(p_doc, pr_doc, m_doc, data, user)
-    except (DocumentAlreadyExists, DomainValidationError, DocumentDoesNotExist) as e:
+        mr_doc = await manager.create_modelrun(data, user)
+    except (
+        VertexAlreadyExists,
+        DocumentAlreadyExists,
+        DomainValidationError,
+        DocumentDoesNotExist,
+    ) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -93,11 +95,6 @@ async def get_modelruns(
             detail=str(e),
         )
 
-    manager = ModelRunManager()
-    mr_reads = await manager.get_modelruns(
-        p_doc=validated_context.project,
-        pr_doc=validated_context.projectrun,
-        m_doc=validated_context.model,
-    )
-
+    manager = ModelRunManager(context=validated_context)
+    mr_reads = await manager.get_modelruns()
     return mr_reads

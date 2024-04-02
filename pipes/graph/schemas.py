@@ -155,6 +155,39 @@ class ModelVertex(VertexModel):
 
 
 # Model run vertex model
+class ModelRunVertexProperties(BaseModel):
+    project: str = Field(
+        title="project",
+        min_length=1,
+        description="project name",
+    )
+    projectrun: str = Field(
+        title="projectrun",
+        min_length=1,
+        description="project run name",
+    )
+    model: str = Field(
+        title="model",
+        min_length=1,
+        description="model name",
+    )
+    name: str = Field(
+        title="name",
+        min_length=1,
+        description="model name",
+    )
+
+
+class ModelRunVertex(VertexModel):
+    label: str = Field(
+        title="label",
+        default=VertexLabel.ModelRun.value,
+        description="The label for the vertex",
+    )
+    properties: ModelRunVertexProperties = Field(
+        title="properties",
+        description="model run properties on the vertex",
+    )
 
 
 # Dataset vertex model

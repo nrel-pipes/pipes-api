@@ -16,3 +16,4 @@ class EdgeLabel(str, Enum):
     member = "member"  # User is member of team
     runs = "runs"  # Project runs projectrun
     requires = "requires"  # Project run requires model
+    performs = "performs"  # Model performs model run
