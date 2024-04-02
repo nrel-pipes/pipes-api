@@ -11,15 +11,14 @@ from pipes.common.exceptions import (
 )
 from pipes.common.graph import VertexLabel, EdgeLabel
 from pipes.db.manager import AbstractObjectManager
-from pipes.db.neptune import NeptuneDB
-from pipes.projects.schemas import ProjectDocument
+from pipes.projects.contexts import ProjectDocumentContext
 from pipes.teams.schemas import (
     TeamCreate,
     TeamRead,
     TeamUpdate,
     TeamDocument,
-    TeamVertexModel,
     TeamVertexProperties,
+    TeamVertexModel,
 )
 from pipes.users.manager import UserManager
 from pipes.users.schemas import UserCreate, UserDocument, UserRead
@@ -32,18 +31,14 @@ class TeamManager(AbstractObjectManager):
 
     __label__ = VertexLabel.Team.value
 
-    def __init__(self, neptune: NeptuneDB | None = None) -> None:
-        if not neptune:
-            neptune = NeptuneDB()
-            neptune.connect()
-        super().__init__(TeamDocument, neptune)
+    def __init__(self, context: ProjectDocumentContext) -> None:
+        super().__init__(TeamDocument)
+        self.context = context
 
-    async def create_team(
-        self,
-        p_doc: ProjectDocument,
-        t_create: TeamCreate,
-    ) -> TeamDocument:
+    async def create_team(self, t_create: TeamCreate) -> TeamDocument:
         """Create vetex in neptune, then create document in docdb"""
+        p_doc = self.context.project
+
         # Add team vertex
         t_vertex = await self._create_team_vertex(p_doc.name, t_create.name)
 
@@ -51,7 +46,6 @@ class TeamManager(AbstractObjectManager):
         t_members = await self._add_team_members(t_vertex, t_create.members)
 
         t_doc = await self._create_team_document(
-            p_doc,
             t_create,
             t_members,
             t_vertex,
@@ -117,13 +111,14 @@ class TeamManager(AbstractObjectManager):
 
     async def _create_team_document(
         self,
-        p_doc: ProjectDocument,
         t_create: TeamCreate,
         t_members: list[UserDocument],
         t_vertex: TeamVertexModel,
     ) -> TeamDocument:
         """Create new team"""
         t_name = t_create.name
+        p_doc = self.context.project
+
         if await self.d.exists({"context.project": p_doc.id, "name": t_name}):
             raise DocumentAlreadyExists(
                 f"Team document '{t_name}' already exists under project '{p_doc.name}'.",
@@ -157,8 +152,9 @@ class TeamManager(AbstractObjectManager):
         )
         return t_doc
 
-    async def get_all_project_teams(self, p_doc: ProjectDocument) -> list[TeamRead]:
+    async def get_all_teams(self) -> list[TeamRead]:
         """Get all teams of given project."""
+        p_doc = self.context.project
         t_docs = await self.d.find_all({"context.project": p_doc.id})
 
         teams = []
@@ -174,11 +170,12 @@ class TeamManager(AbstractObjectManager):
 
     async def update_team(
         self,
-        p_doc: ProjectDocument,
         team: str,
         data: TeamUpdate,
     ) -> TeamDocument:
         """Update team"""
+        p_doc = self.context.project
+
         t_doc = await self.d.find_one({"context.project": p_doc.id, "name": team})
         if t_doc is None:
             raise DocumentDoesNotExist(

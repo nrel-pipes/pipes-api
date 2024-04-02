@@ -43,11 +43,9 @@ async def create_team(
             detail=str(e),
         )
 
-    p_doc = validated_context.project
-
     try:
-        manager = TeamManager()
-        t_doc = await manager.create_team(p_doc, data)
+        manager = TeamManager(context=validated_context)
+        t_doc = await manager.create_team(data)
     except (VertexAlreadyExists, DocumentAlreadyExists) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -60,7 +58,7 @@ async def create_team(
     t_read = TeamRead(
         name=t_doc.name,
         description=t_doc.description,
-        context={"project": p_doc.name},
+        context={"project": project},
         members=u_docs,
     )
 
@@ -89,10 +87,8 @@ async def get_teams(
             detail=str(e),
         )
 
-    p_doc = validated_context.project
-
-    manager = TeamManager()
-    p_teams = await manager.get_all_project_teams(p_doc)
+    manager = TeamManager(context=validated_context)
+    p_teams = await manager.get_all_teams()
     return p_teams
 
 
@@ -120,11 +116,9 @@ async def update_team(
             detail=str(e),
         )
 
-    p_doc = validated_context.project
-
     try:
-        manager = TeamManager()
-        t_doc = await manager.update_team(p_doc, team, data)
+        manager = TeamManager(context=validated_context)
+        t_doc = await manager.update_team(team, data)
     except (VertexAlreadyExists, DocumentDoesNotExist, DocumentAlreadyExists) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -136,6 +130,6 @@ async def update_team(
         name=t_doc.name,
         description=t_doc.description,
         members=u_docs,
-        context=ProjectSimpleContext(project=p_doc.name),
+        context=ProjectSimpleContext(project=project),
     )
     return t_read
