@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -50,7 +52,6 @@ async def create_model(
 
     manager = ModelManager(context=validated_context)
     try:
-
         m_doc = await manager.create_model(data, user)
     except (
         VertexAlreadyExists,

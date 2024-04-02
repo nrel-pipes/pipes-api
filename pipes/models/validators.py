@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from pipes.common.exceptions import (
-    ContextValidationError,
-    DomainValidationError,
-)
+from pipes.common.exceptions import ContextValidationError, DomainValidationError
 from pipes.common.validators import DomainValidator
 from pipes.db.document import DocumentDB
 from pipes.projectruns.contexts import ProjectRunDocumentContext
