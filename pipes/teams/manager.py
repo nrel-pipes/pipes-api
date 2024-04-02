@@ -9,17 +9,11 @@ from pipes.common.exceptions import (
     DocumentDoesNotExist,
     VertexAlreadyExists,
 )
-from pipes.common.graph import VertexLabel, EdgeLabel
 from pipes.db.manager import AbstractObjectManager
+from pipes.graph.constants import VertexLabel, EdgeLabel
+from pipes.graph.schemas import TeamVertexProperties, TeamVertex
 from pipes.projects.contexts import ProjectDocumentContext
-from pipes.teams.schemas import (
-    TeamCreate,
-    TeamRead,
-    TeamUpdate,
-    TeamDocument,
-    TeamVertexProperties,
-    TeamVertexModel,
-)
+from pipes.teams.schemas import TeamCreate, TeamRead, TeamUpdate, TeamDocument
 from pipes.users.manager import UserManager
 from pipes.users.schemas import UserCreate, UserDocument, UserRead
 
@@ -54,7 +48,7 @@ class TeamManager(AbstractObjectManager):
 
     async def _add_team_members(
         self,
-        t_vertex: TeamVertexModel,
+        t_vertex: TeamVertex,
         t_members: list[UserCreate],
     ) -> list[UserDocument]:
         """Create user vertexes in neptune"""
@@ -70,7 +64,7 @@ class TeamManager(AbstractObjectManager):
         self,
         p_name: str,
         t_name: str,
-    ) -> TeamVertexModel:
+    ) -> TeamVertex:
         properties = {"project": p_name, "name": t_name}
         if self.n.exists(self.label, **properties):
             raise VertexAlreadyExists(
@@ -82,7 +76,7 @@ class TeamManager(AbstractObjectManager):
         t_vtx = self.n.add_v(self.label, **properties)
 
         # Dcoument creation
-        team_vertex_model = TeamVertexModel(
+        team_vertex_model = TeamVertex(
             id=t_vtx.id,
             label=self.label,
             properties=properties_model,
@@ -93,7 +87,7 @@ class TeamManager(AbstractObjectManager):
         self,
         p_name: str,
         t_name: str,
-    ) -> TeamVertexModel | None:
+    ) -> TeamVertex | None:
         """Create vetex in neptune"""
         properties = {"project": p_name, "name": t_name}
         vlist = self.n.get_v(self.label, **properties)
@@ -102,7 +96,7 @@ class TeamManager(AbstractObjectManager):
 
         t_vtx = vlist[0]
         properties_model = TeamVertexProperties(**properties)
-        team_vertex_model = TeamVertexModel(
+        team_vertex_model = TeamVertex(
             id=t_vtx.id,
             label=self.label,
             properties=properties_model,
@@ -113,7 +107,7 @@ class TeamManager(AbstractObjectManager):
         self,
         t_create: TeamCreate,
         t_members: list[UserDocument],
-        t_vertex: TeamVertexModel,
+        t_vertex: TeamVertex,
     ) -> TeamDocument:
         """Create new team"""
         t_name = t_create.name

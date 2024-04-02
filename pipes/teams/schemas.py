@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from uuid import UUID
-
 import pymongo
 from beanie import PydanticObjectId
 from pymongo import IndexModel
 from beanie import Document
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
-from pipes.common.graph import VertexLabel
+from pipes.graph.schemas import TeamVertex
 from pipes.projects.contexts import ProjectSimpleContext, ProjectObjectContext
 from pipes.users.schemas import UserRead, UserCreate
 
@@ -84,54 +82,10 @@ class TeamBasicRead(BaseModel):
     )
 
 
-class TeamVertexProperties(BaseModel):
-    project: str = Field(
-        title="project",
-        min_length=1,
-        description="project name",
-    )
-    name: str = Field(
-        title="name",
-        min_length=1,
-        description="team name",
-    )
-
-
-class TeamVertexModel(BaseModel):
-    id: str = Field(
-        title="id",
-        description="The vertex id in UUID format",
-    )
-    label: str = Field(
-        title="label",
-        default=VertexLabel.Team.value,
-        description="The label for the vertex",
-    )
-    properties: TeamVertexProperties = Field(
-        title="properties",
-        description="team properties on the vertex",
-    )
-
-    @field_validator("id", mode="before")
-    @classmethod
-    def validate_id(cls, value):
-        """Ensure the value is valid UUID string"""
-        if not value:
-            return None
-
-        value = str(value)
-        try:
-            UUID(value)
-        except ValueError as e:
-            raise e
-
-        return value
-
-
 class TeamDocument(TeamRead, Document):
     """Team document in db"""
 
-    vertex: TeamVertexModel = Field(
+    vertex: TeamVertex = Field(
         title="vertex",
         description="The neptune vertex model",
     )
