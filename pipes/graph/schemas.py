@@ -191,6 +191,44 @@ class ModelRunVertex(VertexModel):
 
 
 # Dataset vertex model
+class DatasetVertexProperties(BaseModel):
+    project: str | None = Field(
+        title="project",
+        min_length=1,
+        description="project name",
+    )
+    projectrun: str | None = Field(
+        title="projectrun",
+        min_length=1,
+        description="project run name",
+    )
+    model: str | None = Field(
+        title="model",
+        min_length=1,
+        description="model name",
+    )
+    modelrun: str | None = Field(
+        title="modelrun",
+        min_length=1,
+        description="model run name",
+    )
+    name: str = Field(
+        title="name",
+        min_length=1,
+        description="dataset name",
+    )
+
+
+class DatasetVertex(VertexModel):
+    label: str = Field(
+        title="label",
+        default=VertexLabel.Dataset.value,
+        description="The label for the vertex",
+    )
+    properties: DatasetVertexProperties = Field(
+        title="properties",
+        description="dataset properties on the vertex",
+    )
 
 
 # Task vertex model

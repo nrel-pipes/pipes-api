@@ -8,6 +8,7 @@ class VertexLabel(str, Enum):
     ProjectRun = "ProjectRun"
     Model = "Model"
     ModelRun = "ModelRun"
+    Dataset = "Dataset"
     Task = "Task"
 
 
@@ -18,3 +19,5 @@ class EdgeLabel(str, Enum):
     requires = "requires"  # Project run requires model
     affiliated = "affiliated"  # Model is affiliated to team
     performs = "performs"  # Model performs model run
+    attributed = "attributed"  # User is attributed to Dataset
+    produced = "produced"  # Model run produces dataset

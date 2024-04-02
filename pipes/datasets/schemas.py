@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from pymongo import IndexModel
 
 from pipes.common.schemas import SourceCode, VersionStatus
+from pipes.graph.schemas import DatasetVertex
 from pipes.modelruns.contexts import ModelRunSimpleContext, ModelRunObjectContext
 from pipes.users.schemas import UserCreate, UserRead
 
@@ -206,6 +207,10 @@ class DatasetRead(DatasetCreate):
 
 
 class DatasetDocument(DatasetRead, Document):
+    vertex: DatasetVertex = Field(
+        title="vertex",
+        description="The dataset vertex pydantic model",
+    )
     context: ModelRunObjectContext = Field(
         title="context",
         description="model run context reference",
