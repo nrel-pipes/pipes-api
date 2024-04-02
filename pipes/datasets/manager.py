@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 
 from pymongo.errors import DuplicateKeyError
@@ -21,6 +22,8 @@ from pipes.datasets.schemas import DatasetCreate, DatasetDocument, DatasetRead
 from pipes.datasets.validators import DatasetDomainValidator
 from pipes.users.manager import UserManager
 from pipes.users.schemas import UserCreate, UserDocument, UserRead
+
+logger = logging.getLogger(__name__)
 
 
 class DatasetManager(AbstractObjectManager):
