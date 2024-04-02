@@ -4,13 +4,36 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from pipes.graph.constants import VertexLabel
+from pipes.graph.constants import VertexLabel, EdgeLabel
 
 
+# Graph element base model
 class VertexModel(BaseModel):
     id: str = Field(
         title="id",
-        description="The Neptune vertex id in UUID format",
+        description="The Neptune graph vertex id in UUID format",
+    )
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def validate_id(cls, value):
+        """Ensure the value is valid UUID string"""
+        if not value:
+            return None
+
+        value = str(value)
+        try:
+            UUID(value)
+        except ValueError as e:
+            raise e
+
+        return value
+
+
+class EdgeModel(BaseModel):
+    id: str = Field(
+        title="id",
+        description="The Neptune graph edge id in UUID format",
     )
 
     @field_validator("id", mode="before")
@@ -232,3 +255,34 @@ class DatasetVertex(VertexModel):
 
 
 # Task vertex model
+
+
+# Handoff edge model
+class FeedsEdgeProperties(BaseModel):
+    project: str = Field(
+        title="project",
+        min_length=1,
+        description="project name",
+    )
+    projectrun: str = Field(
+        title="projectrun",
+        min_length=1,
+        description="project run name",
+    )
+    handoff: str = Field(
+        title="handoff",
+        min_length=1,
+        description="handoff name",
+    )
+
+
+class FeedsEdge(EdgeModel):
+    label: str = Field(
+        title="label",
+        default=EdgeLabel.feeds.value,
+        description="The label for the edge",
+    )
+    properties: FeedsEdgeProperties = Field(
+        title="properties",
+        description="handoff properties on the edge",
+    )

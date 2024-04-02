@@ -21,3 +21,5 @@ class EdgeLabel(str, Enum):
     performs = "performs"  # Model performs model run
     attributed = "attributed"  # User is attributed to Dataset
     produced = "produced"  # Model run produces dataset
+    feeds = "feeds"  # Model A feeds model B
+    informs = "informs"  # Model B informs model A
