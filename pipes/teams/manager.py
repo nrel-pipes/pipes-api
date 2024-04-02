@@ -26,7 +26,6 @@ class TeamManager(AbstractObjectManager):
     __label__ = VertexLabel.Team.value
 
     def __init__(self, context: ProjectDocumentContext) -> None:
-        super().__init__(TeamDocument)
         self.context = context
 
     async def create_team(self, t_create: TeamCreate) -> TeamDocument:
@@ -113,7 +112,11 @@ class TeamManager(AbstractObjectManager):
         t_name = t_create.name
         p_doc = self.context.project
 
-        if await self.d.exists({"context.project": p_doc.id, "name": t_name}):
+        exists = await self.d.exists(
+            collection=TeamDocument,
+            query={"context.project": p_doc.id, "name": t_name},
+        )
+        if exists:
             raise DocumentAlreadyExists(
                 f"Team document '{t_name}' already exists under project '{p_doc.name}'.",
             )
@@ -150,7 +153,7 @@ class TeamManager(AbstractObjectManager):
     #     p_doc = self.context.project
 
     #     query = {"context.project": p_doc.id, "name": t_create.name}
-    #     t_doc = await self.d.find_one(query)
+    #     t_doc = await self.d.find_one(collection=TeamDocument, query=query)
 
     #     if not t_doc:
     #         t_doc = await self.create_team(t_create)
@@ -160,13 +163,16 @@ class TeamManager(AbstractObjectManager):
     async def get_team(self, t_name: str) -> TeamDocument:
         p_doc = self.context.project
         query = {"context.project": p_doc.id, "name": t_name}
-        t_doc = await self.d.find_one(query)
+        t_doc = await self.d.find_one(collection=TeamDocument, query=query)
         return t_doc
 
     async def get_all_teams(self) -> list[TeamRead]:
         """Get all teams of given project."""
         p_doc = self.context.project
-        t_docs = await self.d.find_all({"context.project": p_doc.id})
+        t_docs = await self.d.find_all(
+            collection=TeamDocument,
+            query={"context.project": p_doc.id},
+        )
 
         teams = []
         for t_doc in t_docs:
@@ -175,7 +181,10 @@ class TeamManager(AbstractObjectManager):
         return teams
 
     async def get_team_members(self, t_doc: TeamDocument) -> list[UserRead]:
-        u_docs = await UserDocument.find({"_id": {"$in": t_doc.members}}).to_list()
+        u_docs = await self.d.find_all(
+            collection=UserDocument,
+            query={"_id": {"$in": t_doc.members}},
+        )
         members = [UserRead.model_validate(u_doc.model_dump()) for u_doc in u_docs]
         return members
 
@@ -187,14 +196,18 @@ class TeamManager(AbstractObjectManager):
         """Update team"""
         p_doc = self.context.project
 
-        t_doc = await self.d.find_one({"context.project": p_doc.id, "name": team})
+        t_doc = await self.d.find_one(
+            collection=TeamDocument,
+            query={"context.project": p_doc.id, "name": team},
+        )
         if t_doc is None:
             raise DocumentDoesNotExist(
                 f"Team '{team}' not exist in project '{p_doc.name}'",
             )
 
         other_t_doc = await self.d.find_one(
-            {"context.project": p_doc.id, "name": data.name},
+            collection=TeamDocument,
+            query={"context.project": p_doc.id, "name": data.name},
         )
         if other_t_doc and (t_doc.name == other_t_doc.name):
             raise DocumentAlreadyExists(

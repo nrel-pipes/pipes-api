@@ -9,6 +9,7 @@ from pipes.common.exceptions import (
     DocumentDoesNotExist,
     VertexAlreadyExists,
 )
+from pipes.db.document import DocumentDB
 from pipes.projects.contexts import ProjectSimpleContext
 from pipes.projects.validators import ProjectContextValidator
 from pipes.teams.manager import TeamManager
@@ -53,7 +54,11 @@ async def create_team(
         )
 
     # Query members
-    u_docs = await UserDocument.find({"_id": {"$in": t_doc.members}}).to_list()
+    docdb = DocumentDB()
+    u_docs = await docdb.find_all(
+        collection=UserDocument,
+        query={"_id": {"$in": t_doc.members}},
+    )
 
     t_read = TeamRead(
         name=t_doc.name,
@@ -125,7 +130,11 @@ async def update_team(
             detail=str(e),
         )
 
-    u_docs = await UserDocument.find({"_id": {"$in": t_doc.members}}).to_list()
+    docdb = DocumentDB()
+    u_docs = await docdb.find_all(
+        collection=UserDocument,
+        query={"_id": {"$in": t_doc.members}},
+    )
     t_read = TeamRead(
         name=t_doc.name,
         description=t_doc.description,

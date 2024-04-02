@@ -6,6 +6,7 @@ from pipes.common.exceptions import (
     UserPermissionDenied,
 )
 from pipes.common.validators import ContextValidator, DomainValidator
+from pipes.db.document import DocumentDB
 from pipes.projects.contexts import ProjectSimpleContext, ProjectDocumentContext
 from pipes.projects.schemas import ProjectCreate, ProjectDocument
 from pipes.users.schemas import UserDocument
@@ -20,7 +21,8 @@ class ProjectContextValidator(ContextValidator):
     ) -> ProjectDocumentContext:
         """Get project document through validation"""
         p_name = context.project
-        p_doc = await ProjectDocument.find_one(ProjectDocument.name == p_name)
+        docdb = DocumentDB()
+        p_doc = await docdb.find_one(collection=ProjectDocument, query={"name": p_name})
 
         if not p_doc:
             raise ContextValidationError(

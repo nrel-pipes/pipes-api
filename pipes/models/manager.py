@@ -36,7 +36,6 @@ class ModelManager(AbstractObjectManager):
 
     def __init__(self, context: ProjectRunDocumentContext) -> None:
         self.context = context
-        super().__init__(ModelDocument)
 
     async def create_model(
         self,
@@ -121,7 +120,8 @@ class ModelManager(AbstractObjectManager):
         pr_doc = self.context.projectrun
 
         m_doc_exits = await self.d.exists(
-            {
+            collection=ModelDocument,
+            query={
                 "context.project": p_doc.id,
                 "context.projectrun": pr_doc.id,
                 "name": m_name,
@@ -137,8 +137,9 @@ class ModelManager(AbstractObjectManager):
 
         # modeling team
         t_name = m_create.modeling_team
-        t_doc = await TeamDocument.find_one(
-            {"context.project": p_doc.id, "name": t_name},
+        t_doc = await self.d.find_one(
+            collection=TeamDocument,
+            query={"context.project": p_doc.id, "name": t_name},
         )
         if not t_doc:
             raise DocumentDoesNotExist(
@@ -190,15 +191,12 @@ class ModelManager(AbstractObjectManager):
         pr_doc = self.context.projectrun
 
         m_docs = await self.d.find_all(
-            {
+            collection=ModelDocument,
+            query={
                 "context.project": p_doc.id,
                 "context.projectrun": pr_doc.id,
             },
         )
-
-        print("===================================")
-        print(m_docs)
-        print("++++++++++++++++")
 
         team_manager = TeamManager(self.context)
         m_reads = []
@@ -208,7 +206,10 @@ class ModelManager(AbstractObjectManager):
                 project=p_doc.name,
                 projectrun=pr_doc.name,
             )
-            modeling_team_doc = await TeamDocument.get(m_doc.modeling_team)
+            modeling_team_doc = await self.d.get(
+                collection=TeamDocument,
+                id=m_doc.modeling_team,
+            )
             data["modeling_team"] = await team_manager.read_team(modeling_team_doc)
             m_reads.append(ModelRead.model_validate(data))
         return m_reads
@@ -216,10 +217,10 @@ class ModelManager(AbstractObjectManager):
     async def read_model(self, m_doc: ModelDocument):
         """Read a model from given model document"""
         p_id = m_doc.context.project
-        p_doc = await ProjectDocument.get(p_id)
+        p_doc = await self.d.get(collection=ProjectDocument, id=p_id)
 
         pr_id = m_doc.context.projectrun
-        pr_doc = await ProjectRunDocument.get(pr_id)
+        pr_doc = await self.d.get(collection=ProjectRunDocument, id=pr_id)
 
         team_manager = TeamManager(context=self.context)
 
@@ -228,7 +229,10 @@ class ModelManager(AbstractObjectManager):
             project=p_doc.name,
             projectrun=pr_doc.name,
         )
-        modeling_team_doc = await TeamDocument.get(m_doc.modeling_team)
+        modeling_team_doc = await self.d.get(
+            collection=TeamDocument,
+            id=m_doc.modeling_team,
+        )
         data["modeling_team"] = await team_manager.read_team(modeling_team_doc)
 
         return ModelRead.model_validate(data)

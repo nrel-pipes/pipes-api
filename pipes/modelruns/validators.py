@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pipes.common.exceptions import ContextValidationError
 from pipes.common.validators import DomainValidator
+from pipes.db.document import DocumentDB
 from pipes.models.contexts import ModelDocumentContext
 from pipes.models.validators import ModelContextValidator
 from pipes.modelruns.contexts import ModelRunSimpleContext, ModelRunDocumentContext
@@ -22,7 +23,11 @@ class ModelRunContextValidator(ModelContextValidator):
         m_doc = m_context.model
 
         mr_name = context.modelrun
-        mr_doc = await ModelRunDocument.find_one(ModelRunDocument.name == mr_name)
+        docdb = DocumentDB()
+        mr_doc = await docdb.find_one(
+            collection=ModelRunDocument,
+            query={"name": mr_name},
+        )
 
         if not m_doc:
             raise ContextValidationError(

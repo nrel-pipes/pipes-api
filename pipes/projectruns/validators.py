@@ -5,6 +5,7 @@ from pipes.common.exceptions import (
     DomainValidationError,
 )
 from pipes.common.validators import DomainValidator
+from pipes.db.document import DocumentDB
 from pipes.projects.contexts import ProjectDocumentContext
 from pipes.projects.validators import ProjectContextValidator
 from pipes.projectruns.contexts import (
@@ -26,7 +27,11 @@ class ProjectRunContextValidator(ProjectContextValidator):
         p_doc = p_context.project
 
         pr_name = context.projectrun
-        pr_doc = await ProjectRunDocument.find_one(ProjectRunDocument.name == pr_name)
+        docdb = DocumentDB()
+        pr_doc = await docdb.find_one(
+            collection=ProjectRunDocument,
+            query={"name": pr_name},
+        )
 
         if not pr_doc:
             raise ContextValidationError(

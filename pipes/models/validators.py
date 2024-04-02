@@ -5,6 +5,7 @@ from pipes.common.exceptions import (
     DomainValidationError,
 )
 from pipes.common.validators import DomainValidator
+from pipes.db.document import DocumentDB
 from pipes.projectruns.contexts import ProjectRunDocumentContext
 from pipes.projectruns.validators import ProjectRunContextValidator
 from pipes.models.contexts import ModelSimpleContext, ModelDocumentContext
@@ -24,7 +25,8 @@ class ModelContextValidator(ProjectRunContextValidator):
         pr_doc = pr_context.projectrun
 
         m_name = context.model
-        m_doc = await ModelDocument.find_one(ModelDocument.name == m_name)
+        docdb = DocumentDB()
+        m_doc = await docdb.find_one(collection=ModelDocument, query={"name": m_name})
 
         if not m_doc:
             raise ContextValidationError(
@@ -57,21 +59,23 @@ class ModelDomainValidator(DomainValidator):
 
         # Validate model scenarios
         m_scenario_pool = set()
-        existing_m_docs = ModelDocument.find(
-            {
+        docdb = DocumentDB()
+        existing_m_docs = await docdb.find_all(
+            collection=ModelDocument,
+            query={
                 "context.project": self.context.project,
                 "context.projectrun": self.context.projectrun,
             },
         )
-        async for _m_doc in existing_m_docs:
-            for scenario_mapping in _m_doc.scenario_mappings:
-                m_s_name = scenario_mapping.model_scenario
-                if m_s_name not in m_scenario_pool:
-                    m_scenario_pool.add(m_s_name)
+        for m_doc in existing_m_docs:
+            for scenario_mapping in m_doc.scenario_mappings:
+                m_scenario = scenario_mapping.model_scenario
+                if m_scenario not in m_scenario_pool:
+                    m_scenario_pool.add(m_scenario)
                 else:
                     raise DomainValidationError(
-                        f"Model scneario name '{m_s_name}' already defined in "
-                        f"model '{_m_doc.name}' under same project and project run.",
+                        f"Model scneario name '{m_scenario}' already defined in "
+                        f"model '{m_doc.name}' under same project and project run.",
                     )
 
         # Validate project scenarios

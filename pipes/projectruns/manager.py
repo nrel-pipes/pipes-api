@@ -33,7 +33,6 @@ class ProjectRunManager(AbstractObjectManager):
 
     def __init__(self, context: ProjectDocumentContext) -> None:
         self.context = context
-        super().__init__(ProjectRunDocument)
 
     async def create_projectrun(
         self,
@@ -95,8 +94,9 @@ class ProjectRunManager(AbstractObjectManager):
         pr_name = pr_create.name
         p_doc = self.context.project
 
-        pr_doc_exists = await ProjectRunDocument.find_one(
-            {"context.project": p_doc.id, "name": pr_name},
+        pr_doc_exists = await self.d.find_one(
+            collection=ProjectRunDocument,
+            query={"context.project": p_doc.id, "name": pr_name},
         )
         if pr_doc_exists:
             raise DocumentAlreadyExists(
@@ -143,7 +143,10 @@ class ProjectRunManager(AbstractObjectManager):
     async def get_projectruns(self) -> list[ProjectRunRead]:
         """Return all project runs under given project"""
         p_doc = self.context.project
-        pr_docs = await self.d.find_all({"context.project": p_doc.id})
+        pr_docs = await self.d.find_all(
+            collection=ProjectRunDocument,
+            query={"context.project": p_doc.id},
+        )
 
         pr_reads = []
         for pr_doc in pr_docs:
@@ -155,7 +158,7 @@ class ProjectRunManager(AbstractObjectManager):
     async def read_projectrun(self, pr_doc: ProjectRunDocument) -> ProjectRunRead:
         """Convert ProjectRunDocument to ProjectRunRead instance"""
         p_id = pr_doc.context.project
-        p_doc = await ProjectDocument.get(p_id)
+        p_doc = await self.d.get(collection=ProjectDocument, id=p_id)
 
         data = pr_doc.model_dump()
         data["context"] = ProjectSimpleContext(project=p_doc.name)

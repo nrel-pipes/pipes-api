@@ -26,9 +26,6 @@ class UserManager(AbstractObjectManager):
 
     __label__ = VertexLabel.User.value
 
-    def __init__(self) -> None:
-        super().__init__(UserDocument)
-
     async def create_user(
         self,
         u_create: UserCreate | CognitoUserCreate,
@@ -82,7 +79,11 @@ class UserManager(AbstractObjectManager):
 
     async def _create_user_document(self, u_create, u_vertex):
         # Check if user already exists
-        if await self.d.find_one({"email": u_create.email}):
+        exists = await self.d.exists(
+            collection=UserDocument,
+            query={"email": u_create.email},
+        )
+        if exists:
             raise DocumentAlreadyExists(
                 f"User document ({u_create.email}) already exists.",
             )
@@ -113,8 +114,10 @@ class UserManager(AbstractObjectManager):
 
     async def get_or_create_user(self, u_create: UserCreate) -> UserDocument:
         """Get or create user"""
-        u_doc = await self.d.find_one({"email": u_create.email})
-
+        u_doc = await self.d.find_one(
+            collection=UserDocument,
+            query={"email": u_create.email},
+        )
         if u_doc:
             return u_doc
 
@@ -138,27 +141,30 @@ class UserManager(AbstractObjectManager):
 
     async def get_all_users(self) -> list[UserDocument]:
         """Admin get all users from documentdb"""
-        u_docs = await self.d.find_all()
+        u_docs = await self.d.find_all(collection=UserDocument)
         return u_docs
 
     async def get_user_by_email(self, email: EmailStr) -> UserDocument:
         """Get user by email"""
         email = email.lower()
-        u_doc = await self.d.find_one({"email": email})
+        u_doc = await self.d.find_one(collection=UserDocument, query={"email": email})
         if not u_doc:
             raise DocumentDoesNotExist(f"User '{email}' not found")
         return u_doc
 
     async def get_user_by_username(self, username: str) -> UserDocument:
         """Get user by cognito username decoded from access token"""
-        u_doc = await self.d.find_one({"username": username})
+        u_doc = await self.d.find_one(
+            collection=UserDocument,
+            query={"username": username},
+        )
         if not u_doc:
             raise DocumentDoesNotExist(f"User not found - username: {username}")
         return u_doc
 
     async def get_user_by_id(self, id: PydanticObjectId) -> UserDocument:
         """Get user by document id"""
-        u_doc = await self.d.get(id)
+        u_doc = await self.d.get(collection=UserDocument, id=id)
         if not u_doc:
             raise DocumentDoesNotExist(f"User not found - user id: {id}")
         return u_doc

@@ -23,9 +23,6 @@ class ProjectManager(AbstractObjectManager):
 
     __label__ = VertexLabel.Project.value
 
-    def __init__(self) -> None:
-        super().__init__(ProjectDocument)
-
     async def create_project(
         self,
         p_create: ProjectCreate,
@@ -83,7 +80,7 @@ class ProjectManager(AbstractObjectManager):
         """Create a new project"""
         # NOTE: avoid db collection issue introduced from manual operations, like db.projects.drop()
         p_name = p_create.name
-        p_doc_exists = await ProjectDocument.find_one(ProjectDocument.name == p_name)
+        p_doc_exists = self.d.exists(collection=ProjectDocument, query={"name": p_name})
         if p_doc_exists:
             raise DocumentAlreadyExists(f"Project '{p_create.name}' already exists.")
 
@@ -119,22 +116,33 @@ class ProjectManager(AbstractObjectManager):
     async def get_basic_projects(self, user: UserDocument) -> list[ProjectDocument]:
         """Get all projects of current user, basic information only."""
         # project created by current user
-        p1_docs = await ProjectDocument.find(
-            {"created_by": {"$eq": user.id}},
-        ).to_list()
+        p1_docs = await self.d.find_all(
+            collection=ProjectDocument,
+            query={"created_by": {"$eq": user.id}},
+        )
 
         # project owner is current user
-        p2_docs = await ProjectDocument.find(
-            {"owner": {"$eq": user.id}},
-        ).to_list()
+        p2_docs = await self.d.find_all(
+            collection=ProjectDocument,
+            query={"owner": {"$eq": user.id}},
+        )
 
         # project leads containing current user
-        p3_docs = await ProjectDocument.find({"leads": user.id}).to_list()
+        p3_docs = await self.d.find_all(
+            collection=ProjectDocument,
+            query={"leads": user.id},
+        )
 
         # project team containing current user
-        u_team_docs = await TeamDocument.find({"members": user.id}).to_list()
+        u_team_docs = await self.d.find_all(
+            collection=TeamDocument,
+            query={"members": user.id},
+        )
         p_ids = [t_doc.context.project for t_doc in u_team_docs]
-        p4_docs = await ProjectDocument.find({"_id": {"$in": p_ids}}).to_list()
+        p4_docs = await self.d.find_all(
+            collection=ProjectDocument,
+            query={"_id": {"$in": p_ids}},
+        )
 
         # return projects
         p_docs = {}
@@ -151,8 +159,9 @@ class ProjectManager(AbstractObjectManager):
     # ) -> ProjectDocument | None:
     #     """Update project details"""
     #     p_doc = self.validated_context.project
-    #     p_doc_other = await ProjectDocument.find_one(
-    #         ProjectDocument.name == p_update.name,
+    #     p_doc_other = await self.d.find_one(
+    #         collection=ProjectDocument,
+    #         query={"name": p_update.name},
     #     )
     #     if p_doc_other and (p_doc_other.id != p_doc.id):
     #         raise DocumentAlreadyExists(
@@ -180,16 +189,22 @@ class ProjectManager(AbstractObjectManager):
         owner_read = UserRead.model_validate(owner_doc.model_dump())
 
         # leads
-        lead_docs = UserDocument.find({"_id": {"$in": p_doc.leads}})
+        lead_docs = await self.d.find_all(
+            collection=UserDocument,
+            query={"_id": {"$in": p_doc.leads}},
+        )
         lead_reads = []
-        async for lead_doc in lead_docs:
+        for lead_doc in lead_docs:
             lead_read = UserRead.model_validate(lead_doc.model_dump())
             lead_reads.append(lead_read)
 
         # teams
-        team_docs = TeamDocument.find({"_id": {"$in": p_doc.teams}})
+        team_docs = await self.d.find_all(
+            collection=TeamDocument,
+            query={"_id": {"$in": p_doc.teams}},
+        )
         team_reads = []
-        async for team_doc in team_docs:
+        for team_doc in team_docs:
             team_read = TeamBasicRead(
                 name=team_doc.name,
                 description=team_doc.description,

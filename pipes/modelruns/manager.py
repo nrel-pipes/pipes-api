@@ -30,7 +30,6 @@ class ModelRunManager(AbstractObjectManager):
 
     def __init__(self, context: ModelDocumentContext) -> None:
         self.context = context
-        super().__init__(ModelRunDocument)
 
     async def create_modelrun(
         self,
@@ -106,7 +105,8 @@ class ModelRunManager(AbstractObjectManager):
 
         mr_name = mr_create.name
         mr_doc_exists = await self.d.find_one(
-            {
+            collection=ModelRunDocument,
+            query={
                 "context.project": p_doc.id,
                 "context.projectrun": pr_doc.id,
                 "context.model": m_doc,
@@ -165,7 +165,8 @@ class ModelRunManager(AbstractObjectManager):
         m_doc = self.context.model
 
         mr_docs = await self.d.find_all(
-            {
+            collection=ModelRunDocument,
+            query={
                 "context.project": p_doc.id,
                 "context.projectrun": pr_doc.id,
                 "context.model": m_doc.id,
@@ -185,13 +186,13 @@ class ModelRunManager(AbstractObjectManager):
 
     async def read_modelrun(self, mr_doc: ModelRunDocument) -> ModelRunRead:
         p_id = mr_doc.context.project
-        p_doc = await ProjectDocument.get(p_id)
+        p_doc = await self.d.get(collection=ProjectDocument, id=p_id)
 
         pr_id = mr_doc.context.projectrun
-        pr_doc = await ProjectRunDocument.get(pr_id)
+        pr_doc = await self.d.get(collection=ProjectRunDocument, id=pr_id)
 
         m_id = mr_doc.context.model
-        m_doc = await ModelDocument.get(m_id)
+        m_doc = await self.d.get(collection=ModelDocument, id=m_id)
 
         data = mr_doc.model_dump()
         data["context"] = ModelSimpleContext(
