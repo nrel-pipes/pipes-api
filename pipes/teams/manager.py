@@ -146,6 +146,23 @@ class TeamManager(AbstractObjectManager):
         )
         return t_doc
 
+    # async def get_or_create_team(self, t_create: TeamCreate) -> TeamDocument:
+    #     p_doc = self.context.project
+
+    #     query = {"context.project": p_doc.id, "name": t_create.name}
+    #     t_doc = await self.d.find_one(query)
+
+    #     if not t_doc:
+    #         t_doc = await self.create_team(t_create)
+
+    #     return t_doc
+
+    async def get_team(self, t_name: str) -> TeamDocument:
+        p_doc = self.context.project
+        query = {"context.project": p_doc.id, "name": t_name}
+        t_doc = await self.d.find_one(query)
+        return t_doc
+
     async def get_all_teams(self) -> list[TeamRead]:
         """Get all teams of given project."""
         p_doc = self.context.project

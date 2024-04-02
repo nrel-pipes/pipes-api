@@ -50,20 +50,38 @@ class ModelManager(AbstractObjectManager):
         domain_validator = ModelDomainValidator(self.context)
         m_create = await domain_validator.validate(m_create)
 
-        # Create model vertex
+        # Create model & modeling team vertex, edge
+        modeling_team_doc = await self._get_modeling_team(
+            p_doc.name,
+            m_create.modeling_team,
+        )
         m_vertex = await self._create_model_vertex(
             p_doc.name,
             pr_doc.name,
             m_create.name,
         )
+        m_vtx_id = m_vertex.id
+        t_vtx_id = modeling_team_doc.vertex.id
+        self.n.add_edge(m_vtx_id, t_vtx_id, EdgeLabel.affiliated.value)
+
+        # Create model document
         m_doc = await self._create_model_document(m_create, m_vertex, user)
 
         # Add edge: project run -(requires)- model
         pr_vtx_id = pr_doc.vertex.id
-        m_vtx_id = m_vertex.id
         self.n.add_edge(pr_vtx_id, m_vtx_id, EdgeLabel.requires.value)
 
         return m_doc
+
+    async def _get_modeling_team(self, p_name: str, modeling_team: str) -> TeamDocument:
+        # Get or create team object
+        team_manager = TeamManager(self.context)
+        model_team_doc = await team_manager.get_team(modeling_team)
+        if not model_team_doc:
+            raise DocumentDoesNotExist(
+                f"Modeling team '{modeling_team}' does not exist under project '{p_name}'.",
+            )
+        return model_team_doc
 
     async def _create_model_vertex(
         self,
