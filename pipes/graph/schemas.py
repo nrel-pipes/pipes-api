@@ -255,6 +255,44 @@ class DatasetVertex(VertexModel):
 
 
 # Task vertex model
+class TaskVertexProperties(BaseModel):
+    project: str = Field(
+        title="project",
+        min_length=1,
+        description="project name",
+    )
+    projectrun: str = Field(
+        title="projectrun",
+        min_length=1,
+        description="project run name",
+    )
+    model: str = Field(
+        title="model",
+        min_length=1,
+        description="model name",
+    )
+    modelrun: str = Field(
+        title="modelrun",
+        min_length=1,
+        description="model run name",
+    )
+    name: str = Field(
+        title="name",
+        min_length=1,
+        description="task name",
+    )
+
+
+class TaskVertex(VertexModel):
+    label: str = Field(
+        title="label",
+        default=VertexLabel.Task.value,
+        description="The label for the vertex",
+    )
+    properties: TaskVertexProperties = Field(
+        title="properties",
+        description="task properties on the vertex",
+    )
 
 
 # Handoff edge model
