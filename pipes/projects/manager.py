@@ -7,15 +7,10 @@ from itertools import chain
 from pymongo.errors import DuplicateKeyError
 
 from pipes.common.exceptions import DocumentAlreadyExists, VertexAlreadyExists
-from pipes.common.graph import VertexLabel, EdgeLabel
 from pipes.db.manager import AbstractObjectManager
-from pipes.projects.schemas import (
-    ProjectCreate,
-    ProjectDocument,
-    ProjectDetailRead,
-    ProjectVertexProperties,
-    ProjectVertexModel,
-)
+from pipes.graph.constants import VertexLabel, EdgeLabel
+from pipes.graph.schemas import ProjectVertexProperties, ProjectVertex
+from pipes.projects.schemas import ProjectCreate, ProjectDetailRead, ProjectDocument
 from pipes.projects.validators import ProjectDomainValidator
 from pipes.teams.schemas import TeamDocument, TeamBasicRead
 from pipes.users.manager import UserManager
@@ -55,7 +50,7 @@ class ProjectManager(AbstractObjectManager):
 
         return p_doc
 
-    async def _create_project_vertex(self, p_name: str) -> ProjectVertexModel:
+    async def _create_project_vertex(self, p_name: str) -> ProjectVertex:
         properties = {"name": p_name}
         if self.n.exists(self.label, **properties):
             raise VertexAlreadyExists(f"Project vertex {properties} already exists.")
@@ -65,7 +60,7 @@ class ProjectManager(AbstractObjectManager):
         p_vtx = self.n.add_v(self.label, **properties)
 
         # Dcoument creation
-        p_vtx_model = ProjectVertexModel(
+        p_vtx_model = ProjectVertex(
             id=p_vtx.id,
             label=self.label,
             properties=properties_model,
@@ -81,7 +76,7 @@ class ProjectManager(AbstractObjectManager):
     async def _create_project_document(
         self,
         p_create: ProjectCreate,
-        p_vertex: ProjectVertexModel,
+        p_vertex: ProjectVertex,
         p_owner: UserDocument,
         user: UserDocument,
     ) -> ProjectDocument:

@@ -12,6 +12,9 @@ class ProjectSimpleContext(BaseModel):
         description="project name",
     )
 
+    def __str__(self):
+        return "{" f"project: {self.project}" "}"
+
 
 class ProjectDocumentContext(BaseModel):
     # NOTE: use Document type here, avoid circular import
@@ -20,9 +23,15 @@ class ProjectDocumentContext(BaseModel):
         description="project document",
     )
 
+    def __str__(self):
+        return "{" f"project: {self.project.name}" "}"
+
 
 class ProjectObjectContext(BaseModel):
     project: PydanticObjectId = Field(
         title="project",
         description="project object id",
     )
+
+    def __str__(self):
+        return "{" f"project: {self.project}" "}"

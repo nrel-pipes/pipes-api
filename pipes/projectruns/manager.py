@@ -6,19 +6,19 @@ from datetime import datetime
 from pymongo.errors import DuplicateKeyError
 
 from pipes.common.exceptions import DocumentAlreadyExists, VertexAlreadyExists
-from pipes.common.graph import VertexLabel, EdgeLabel
 from pipes.db.manager import AbstractObjectManager
+from pipes.graph.constants import VertexLabel, EdgeLabel
+from pipes.graph.schemas import ProjectRunVertexProperties, ProjectRunVertex
 from pipes.projects.contexts import (
     ProjectDocumentContext,
     ProjectSimpleContext,
     ProjectObjectContext,
 )
+from pipes.projects.schemas import ProjectDocument
 from pipes.projectruns.schemas import (
     ProjectRunCreate,
     ProjectRunDocument,
     ProjectRunRead,
-    ProjectRunVertexProperties,
-    ProjectRunVertex,
 )
 from pipes.projectruns.validators import ProjectRunDomainValidator
 from pipes.users.schemas import UserDocument
@@ -154,7 +154,8 @@ class ProjectRunManager(AbstractObjectManager):
 
     async def read_projectrun(self, pr_doc: ProjectRunDocument) -> ProjectRunRead:
         """Convert ProjectRunDocument to ProjectRunRead instance"""
-        p_doc = self.context.project
+        p_id = pr_doc.context.project
+        p_doc = await ProjectDocument.get(p_id)
 
         data = pr_doc.model_dump()
         data["context"] = ProjectSimpleContext(project=p_doc.name)

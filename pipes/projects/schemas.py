@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
-from uuid import UUID
 
 import pymongo
 from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field, field_validator
 
-from pipes.common.graph import VertexLabel
 from pipes.common.utilities import parse_datetime
+from pipes.graph.schemas import ProjectVertex
 from pipes.teams.schemas import TeamBasicRead
 from pipes.users.schemas import UserCreate, UserRead
 
@@ -207,47 +206,8 @@ class ProjectDetailRead(ProjectCreate):
     )
 
 
-class ProjectVertexProperties(BaseModel):
-    name: str = Field(
-        title="name",
-        min_length=1,
-        description="human-readable project id name, must be unique.",
-    )
-
-
-class ProjectVertexModel(BaseModel):
-    id: str = Field(
-        title="id",
-        description="The Neptune vertex id",
-    )
-    label: VertexLabel = Field(
-        title="label",
-        default=VertexLabel.Project.value,
-        description="The Neptune vertex label",
-    )
-    properties: ProjectVertexProperties = Field(
-        title="properties",
-        description="The project vertex properties",
-    )
-
-    @field_validator("id", mode="before")
-    @classmethod
-    def validate_id(cls, value):
-        """Ensure the value is valid UUID string"""
-        if not value:
-            return None
-
-        value = str(value)
-        try:
-            UUID(value)
-        except ValueError as e:
-            raise e
-
-        return value
-
-
 class ProjectDocument(ProjectDetailRead, Document):
-    vertex: ProjectVertexModel = Field(
+    vertex: ProjectVertex = Field(
         title="vertex",
         description="The project vertex model",
     )
@@ -275,7 +235,7 @@ class ProjectDocument(ProjectDetailRead, Document):
     )
     last_modified: datetime = Field(
         title="last_modified",
-        default=datetime.utcnow(),
+        default=datetime.now(),
         description="last modification datetime",
     )
     modified_by: PydanticObjectId = Field(

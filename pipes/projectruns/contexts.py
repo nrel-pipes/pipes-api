@@ -17,6 +17,9 @@ class ProjectRunSimpleContext(BaseModel):
         description="projectrun name",
     )
 
+    def __str__(self):
+        return "{" f"project: {self.project}," f"projectrun: {self.projectrun}" "}"
+
 
 class ProjectRunDocumentContext(BaseModel):
     project: Document = Field(
@@ -28,6 +31,14 @@ class ProjectRunDocumentContext(BaseModel):
         description="projectrun document",
     )
 
+    def __str__(self):
+        return (
+            "{"
+            f"project: {self.project.name},"
+            f"projectrun: {self.projectrun.name}"
+            "}"
+        )
+
 
 class ProjectRunObjectContext(BaseModel):
     project: PydanticObjectId = Field(title="project", description="project name")
@@ -35,3 +46,6 @@ class ProjectRunObjectContext(BaseModel):
         title="projectrun",
         description="projectrun object id",
     )
+
+    def __str__(self):
+        return "{" f"project: {self.project}," f"projectrun: {self.projectrun}" "}"
