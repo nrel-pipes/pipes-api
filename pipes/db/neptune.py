@@ -17,7 +17,6 @@ class NeptuneDB(AbstractDatabase):
 
     def __init__(self):
         self._conn = None
-        self._g = None
 
     @property
     def endpoint(self) -> str:
@@ -35,17 +34,17 @@ class NeptuneDB(AbstractDatabase):
             transport_factory=lambda: AiohttpTransport(call_from_event_loop=True),
         )
         self._conn = connection
-        self._g = self._create_graph_traversal_source()
+        return connection
+
+    @property
+    def conn(self):
+        return self._conn
 
     @property
     def g(self):
-        if self._conn is None:
-            self.connect()
-
-        if self._g is None:
-            self._g = self._create_graph_traversal_source()
-
-        return self._g
+        if not self._conn:
+            return None
+        return self._create_graph_traversal_source()
 
     def _create_graph_traversal_source(self):
         graph = Graph()
@@ -54,7 +53,6 @@ class NeptuneDB(AbstractDatabase):
     def close(self):
         if self._conn:
             self._conn.close()
-        self._g = None
         self._conn = None
 
     def ping(self) -> list:
@@ -104,13 +102,3 @@ class NeptuneDB(AbstractDatabase):
 
         result = [r for r in traversal.to_list()]
         return result
-
-
-def get_neptune():
-    """A dependency function for FastAPI"""
-    db = NeptuneDB()
-    try:
-        db.connect()
-        yield db
-    finally:
-        db.close()

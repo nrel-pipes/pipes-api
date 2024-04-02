@@ -14,7 +14,7 @@ class AbstractObjectManager(ABC):
 
     __label__: str | None = None
 
-    def __init__(self, document: Document, neptune: NeptuneDB | None = None) -> None:
+    def __init__(self, document: Document) -> None:
         """Initialize a new object manager
 
         Parameters
@@ -25,16 +25,22 @@ class AbstractObjectManager(ABC):
             The neptune instance
         """
         self.document = document
-        self.neptune = neptune
 
     @property
     def d(self):
-        return DocumentDB(self.document)
+        docdb = DocumentDB(self.document)
+        return docdb
 
     @property
     def n(self):
-        return self.neptune
+        neptune = NeptuneDB()
+        neptune.connect()
+        return neptune
 
     @property
     def label(self):
         return self.__label__
+
+    def __delete__(self):
+        self.d.close()
+        self.n.close()
