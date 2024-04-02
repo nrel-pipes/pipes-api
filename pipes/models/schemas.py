@@ -9,6 +9,7 @@ from beanie import Document
 from pydantic import BaseModel, Field, field_validator
 
 from pipes.common.utilities import parse_datetime
+from pipes.graph.schemas import ModelVertex
 from pipes.projectruns.contexts import ProjectRunSimpleContext, ProjectRunObjectContext
 from pipes.teams.schemas import TeamRead
 
@@ -142,6 +143,10 @@ class ModelRead(ModelCreate):
 
 
 class ModelDocument(ModelRead, Document):
+    vertex: ModelVertex = Field(
+        title="vertex",
+        description="The model vertex pydantic model",
+    )
     context: ProjectRunObjectContext = Field(
         title="context",
         description="the project run object id",
@@ -162,7 +167,7 @@ class ModelDocument(ModelRead, Document):
     )
     last_modified: datetime = Field(
         title="last_modified",
-        default=datetime.utcnow(),
+        default=datetime.now(),
         description="last modification datetime",
     )
     modified_by: PydanticObjectId = Field(
