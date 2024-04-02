@@ -14,13 +14,13 @@ from pipes.common.exceptions import (
 )
 from pipes.common.graph import VertexLabel
 from pipes.common.utilities import parse_organization
-from pipes.db.manager import AbstractObjectManager, NeptuneDB
+from pipes.db.manager import AbstractObjectManager
 from pipes.users.schemas import (
     UserCreate,
     CognitoUserCreate,
     UserDocument,
-    UserVertexModel,
     UserVertexProperties,
+    UserVertexModel,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,11 +31,8 @@ class UserManager(AbstractObjectManager):
 
     __label__ = VertexLabel.User.value
 
-    def __init__(self, neptune: NeptuneDB | None = None) -> None:
-        if not neptune:
-            neptune = NeptuneDB()
-            neptune.connect()
-        super().__init__(UserDocument, neptune)
+    def __init__(self) -> None:
+        super().__init__(UserDocument)
 
     async def create_user(
         self,
