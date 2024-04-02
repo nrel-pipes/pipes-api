@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
 
 import pymongo
 from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field, field_validator
 
+from pipes.common.graph import VertexLabel
 from pipes.common.utilities import parse_datetime
 from pipes.projects.contexts import ProjectSimpleContext, ProjectObjectContext
 
@@ -82,7 +84,55 @@ class ProjectRunRead(ProjectRunCreate):
     )
 
 
+class ProjectRunVertexProperties(BaseModel):
+    project: str = Field(
+        title="project",
+        min_length=1,
+        description="project name",
+    )
+    name: str = Field(
+        title="name",
+        min_length=1,
+        description="project run name",
+    )
+
+
+class ProjectRunVertex(BaseModel):
+    id: str = Field(
+        title="id",
+        description="The vertex id in UUID format",
+    )
+    label: str = Field(
+        title="label",
+        default=VertexLabel.ProjectRun.value,
+        description="The label for the vertex",
+    )
+    properties: ProjectRunVertexProperties = Field(
+        title="properties",
+        description="project run properties on the vertex",
+    )
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def validate_id(cls, value):
+        """Ensure the value is valid UUID string"""
+        if not value:
+            return None
+
+        value = str(value)
+        try:
+            UUID(value)
+        except ValueError as e:
+            raise e
+
+        return value
+
+
 class ProjectRunDocument(ProjectRunRead, Document):
+    vertex: ProjectRunVertex = Field(
+        title="vertex",
+        description="The project run vertex model",
+    )
     context: ProjectObjectContext = Field(
         title="context",
         description="project referenced context",
