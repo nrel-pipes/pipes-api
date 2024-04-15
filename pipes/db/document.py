@@ -32,7 +32,6 @@ class DocumentDB(AbstractDatabase):
         query: dict | None = None,
     ) -> list[Document]:
         if query:
-            docs = await collection.find(query).to_list()
-        else:
-            docs = await collection.find().to_list()
-        return docs
+            return await collection.find(query).to_list()
+
+        return await collection.find().to_list()
