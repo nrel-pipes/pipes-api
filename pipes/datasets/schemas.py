@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pymongo
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pymongo import IndexModel
 
 from pipes.common.schemas import SourceCode, VersionStatus
@@ -193,6 +193,7 @@ class DatasetCreate(BaseModel):
         default={},
         description="other metadata info about the dataset",
     )
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class DatasetRead(DatasetCreate):
