@@ -6,7 +6,7 @@ import pymongo
 from beanie import PydanticObjectId
 from pymongo import IndexModel
 from beanie import Document
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from pipes.common.utilities import parse_datetime
 from pipes.graph.schemas import ModelVertex
@@ -36,6 +36,8 @@ class ScenarioMapping(BaseModel):
         default={},
         description="other metadata info about the model scenario mapping in dictionary",
     )
+
+    model_config = ConfigDict(protected_namespaces=())
 
     @field_validator("description", mode="before")
     @classmethod
@@ -152,7 +154,7 @@ class ModelDocument(ModelRead, Document):
         description="the project run object id",
     )
     modeling_team: PydanticObjectId = Field(
-        title="model_team",
+        title="modeling_team",
         description="the modeling team object id",
     )
 
