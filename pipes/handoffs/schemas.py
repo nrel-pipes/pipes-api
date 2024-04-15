@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pymongo
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from pymongo import IndexModel
 
 from pipes.common.utilities import parse_datetime
@@ -45,6 +45,8 @@ class HandoffCreate(BaseModel):
         title="scheduled_end",
         description="scheduled end date",
     )
+    # TODO:
+    # submission_date:
     notes: str = Field(
         title="notes",
         description="Handoff notes",
@@ -126,6 +128,7 @@ class HandoffDocument(HandoffRead, Document):
         title="modified_by",
         description="user who modified the project",
     )
+    model_config = ConfigDict(protected_namespaces=())
 
     class Settings:
         name = "handoffs"
