@@ -5,18 +5,20 @@ from enum import Enum
 
 import pymongo
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from pymongo import IndexModel
 
 from pipes.common.schemas import SourceCode
 from pipes.graph.schemas import TaskVertex
 from pipes.modelruns.contexts import ModelRunObjectContext, ModelRunSimpleContext
+from pipes.users.schemas import UserCreate, UserRead
 
 
 class TaskStatus(str, Enum):
-    PASS = "PASS"
-    FAIL = "FAIL"
-    UNKNOWN = "UNKNOWN"
+    Pending = "Pending"
+    Running = "Running"
+    Success = "Success"
+    Failed = "Failed"
 
 
 class TaskType(str, Enum):
@@ -25,50 +27,15 @@ class TaskType(str, Enum):
     Visualization = "Visualization"
 
 
-class TaskActionCreate(BaseModel):
+class SubTask(BaseModel):
     name: str = Field(
         title="name",
         description="task action name",
-    )
-    datasets: list[str] = Field(
-        title="datasets",
-        description="List of datasets within this Model Run that the task applies to.",
     )
     description: str = Field(
         title="description",
         default="",
         description="Description of task process",
-    )
-    assignee: str = Field(
-        title="assignee",
-        description="The user who will be responsible for performing this task",
-    )
-    inputs: list[str] = Field(
-        title="inputs",
-        description="handoff datasets to use, if empty this task will apply to all registered handoff datasets.",
-        default=[],
-    )
-    scheduled_start: datetime | None = Field(
-        title="scheduled_start",
-        description="scheduled start date",
-        default=None,
-    )
-    scheduled_end: datetime | None = Field(
-        title="scheduled_end",
-        description="scheduled end date",
-        defualt=None,
-    )
-    notes: str = Field(
-        title="notes",
-        description="Notes about this task",
-        default="",
-    )
-
-
-class TaskActionRead(TaskActionCreate):
-    status: TaskStatus = Field(
-        title="status",
-        description="PASS/FAIL flag for the task action.",
     )
 
 
@@ -84,25 +51,73 @@ class TaskCreate(BaseModel):
     )
     description: str = Field(
         title="description",
+        default="",
         description="description of task process",
+    )
+    assignee: UserCreate | EmailStr | None = Field(
+        title="assignee",
+        default=None,
+        description="The user who conducts this task",
+    )
+    status: TaskStatus = Field(
+        title="status",
+        default=TaskStatus.Pending,
+        description="The task status - Pending, Running, Success, or Failed",
+    )
+    # Each task should have at least one subtask
+    subtasks: list[SubTask] = Field(
+        title="subtasks",
+        description="List of actions under this task",
+    )
+    scheduled_start: datetime | None = Field(
+        title="scheduled_start",
+        description="scheduled start date",
+        default=None,
+    )
+    scheduled_end: datetime | None = Field(
+        title="scheduled_end",
+        description="scheduled end date",
+        defualt=None,
+    )
+    completion_date: datetime | None = Field(
+        title="completion_date",
+        description="task completion date",
+        default=None,
+    )
+    source_code: SourceCode | None = Field(
+        title="script",
+        description="Scripts used to perform the task process",
+        default=None,
+    )
+    input_datasets: list[str] = Field(
+        title="input_datasets",
+        description="List of datasets that the task applies to.",
+        default=[],
+    )
+    input_parameters: dict = Field(
+        title="input_parameters",
+        description="Non-dataset inputs, i.e. parameters in dictionary",
+        default={},
+    )
+    output_datasets: list[str] = Field(
+        title="output_datasts",
+        description="List of datasets produced from this task",
+        default=[],
+    )
+    output_values: dict = Field(
+        title="output_values",
+        description="non-dataset outputs, i.e. values in dictionary",
+        default={},
+    )
+    logs: str = Field(
+        title="logs",
+        description="task log location",
+        default="",
     )
     notes: str = Field(
         title="notes",
         description="notes and additional information",
         default="",
-    )
-    actions: list[TaskActionCreate] = Field(
-        title="actions",
-        description="List of actions under this task",
-    )
-    source_code: SourceCode = Field(
-        title="script",
-        description="Scripts used to perform the task process",
-    )
-    outputs: list[dict] = Field(
-        title="outputs",
-        description="Free form dictionary, store outputs information",
-        default=[],
     )
 
 
@@ -111,6 +126,19 @@ class TaskRead(TaskCreate):
         title="context",
         description="model run context",
     )
+    assignee: UserRead | None = Field(
+        title="assignee",
+        description="Assignee in user read schema",
+    )
+    # input_datasets: list[DatasetRead] = Field(
+    #     title="input_datasets",
+    #     description="List of input datasets in read schema",
+    # )
+    # output_datasets: list[DatasetRead] = Field(
+    #     title="output_datasets",
+    #     description="List of output datasets in read schema",
+    #     default=[],
+    # )
 
 
 class TaskDocument(TaskRead, Document):
@@ -122,9 +150,19 @@ class TaskDocument(TaskRead, Document):
         title="context",
         description="model run context reference",
     )
-    status: TaskStatus = Field(
-        title="task_status",
-        description="PASS/FAIL flag for the task. ",
+    assignee: PydanticObjectId | None = Field(
+        title="assignee",
+        description="The assignee user object id",
+        default=None,
+    )
+    input_datasets: list[PydanticObjectId] = Field(
+        title="input_datasets",
+        description="List of input dataset object ids",
+    )
+    output_datasets: list[PydanticObjectId] = Field(
+        title="output_datasets",
+        default=[],
+        description="List of output dataset object ids",
     )
 
     # document information
@@ -147,7 +185,7 @@ class TaskDocument(TaskRead, Document):
     )
 
     class Settings:
-        name = "datasets"
+        name = "tasks"
         indexes = [
             IndexModel(
                 [
