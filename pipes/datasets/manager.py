@@ -172,6 +172,29 @@ class DatasetManager(AbstractObjectManager):
 
         return d_doc
 
+    async def get_dataset(self, d_name: str) -> DatasetRead:
+        _context = ModelRunObjectContext(
+            project=self.context.project.id,
+            projectrun=self.context.projectrun.id,
+            model=self.context.model.id,
+            modelrun=self.context.modelrun.id,
+        )
+        d_doc = await self.d.find_one(
+            collection=DatasetDocument,
+            query={
+                "context.project": _context.project,
+                "context.projectrun": _context.projectrun,
+                "context.model": _context.model,
+                "context.modelrun": _context.modelrun,
+                "name": d_name,
+            },
+        )
+        if not d_doc:
+            return d_doc
+
+        d_read = await self.read_dataset(d_doc)
+        return d_read
+
     async def get_datasets(self) -> list[DatasetRead]:
         """Get all datasets in the given context"""
         _context = ModelRunObjectContext(
