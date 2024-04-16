@@ -43,7 +43,7 @@ build:
 	docker build -t $(REPO):$(TAG) \
 		--build-arg BASE_IMAGE_TAG=$(BASE_IMAGE_TAG) \
 		--build-arg AWS_ACCOUNT_ID=$(REGISTRY-IDS) \
-	 	-f prodouction/Dockerfile \
+	 	-f deployment/Dockerfile \
 		./
 
 push:
