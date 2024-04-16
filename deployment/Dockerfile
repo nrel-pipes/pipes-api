@@ -21,7 +21,7 @@ COPY ./requirements.txt requirements.txt
 RUN pip3 install --upgrade pip setuptools
 
 # operations
-COPY ./production/entrypoint.sh /entrypoint.sh
+COPY ./deployment/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # all code
