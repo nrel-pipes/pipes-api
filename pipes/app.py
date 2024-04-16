@@ -66,7 +66,7 @@ async def lifespan(app: FastAPI):
             settings.PIPES_DOCDB_NAME,
         )
         docdb_uri += (
-            "/?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
+            "?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
         )
     else:
         docdb_uri = f"mongodb://{settings.PIPES_DOCDB_HOST}:{settings.PIPES_DOCDB_PORT}/{settings.PIPES_DOCDB_NAME}"
