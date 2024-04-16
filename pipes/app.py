@@ -57,10 +57,17 @@ __version__ = "0.0.1"
 async def lifespan(app: FastAPI):
     """FastAPI application life span"""
     # Init beanie
-    if settings.PIPES_ENV == "testing":
-        docdb_uri = "mongodb://"  # TODO: testing docdb uri
-    elif settings.PIPES_ENV == "prod":
-        docdb_uri = "mongodb://"  # TODO: prod docdb uri
+    if settings.PIPES_ENV in ["dev", "stage", "prod"]:
+        docdb_uri = "mongodb://{}:{}@{}:{}/{}".format(
+            settings.PIPES_DOCDB_USER,
+            settings.PIPES_DOCDB_PASS,
+            settings.PIPES_DOCDB_HOST,
+            settings.PIPES_DOCDB_PORT,
+            settings.PIPES_DOCDB_NAME,
+        )
+        docdb_uri += (
+            "/?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
+        )
     else:
         docdb_uri = f"mongodb://{settings.PIPES_DOCDB_HOST}:{settings.PIPES_DOCDB_PORT}/{settings.PIPES_DOCDB_NAME}"
 

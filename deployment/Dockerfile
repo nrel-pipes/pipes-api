@@ -27,3 +27,5 @@ RUN chmod +x /entrypoint.sh
 
 # all code
 COPY . .
+
+EXPOSE 8080
