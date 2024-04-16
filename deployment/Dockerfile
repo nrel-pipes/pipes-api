@@ -19,6 +19,7 @@ RUN apt-get update -y --fix-missing && apt-get upgrade -y \
 WORKDIR /app
 COPY ./requirements.txt requirements.txt
 RUN pip3 install --upgrade pip setuptools
+RUN pip3 install -r requirements.txt
 
 # operations
 COPY ./deployment/entrypoint.sh /entrypoint.sh
