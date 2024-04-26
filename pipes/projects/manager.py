@@ -80,7 +80,10 @@ class ProjectManager(AbstractObjectManager):
         """Create a new project"""
         # NOTE: avoid db collection issue introduced from manual operations, like db.projects.drop()
         p_name = p_create.name
-        p_doc_exists = self.d.exists(collection=ProjectDocument, query={"name": p_name})
+        p_doc_exists = await self.d.exists(
+            collection=ProjectDocument,
+            query={"name": p_name},
+        )
         if p_doc_exists:
             raise DocumentAlreadyExists(f"Project '{p_create.name}' already exists.")
 
