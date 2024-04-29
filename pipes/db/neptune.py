@@ -101,4 +101,4 @@ class NeptuneDB(AbstractDatabase):
             traversal = traversal.property(k, v)
 
         result = [r for r in traversal.to_list()]
-        return result
+        return result[0]

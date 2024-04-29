@@ -3,6 +3,9 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 
+from pymongo.errors import DuplicateKeyError
+
+from pipes.common.exceptions import DocumentAlreadyExists
 from pipes.db.manager import AbstractObjectManager
 from pipes.graph.constants import EdgeLabel
 from pipes.graph.schemas import FeedsEdgeProperties, FeedsEdge
@@ -14,6 +17,7 @@ from pipes.projects.schemas import ProjectDocument
 from pipes.projectruns.contexts import (
     ProjectRunDocumentContext,
     ProjectRunSimpleContext,
+    ProjectRunObjectContext,
 )
 from pipes.projectruns.schemas import ProjectRunDocument
 from pipes.users.schemas import UserDocument
@@ -61,8 +65,13 @@ class HandoffManager(AbstractObjectManager):
         )
 
         mr_doc = domain_validator.from_modelrun_doc
+        _context = ProjectRunObjectContext(
+            project=p_doc.id,
+            projectrun=pr_doc.id,
+        )
         h_doc = HandoffDocument(
             edge=feeds_edge_model,
+            context=_context,
             from_model=domain_validator.from_model_doc.id,  # type: ignore
             to_model=domain_validator.to_model_doc.id,  # type: ignore
             from_modelrun=mr_doc.id if mr_doc else None,  # type: ignore
@@ -74,6 +83,13 @@ class HandoffManager(AbstractObjectManager):
             last_modified=datetime.now(),
             modified_by=user.id,
         )
+
+        try:
+            h_doc = await self.d.insert(h_doc)
+        except DuplicateKeyError:
+            raise DocumentAlreadyExists(
+                f"Handoff document '{h_doc.name}' already exists under context: {self.context}.",
+            )
 
         return h_doc
 
@@ -107,8 +123,11 @@ class HandoffManager(AbstractObjectManager):
         pr_id = h_doc.context.projectrun
         pr_doc = await self.d.get(collection=ProjectRunDocument, id=pr_id)
 
-        m_id = h_doc.from_model
-        m_doc = await self.d.get(collection=ModelDocument, id=m_id)
+        m_from_id = h_doc.from_model
+        m_from_doc = await self.d.get(collection=ModelDocument, id=m_from_id)
+
+        m_to_id = h_doc.to_model
+        m_to_doc = await self.d.get(collection=ModelDocument, id=m_to_id)
 
         mr_id = h_doc.from_modelrun
         if mr_id:
@@ -121,7 +140,8 @@ class HandoffManager(AbstractObjectManager):
             project=p_doc.name,
             projectrun=pr_doc.name,
         )
-        data["from_model"] = m_doc.name
-        data["to_model"] = m_doc.name if mr_doc else None
+        data["from_model"] = m_from_doc.name
+        data["to_model"] = m_to_doc.name
+        data["from_modelrun"] = mr_doc.name if mr_doc else None
 
         return HandoffRead.model_validate(data)

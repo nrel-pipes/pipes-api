@@ -21,6 +21,11 @@ class HandoffDomainValidator(DomainValidator):
         if self.from_model_doc:
             return h_create
 
+        if h_create.from_model == h_create.to_model:
+            raise DomainValidationError(
+                f"Handoff from_model '{h_create.from_model}' could not be same as to_model '{h_create.to_model}'",
+            )
+
         docdb = DocumentDB()
         m_doc = await docdb.find_one(
             collection=ModelDocument,
@@ -42,6 +47,11 @@ class HandoffDomainValidator(DomainValidator):
     async def validate_to_model(self, h_create: HandoffCreate) -> HandoffCreate:
         if self.to_model_doc:
             return h_create
+
+        if h_create.from_model == h_create.to_model:
+            raise DomainValidationError(
+                f"Handoff to_model '{h_create.to_model}' could not be same as from_model '{h_create.from_model}'",
+            )
 
         docdb = DocumentDB()
         m_doc = await docdb.find_one(
@@ -67,6 +77,9 @@ class HandoffDomainValidator(DomainValidator):
 
         if not self.from_model_doc:
             await self.validate_from_model(h_create)
+
+        if h_create.from_modelrun is None:
+            return h_create
 
         docdb = DocumentDB()
         mr_doc = await docdb.find_one(

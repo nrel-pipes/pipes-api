@@ -39,14 +39,19 @@ class HandoffCreate(BaseModel):
     )
     scheduled_start: datetime | None = Field(
         title="scheduled_start",
+        default=None,
         description="scheduled start date",
     )
     scheduled_end: datetime | None = Field(
         title="scheduled_end",
+        default=None,
         description="scheduled end date",
     )
-    # TODO:
-    # submission_date:
+    submission_date: datetime | None = Field(
+        title="submission_date",
+        default=None,
+        description="scheduled end date",
+    )
     notes: str = Field(
         title="notes",
         description="Handoff notes",
@@ -77,6 +82,18 @@ class HandoffCreate(BaseModel):
             raise ValueError(f"Invalid scheduled_end value: {value}; Error: {e}")
         return value
 
+    @field_validator("submission_date", mode="before")
+    @classmethod
+    def validate_submission_date(cls, value):
+        if value is None:
+            return value
+
+        try:
+            value = parse_datetime(value)
+        except Exception as e:
+            raise ValueError(f"Invalid submission_date value: {value}; Error: {e}")
+        return value
+
 
 class HandoffRead(HandoffCreate):
     context: ProjectRunSimpleContext = Field(
@@ -104,8 +121,8 @@ class HandoffDocument(HandoffRead, Document):
         title="to_model",
         description="the to_model object id",
     )
-    model_run: PydanticObjectId | None = Field(
-        title="model_run",
+    from_modelrun: PydanticObjectId | None = Field(
+        title="from_modelrun",
         description="the modelrun object id",
         default=None,
     )
