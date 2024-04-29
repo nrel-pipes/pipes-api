@@ -140,13 +140,19 @@ class ProjectRunManager(AbstractObjectManager):
         )
         return pr_doc
 
-    async def get_projectruns(self) -> list[ProjectRunRead]:
+    async def get_projectruns(
+        self,
+        read_docs=True,
+    ) -> list[ProjectRunRead] | list[ProjectRunDocument]:
         """Return all project runs under given project"""
         p_doc = self.context.project
         pr_docs = await self.d.find_all(
             collection=ProjectRunDocument,
             query={"context.project": p_doc.id},
         )
+
+        if not read_docs:
+            return pr_docs
 
         pr_reads = []
         for pr_doc in pr_docs:

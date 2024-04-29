@@ -14,7 +14,13 @@ from pipes.common.exceptions import (
 )
 from pipes.models.manager import ModelManager
 from pipes.models.schemas import ModelCreate, ModelRead
-from pipes.projectruns.contexts import ProjectRunSimpleContext
+from pipes.projects.contexts import ProjectSimpleContext
+from pipes.projects.validators import ProjectContextValidator
+from pipes.projectruns.contexts import (
+    ProjectRunSimpleContext,
+    ProjectRunDocumentContext,
+)
+from pipes.projectruns.manager import ProjectRunManager
 from pipes.projectruns.validators import ProjectRunContextValidator
 from pipes.users.auth import auth_required
 from pipes.users.schemas import UserDocument
@@ -72,27 +78,55 @@ async def create_model(
 @router.get("/models/", response_model=list[ModelRead])
 async def get_models(
     project: str,
-    projectrun: str,
+    projectrun: str | None = None,
     user: UserDocument = Depends(auth_required),
 ):
     """Get all models with given project and projectrun"""
-    context = ProjectRunSimpleContext(project=project, projectrun=projectrun)
+    if projectrun is None:
+        p_context = ProjectSimpleContext(project=project)
+        try:
+            validator = ProjectContextValidator()
+            validated_context = await validator.validate(user, p_context)
+        except ContextValidationError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
+        except UserPermissionDenied as e:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=str(e),
+            )
 
-    try:
-        validator = ProjectRunContextValidator()
-        validated_context = await validator.validate(user, context)
-    except ContextValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    except UserPermissionDenied as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e),
-        )
+        m_reads = []
+        pr_manager = ProjectRunManager(context=validated_context)
 
-    manager = ModelManager(context=validated_context)
-    m_reads = await manager.get_models()
+        pr_docs = await pr_manager.get_projectruns(read_docs=False)
+        for pr_doc in pr_docs:
+            pr_context = ProjectRunDocumentContext(
+                project=validated_context.project,
+                projectrun=pr_doc,
+            )
+            m_manager = ModelManager(context=pr_context)
+            _m_reads = await m_manager.get_models()
+            m_reads.extend(_m_reads)
+
+    else:
+        pr_context = ProjectRunSimpleContext(project=project, projectrun=projectrun)
+        try:
+            validator = ProjectRunContextValidator()
+            validated_context = await validator.validate(user, pr_context)
+        except ContextValidationError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
+        except UserPermissionDenied as e:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=str(e),
+            )
+        manager = ModelManager(context=validated_context)
+        m_reads = await manager.get_models()
 
     return m_reads
