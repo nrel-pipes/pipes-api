@@ -80,6 +80,23 @@ for projectrun in raw_projectruns:
         if response.status_code != 201:
             print(url4, response.text)
 
+    # Create handoff plans
+    topology = projectrun["topology"]
+    handoffs = []
+    for topo in topology:
+        for h in topo["handoffs"]:
+            handoff = {
+                "from_model": topo["from_model"],
+                "to_model": topo["to_model"],
+                "name": h["id"],
+                "description": h["description"],
+                "scheduled_start": h["scheduled_start"],
+                "scheduled_end": h["scheduled_end"],
+                "notes": h["notes"],
+            }
+            handoffs.append(handoff)
+    urlh = f"{host}/api/handoffs/?project={p_name}&projectrun={pr_name}"
+    response = requests.post(urlh, data=json.dumps(handoffs), headers=headers)
 
 # Model runs
 mr_template_file = templates_dir.joinpath("test_model_run.toml")
