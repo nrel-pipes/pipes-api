@@ -57,7 +57,7 @@ class ProjectRunManager(AbstractObjectManager):
         # Add edge: project -(runs)- project run
         p_vtx_id = p_doc.vertex.id
         pr_vtx_id = pr_vertex.id
-        self.n.add_edge(p_vtx_id, pr_vtx_id, EdgeLabel.runs.value)
+        self.n.add_e(p_vtx_id, pr_vtx_id, EdgeLabel.runs.value)
 
         return pr_doc
 

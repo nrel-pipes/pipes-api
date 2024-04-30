@@ -23,11 +23,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/handoffs/", response_model=HandoffRead, status_code=201)
+@router.post(
+    "/handoffs/",
+    response_model=HandoffRead | list[HandoffRead],
+    status_code=201,
+)
 async def create_handoff(
     project: str,
     projectrun: str,
-    data: HandoffCreate,
+    data: HandoffCreate | list[HandoffCreate],
     user: UserDocument = Depends(auth_required),
 ):
     """Create a new handoff"""
@@ -51,8 +55,12 @@ async def create_handoff(
         )
 
     manager = HandoffManager(context=validated_context)
+
+    if isinstance(data, HandoffCreate):
+        data = [data]
+
     try:
-        h_doc = await manager.create_handoff(data, user)
+        h_docs = await manager.create_handoffs(data, user)
     except (
         EdgeAlreadyExists,
         DocumentAlreadyExists,
@@ -64,9 +72,15 @@ async def create_handoff(
             detail=str(e),
         )
 
-    h_read = await manager.read_handoff(h_doc)
+    h_reads = []
+    for h_doc in h_docs:
+        h_read = await manager.read_handoff(h_doc)
+        h_reads.append(h_read)
 
-    return h_read
+    if len(h_reads) == 1:
+        return h_reads[0]
+
+    return h_reads
 
 
 @router.get("/handoffs/", response_model=list[HandoffRead])

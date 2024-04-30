@@ -66,21 +66,21 @@ class TaskManager(AbstractObjectManager):
 
         # Add edges between task and assignee
         u_vtx_id = assignee_doc.vertex.id
-        self.n.add_edge(task_vtx_id, u_vtx_id, EdgeLabel.associated.value)
+        self.n.add_e(task_vtx_id, u_vtx_id, EdgeLabel.associated.value)
 
         # Task used datasets
         for d_doc in input_datasets:
             d_vtx_id = d_doc.vertex.id
-            self.n.add_edge(task_vtx_id, d_vtx_id, EdgeLabel.used.value)
+            self.n.add_e(task_vtx_id, d_vtx_id, EdgeLabel.used.value)
 
         mr_vtx_id = self.context.modelrun.vertex.id
         for d_doc in output_datasets:
             d_vtx_id = d_doc.vertex.id
             # Task output dataset
-            self.n.add_edge(task_vtx_id, d_vtx_id, EdgeLabel.output.value)
+            self.n.add_e(task_vtx_id, d_vtx_id, EdgeLabel.output.value)
 
             # Model run connected to task output dataset
-            self.n.add_edge(mr_vtx_id, d_vtx_id, EdgeLabel.connected.value)
+            self.n.add_e(mr_vtx_id, d_vtx_id, EdgeLabel.connected.value)
 
         # Create task document
         _context = ModelRunObjectContext(

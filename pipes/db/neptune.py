@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from gremlin_python.process.graph_traversal import GraphTraversalSource
+from gremlin_python.process.graph_traversal import GraphTraversalSource, __
 from gremlin_python.structure.graph import Graph
 from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
 from gremlin_python.driver.aiohttp.transport import AiohttpTransport
@@ -91,10 +91,10 @@ class NeptuneDB(AbstractDatabase):
 
         return self.add_v(label, **properties)
 
-    def add_edge(self, id1, id2, label, **properties):
+    def add_e(self, v1, v2, label, **properties):
         """Add edge from v1 to v2"""
         traversal = (
-            self.g.V(id1).as_("v1").V(id2).as_("v2").add_e(label).from_("v1").to("v2")
+            self.g.V(v1).as_("v1").V(v2).as_("v2").add_e(label).from_("v1").to("v2")
         )
 
         for k, v in properties.items():
@@ -102,3 +102,20 @@ class NeptuneDB(AbstractDatabase):
 
         result = [r for r in traversal.to_list()]
         return result[0]
+
+    def get_e(self, v1, v2, label, **properties):
+        """Get edge from v1 to v2"""
+        if "handoff" in properties:
+            del properties["handoff"]
+
+        traversal = self.g.V(v1).outE(label).where(__.inV().hasId(v2))
+        for k, v in properties.items():
+            traversal = traversal.has(k, v)
+        return traversal.to_list()
+
+    def get_or_add_e(self, v1, v2, label, **properties):
+        elist = self.get_e(v1, v2, label, **properties)
+
+        if elist:
+            return elist[0]
+        return self.add_e(v1, v2, label, **properties)

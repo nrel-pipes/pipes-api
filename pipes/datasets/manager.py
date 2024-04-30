@@ -53,7 +53,7 @@ class DatasetManager(AbstractObjectManager):
         # Add edge between dataset and registration author
         d_vtx_id = d_vertex.id
         u_vtx_id = r_author.vertex.id
-        self.n.add_edge(d_vtx_id, u_vtx_id, EdgeLabel.attributed.value)
+        self.n.add_e(d_vtx_id, u_vtx_id, EdgeLabel.attributed.value)
 
         # Create dataset document
         d_doc = await self._create_dataset_document(d_create, r_author, d_vertex, user)
@@ -61,7 +61,7 @@ class DatasetManager(AbstractObjectManager):
         # Add edge between dataset and model run
         mr_doc = self.context.modelrun
         mr_vtx_id = mr_doc.vertex.id
-        self.n.add_edge(mr_vtx_id, d_vtx_id, EdgeLabel.produced.value)
+        self.n.add_e(mr_vtx_id, d_vtx_id, EdgeLabel.produced.value)
 
         return d_doc
 

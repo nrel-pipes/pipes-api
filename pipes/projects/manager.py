@@ -43,7 +43,7 @@ class ProjectManager(AbstractObjectManager):
         # Add edget: user owns project
         u_vtx_id = p_owner.vertex.id
         p_vtx_id = p_vertex.id
-        self.n.add_edge(u_vtx_id, p_vtx_id, EdgeLabel.owns.value)
+        self.n.add_e(u_vtx_id, p_vtx_id, EdgeLabel.owns.value)
 
         return p_doc
 

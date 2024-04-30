@@ -61,14 +61,14 @@ class ModelManager(AbstractObjectManager):
         )
         m_vtx_id = m_vertex.id
         t_vtx_id = modeling_team_doc.vertex.id
-        self.n.add_edge(m_vtx_id, t_vtx_id, EdgeLabel.affiliated.value)
+        self.n.add_e(m_vtx_id, t_vtx_id, EdgeLabel.affiliated.value)
 
         # Create model document
         m_doc = await self._create_model_document(m_create, m_vertex, user)
 
         # Add edge: project run -(requires)- model
         pr_vtx_id = pr_doc.vertex.id
-        self.n.add_edge(pr_vtx_id, m_vtx_id, EdgeLabel.requires.value)
+        self.n.add_e(pr_vtx_id, m_vtx_id, EdgeLabel.requires.value)
 
         return m_doc
 

@@ -55,7 +55,7 @@ class TeamManager(AbstractObjectManager):
         member_docs = []
         for u_create in t_members:
             u_doc = await user_manager.get_or_create_user(u_create)
-            self.n.add_edge(u_doc.vertex.id, t_vertex.id, EdgeLabel.member.value)
+            self.n.add_e(u_doc.vertex.id, t_vertex.id, EdgeLabel.member.value)
             member_docs.append(u_doc)
         return member_docs
 
@@ -221,7 +221,7 @@ class TeamManager(AbstractObjectManager):
 
             # Add edge (member of Team)
             # TODO: may case duplicated edges?
-            self.n.add_edge(u_doc.vertex.id, t_doc.vertex.id, EdgeLabel.member.value)
+            self.n.add_e(u_doc.vertex.id, t_doc.vertex.id, EdgeLabel.member.value)
 
             member_doc_ids.add(u_doc.id)
 

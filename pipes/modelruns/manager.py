@@ -58,7 +58,7 @@ class ModelRunManager(AbstractObjectManager):
         # Add edge: model -(performs)- model run
         m_vtx_id = m_doc.vertex.id
         mr_vtx_id = mr_vertex.id
-        self.n.add_edge(m_vtx_id, mr_vtx_id, EdgeLabel.performs.value)
+        self.n.add_e(m_vtx_id, mr_vtx_id, EdgeLabel.performs.value)
 
         return mr_doc
 

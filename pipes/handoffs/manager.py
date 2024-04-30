@@ -45,7 +45,6 @@ class HandoffManager(AbstractObjectManager):
         domain_validator = HandoffDomainValidator(self.context)
         h_create = await domain_validator.validate(h_create)
 
-        # TODO: refactor edge creation
         # Create feeds edge between models for handoff
         from_m_vtx_id = domain_validator.from_model_doc.vertex.id  # type: ignore
         to_m_vtx_id = domain_validator.to_model_doc.vertex.id  # type: ignore
@@ -55,7 +54,7 @@ class HandoffManager(AbstractObjectManager):
             handoff=h_create.name,
         )
         properties = properties_model.model_dump()
-        edge = self.n.add_edge(from_m_vtx_id, to_m_vtx_id, self.label, **properties)
+        edge = self.n.get_or_add_e(from_m_vtx_id, to_m_vtx_id, self.label, **properties)
 
         # Create handoff document
         feeds_edge_model = FeedsEdge(
@@ -92,6 +91,17 @@ class HandoffManager(AbstractObjectManager):
             )
 
         return h_doc
+
+    async def create_handoffs(
+        self,
+        h_creates: list[HandoffCreate],
+        user: UserDocument,
+    ) -> list[HandoffDocument]:
+        h_docs = []
+        for h_create in h_creates:
+            h_doc = await self.create_handoff(h_create, user)
+            h_docs.append(h_doc)
+        return h_docs
 
     async def get_handoffs(self, model: str | None = None) -> list[HandoffRead]:
         p_doc = self.context.project
