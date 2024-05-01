@@ -15,7 +15,7 @@ from pipes.users.schemas import UserCreate, UserRead, UserDocument
 router = APIRouter()
 
 
-@router.post("/users/", response_model=UserRead, status_code=201)
+@router.post("/users", response_model=UserRead, status_code=201)
 async def create_user(
     data: UserCreate,
     user: UserDocument = Depends(auth_required),
@@ -38,7 +38,7 @@ async def create_user(
     return u_doc
 
 
-@router.get("/users/", response_model=list[UserRead])
+@router.get("/users", response_model=list[UserRead])
 async def get_all_users(user: UserDocument = Depends(auth_required)):
     """Get a user by email"""
     if not user.is_superuser:
@@ -52,7 +52,7 @@ async def get_all_users(user: UserDocument = Depends(auth_required)):
     return u_docs
 
 
-@router.get("/users/detail/", response_model=UserRead)
+@router.get("/users/detail", response_model=UserRead)
 async def get_user_by_email(
     email: EmailStr,
     user: UserDocument = Depends(auth_required),

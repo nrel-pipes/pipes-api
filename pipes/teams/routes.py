@@ -21,7 +21,7 @@ router = APIRouter()
 
 
 # Teams
-@router.post("/teams/", response_model=TeamRead, status_code=201)
+@router.post("/teams", response_model=TeamRead, status_code=201)
 async def create_team(
     project: str,
     data: TeamCreate,
@@ -70,7 +70,7 @@ async def create_team(
     return t_read
 
 
-@router.get("/teams/", response_model=list[TeamRead])
+@router.get("/teams", response_model=list[TeamRead])
 async def get_teams(
     project: str,
     user: UserDocument = Depends(auth_required),
@@ -97,7 +97,7 @@ async def get_teams(
     return p_teams
 
 
-@router.put("/teams/detail/")
+@router.put("/teams/detail")
 async def update_team(
     project: str,
     team: str,

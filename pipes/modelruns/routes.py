@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/modelruns/", response_model=ModelRunRead, status_code=201)
+@router.post("/modelruns", response_model=ModelRunRead, status_code=201)
 async def create_modelrun(
     project: str,
     projectrun: str,
@@ -71,7 +71,7 @@ async def create_modelrun(
     return mr_read
 
 
-@router.get("/modelruns/", response_model=list[ModelRunRead])
+@router.get("/modelruns", response_model=list[ModelRunRead])
 async def get_modelruns(
     project: str,
     projectrun: str,

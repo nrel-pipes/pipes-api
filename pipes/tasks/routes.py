@@ -20,7 +20,7 @@ from pipes.users.schemas import UserDocument
 router = APIRouter()
 
 
-@router.post("/tasks/", response_model=TaskRead, status_code=201)
+@router.post("/tasks", response_model=TaskRead, status_code=201)
 async def create_task(
     project: str,
     projectrun: str,
@@ -70,7 +70,7 @@ async def create_task(
     return task_read
 
 
-@router.get("/tasks/", response_model=list[TaskRead])
+@router.get("/tasks", response_model=list[TaskRead])
 async def get_tasks(
     project: str,
     projectrun: str,

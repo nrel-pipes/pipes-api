@@ -43,7 +43,7 @@ async def create_project(
     return p_read
 
 
-@router.get("/projects/", response_model=ProjectDetailRead)
+@router.get("/projects", response_model=ProjectDetailRead)
 async def get_project_detail(
     project: str,
     user: UserDocument = Depends(auth_required),
@@ -74,7 +74,7 @@ async def get_project_detail(
     return p_read
 
 
-@router.get("/projects/basics/", response_model=list[ProjectBasicRead])
+@router.get("/projects/basics", response_model=list[ProjectBasicRead])
 async def get_basic_projects(user: UserDocument = Depends(auth_required)):
     """Get all projects with basic information"""
     manager = ProjectManager()
@@ -82,7 +82,7 @@ async def get_basic_projects(user: UserDocument = Depends(auth_required)):
     return p_read_docs
 
 
-# @router.put("/projects/detail/", response_model=ProjectDetailRead)
+# @router.put("/projects/detail", response_model=ProjectDetailRead)
 # async def update_project_detail(
 #     project: str,
 #     data: ProjectUpdate,

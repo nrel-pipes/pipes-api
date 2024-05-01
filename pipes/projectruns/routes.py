@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/projectruns/", response_model=ProjectRunRead, status_code=201)
+@router.post("/projectruns", response_model=ProjectRunRead, status_code=201)
 async def create_projectrun(
     project: str,
     data: ProjectRunCreate,
@@ -59,7 +59,7 @@ async def create_projectrun(
     return pr_read
 
 
-@router.get("/projectruns/", response_model=list[ProjectRunRead])
+@router.get("/projectruns", response_model=list[ProjectRunRead])
 async def get_projectruns(
     project: str,
     user: UserDocument = Depends(auth_required),

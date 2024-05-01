@@ -24,7 +24,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/handoffs/",
+    "/handoffs",
     response_model=HandoffRead | list[HandoffRead],
     status_code=201,
 )
@@ -83,7 +83,7 @@ async def create_handoff(
     return h_reads
 
 
-@router.get("/handoffs/", response_model=list[HandoffRead])
+@router.get("/handoffs", response_model=list[HandoffRead])
 async def get_handoffs(
     project: str,
     projectrun: str,

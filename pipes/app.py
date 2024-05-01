@@ -122,4 +122,4 @@ app.include_router(users_router, prefix="/api", tags=["users"])
 
 @app.get("/")
 async def welcome():
-    return RedirectResponse("/api/")
+    return RedirectResponse("/api")

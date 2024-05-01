@@ -22,7 +22,7 @@ async def welcome():
     return {"message": "Welcome to NREL PIPES!"}
 
 
-@router.get("/ping/")
+@router.get("/ping")
 async def ping(neptune: NeptuneDB = Depends(get_neptune_db)):
     """
     For ALB health check, need to ping Neptune regularly to avoid idle timeout - 20mins
