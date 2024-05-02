@@ -9,6 +9,7 @@ import requests
 root_dir = Path(__file__).parents[1].absolute()
 templates_dir = root_dir.joinpath("scripts", "templates")
 host = "http://127.0.0.1:8080"
+host = "https://pipes-api-stage.stratus.nrel.gov"
 
 cognito_access_token = os.getenv("PIPES_COGNITO_ACCESS_TOKEN", None)
 if not cognito_access_token:
@@ -46,39 +47,48 @@ clean_project = dict(
     owner=raw_project["owner"],
 )
 
-url1 = f"{host}/api/projects/"
-response = requests.post(url1, data=json.dumps(clean_project), headers=headers)
+p_url = f"{host}/api/projects"
+response = requests.post(p_url, data=json.dumps(clean_project), headers=headers)
 if response.status_code != 201:
-    print(url1, response.text)
+    print(p_url, response.text)
+else:
+    print(f"Project {p_name} created successfully.")
 
 
 # Create project teams
-url2 = f"{host}/api/teams/?project={p_name}"
+t_url = f"{host}/api/teams?project={p_name}"
 for team in raw_teams:
-    response = requests.post(url2, data=json.dumps(team), headers=headers)
+    t_name = team["name"]
+    response = requests.post(t_url, data=json.dumps(team), headers=headers)
     if response.status_code != 201:
-        print(url2, response.text)
-
+        print(t_url, response.text)
+    else:
+        print(f"Team {t_name} created successfully.")
 
 # Create project runs
-url3 = f"{host}/api/projectruns/?project={p_name}"
+pr_url = f"{host}/api/projectruns?project={p_name}"
 for projectrun in raw_projectruns:
-    response = requests.post(url3, data=json.dumps(projectrun), headers=headers)
+    pr_name = projectrun["name"]
+    response = requests.post(pr_url, data=json.dumps(projectrun), headers=headers)
     if response.status_code != 201:
-        print(url3, response.text)
+        print(pr_url, response.text)
+    else:
+        print(f"Project run {pr_name} created successfully.")
 
     # Add models to project runs
-    pr_name = projectrun["name"]
-    url4 = f"{host}/api/models/?project={p_name}&projectrun={pr_name}"
+    m_url = f"{host}/api/models?project={p_name}&projectrun={pr_name}"
     for raw_model in projectrun["models"]:
         clean_model = raw_model.copy()
         clean_model["name"] = raw_model["model"]
+        m_name = clean_model["name"]
         if not clean_model.get("modeling_team", None):
             clean_model["modeling_team"] = raw_model["model"]
 
-        response = requests.post(url4, data=json.dumps(clean_model), headers=headers)
+        response = requests.post(m_url, data=json.dumps(clean_model), headers=headers)
         if response.status_code != 201:
-            print(url4, response.text)
+            print(m_url, response.text)
+        else:
+            print(f"Model {m_name} created successfully.")
 
     # Create handoff plans
     topology = projectrun["topology"]
@@ -95,17 +105,22 @@ for projectrun in raw_projectruns:
                 "notes": h["notes"],
             }
             handoffs.append(handoff)
-    urlh = f"{host}/api/handoffs/?project={p_name}&projectrun={pr_name}"
-    response = requests.post(urlh, data=json.dumps(handoffs), headers=headers)
+    h_url = f"{host}/api/handoffs?project={p_name}&projectrun={pr_name}"
+    response = requests.post(h_url, data=json.dumps(handoffs), headers=headers)
+    if response.status_code != 201:
+        print(h_url, response.text)
+    else:
+        print(f"{len(handoffs)} Handoffs created successfully.")
+
 
 # Model runs
 mr_template_file = templates_dir.joinpath("test_model_run.toml")
 with open(mr_template_file) as f:
     raw_modelrun = toml.load(f)
 
-modelrun_name = raw_modelrun["name"]
+mr_name = raw_modelrun["name"]
 clean_modelrun = {
-    "name": modelrun_name,
+    "name": mr_name,
     "description": raw_modelrun["description"],
     "version": raw_modelrun["version"],
     "assumptions": raw_modelrun["assumptions"],
@@ -115,10 +130,12 @@ clean_modelrun = {
     "env_deps": raw_modelrun["config"],
     "datasets": [],
 }
-url5 = f"{host}/api/modelruns/?project={p_name}&projectrun={pr_name}&model=dsgrid"
-response = requests.post(url5, data=json.dumps(clean_modelrun), headers=headers)
+mr_url = f"{host}/api/modelruns?project={p_name}&projectrun={pr_name}&model=dsgrid"
+response = requests.post(mr_url, data=json.dumps(clean_modelrun), headers=headers)
 if response.status_code != 201:
-    print(url5, response.text)
+    print(mr_url, response.text)
+else:
+    print(f"Model run {mr_name} created successfully.")
 
 
 # Checkin dataset
@@ -128,8 +145,10 @@ with open(d_template_file) as f:
 
 raw_dataset = data["dataset"]
 clean_dataset = raw_dataset.copy()
-
-url6 = f"{host}/api/datasets/?project={p_name}&projectrun={pr_name}&model=dsgrid&modelrun={modelrun_name}"
-response = requests.post(url6, data=json.dumps(clean_dataset), headers=headers)
+d_name = clean_dataset["name"]
+d_url = f"{host}/api/datasets?project={p_name}&projectrun={pr_name}&model=dsgrid&modelrun={mr_name}"
+response = requests.post(d_url, data=json.dumps(clean_dataset), headers=headers)
 if response.status_code != 201:
-    print(url6, response.text)
+    print(d_url, response.text)
+else:
+    print(f"Dataset {d_name} created successfully.")
