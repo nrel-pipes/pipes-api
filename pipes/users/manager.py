@@ -31,7 +31,7 @@ class UserManager(AbstractObjectManager):
         u_create: UserCreate | CognitoUserCreate,
     ) -> UserDocument:
         """Admin create new user"""
-        u_vertex = await self._create_user_vertex(u_create.email)
+        u_vertex = await self._get_or_create_user_vertex(u_create.email)
         return await self._create_user_document(u_create, u_vertex)
 
     async def _get_user_vertex(self, email: EmailStr) -> UserVertex | None:
