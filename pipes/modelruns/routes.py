@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from pipes.common.exceptions import (
@@ -14,7 +13,7 @@ from pipes.common.exceptions import (
 from pipes.models.contexts import ModelSimpleContext
 from pipes.models.validators import ModelContextValidator
 from pipes.modelruns.manager import ModelRunManager
-from pipes.modelruns.schemas import ModelRunCreate, ModelRunRead
+from pipes.modelruns.schemas import ModelRunCreate, ModelRunRead, ModelRunUpdate
 from pipes.users.auth import auth_required
 from pipes.users.schemas import UserDocument
 
@@ -101,3 +100,58 @@ async def get_modelruns(
     )
 
     return mr_reads
+
+
+@router.put("/modelruns/", response_model=ModelRunUpdate)
+async def update_status(
+    project: str,
+    projectrun: str,
+    model: str,
+    modelrun: str,
+    user: UserDocument = Depends(auth_required),
+    status: str = "PENDING",
+):
+    """
+    Logical steps:
+    1. Find if document exists
+    2. Adjust status to new status
+    3. Write to disk
+        1. Find if document
+    # Get modelrun -- pname, pr-name, model-run-name, context.
+    # Run validation. Use manager to update neptune and documentDb. Return ModelRunUpdate
+
+    """
+    context = ModelSimpleContext(
+        project=project,
+        projectrun=projectrun,
+        model=model,
+    )
+    try:
+        validator = ModelContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise Exception(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+    p_doc = validated_context.project
+    pr_doc = validated_context.projectrun
+    m_doc = validated_context.model
+
+    manager = ModelRunManager()
+    try:
+        mr_doc = await manager.update_status(p_doc, pr_doc, m_doc, modelrun, status)
+    except (DocumentAlreadyExists, DomainValidationError, DocumentDoesNotExist) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    # mr_read = await manager.read_modelrun(mr_doc)
+    print("Got Here")
+    return ModelRunRead(status=status)

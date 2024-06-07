@@ -121,7 +121,9 @@ class ProjectRunDomainValidator(DomainValidator):
 
         if pr_doc.scheduled_end > p_doc.scheduled_end:
             raise DomainValidationError(
-                f"Project run 'scheduled_end' could not be late than {p_doc.scheduled_end}",
+                f"Project run 'scheduled_end' could not be late than {
+                    p_doc.scheduled_end
+                }, {p_doc.scheduled_start, p_doc.scheduled_end}",
             )
 
         return pr_doc

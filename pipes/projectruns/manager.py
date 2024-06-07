@@ -58,6 +58,7 @@ class ProjectRunManager(AbstractObjectManager):
             created_by=user.id,
             last_modified=datetime.utcnow(),
             modified_by=user.id,
+            status=pr_create.status,
         )
 
         domain_validator = ProjectRunDomainValidator()
@@ -77,6 +78,19 @@ class ProjectRunManager(AbstractObjectManager):
             pr_doc.name,
         )
         return pr_doc
+
+    async def change_projectrun_status(
+        self,
+        p_doc: ProjectDocument,
+        pr_create: ProjectRunCreate,
+    ):
+        pr_name = pr_create.name
+        pr_doc_exists = await ProjectRunDocument.find_one(
+            {"context.project": p_doc.id, "name": pr_name},
+        )
+        if not pr_doc_exists:
+            raise ValueError("Document does not exist.")
+        print(pr_doc_exists.status)
 
     async def get_projectruns(self, p_doc: ProjectDocument) -> list[ProjectRunRead]:
         """Return all project runs under given project"""

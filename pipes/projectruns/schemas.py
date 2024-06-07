@@ -118,3 +118,7 @@ class ProjectRunDocument(ProjectRunRead, Document):
                 unique=True,
             ),
         ]
+
+
+class ProjectRunStatus(BaseModel):
+    pass

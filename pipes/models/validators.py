@@ -10,6 +10,10 @@ from pipes.models.contexts import ModelSimpleContext, ModelDocumentContext
 from pipes.models.schemas import ModelDocument
 from pipes.projectruns.schemas import ProjectRunDocument
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class ModelContextValidator(ProjectRunContextValidator):
     """Model context validator class"""
@@ -52,12 +56,14 @@ class ModelDomainValidator(DomainValidator):
     async def _get_parent_projectrun(self, m_doc: ModelDocument) -> ProjectRunDocument:
         """Get project run document"""
 
-        if self._cached_pr_doc:
-            pr_doc = self._cached_pr_doc
-        else:
-            pr_id = m_doc.context.projectrun
-            pr_doc = await ProjectRunDocument.get(pr_id)
-            self._cached_pr_doc = pr_doc
+        # if self._cached_pr_doc:
+        #     pr_doc = self._cached_pr_doc
+        # else:
+        pr_id = m_doc.context.projectrun
+        pr_doc = await ProjectRunDocument.get(pr_id)
+        logger.info(f"Tracing BACK: {pr_doc.scheduled_start, pr_doc.scheduled_end}")
+
+        self._cached_pr_doc = pr_doc
 
         return pr_doc
 
@@ -107,7 +113,7 @@ class ModelDomainValidator(DomainValidator):
         m_doc: ModelDocument,
     ) -> ModelDocument:
         """Model scheduled start dates should be within project run schedules"""
-
+        logger.info(f"Start: {m_doc.validate_scheduled_start}, End date: {m_doc.validate_scheduled_end}")
         if m_doc.scheduled_start > m_doc.scheduled_end:
             raise DomainValidationError(
                 "Model 'scheduled_start' could not be larger than 'scheduled_end'.",
@@ -132,13 +138,18 @@ class ModelDomainValidator(DomainValidator):
         m_doc: ModelDocument,
     ) -> ModelDocument:
         """Model scheduled end dates should be within project run schedules"""
-
         if m_doc.scheduled_end < m_doc.scheduled_start:
             raise DomainValidationError(
                 "Model 'scheduled_end' could not be smaller than 'scheduled_start'.",
             )
 
-        pr_doc = await self._get_parent_projectrun(m_doc)
+        # pr_doc = await self._get_parent_projectrun(m_doc)
+        pr_id = m_doc.context.projectrun
+        pr_doc = await ProjectRunDocument.get(pr_id)
+        logger.info(f"Tracing BACK: {pr_doc.scheduled_start, pr_doc.scheduled_end}")
+
+        logger.info(f"Child Document: {m_doc.scheduled_start, m_doc.scheduled_end}")
+        logger.info(f"Parent Document: {pr_doc.scheduled_start, pr_doc.scheduled_end}")
 
         if m_doc.scheduled_end < pr_doc.scheduled_start:
             raise DomainValidationError(
@@ -147,7 +158,9 @@ class ModelDomainValidator(DomainValidator):
 
         if m_doc.scheduled_end > pr_doc.scheduled_end:
             raise DomainValidationError(
-                f"Model 'scheduled_end' could not be late than {pr_doc.scheduled_end}",
+                f"Model 'scheduled_end' could not be late than {pr_doc.scheduled_end}, start: {
+                    pr_doc.scheduled_start
+                }, end {pr_doc.scheduled_end}",
             )
 
         return m_doc

@@ -108,3 +108,10 @@ class VersionStatus(str, Enum):
     Active = "Active"
     Inactivate = "Inactivate"
     Unresolved = "Unresolved"
+
+
+class Status(str, Enum):
+    PENDING = "PENDING"
+    SUCCESS = "SUCCESS"
+    DONE = "DONE"
+    FAILED = "FAILED"

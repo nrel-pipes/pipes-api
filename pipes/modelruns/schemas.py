@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-
 import pymongo
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field, field_validator
 from pymongo import IndexModel
 
-from pipes.common.schemas import SourceCode
+from pipes.common.schemas import SourceCode, Status
 from pipes.models.contexts import ModelSimpleContext, ModelObjectContext
 from pipes.datasets.schemas import DatasetSchedule
 
@@ -59,6 +58,11 @@ class ModelRunCreate(BaseModel):
         default=[],
         description="Output datasets for handoff",
     )
+    status: str = Field(
+        title="status",
+        description="The status of a modelrun",
+        default="PENDING",
+    )
     # TODO:
     # handoffs =
 
@@ -74,6 +78,14 @@ class ModelRunRead(ModelRunCreate):
     context: ModelSimpleContext = Field(
         title="context",
         description="project run context",
+    )
+
+
+class ModelRunUpdate(BaseModel):
+    status: Status = Field(
+        title="status",
+        description="This denotes the status of a model run.",
+        default="PENDING",
     )
 
 

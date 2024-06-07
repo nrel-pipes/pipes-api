@@ -29,7 +29,7 @@ async def create_projectrun(
 ):
     """Create project run under given project"""
     context = ProjectSimpleContext(project=project)
-
+    logger.info(f"User: {user} \n Data: {data}")
     try:
         validator = ProjectContextValidator()
         validated_context = await validator.validate(user, context)
