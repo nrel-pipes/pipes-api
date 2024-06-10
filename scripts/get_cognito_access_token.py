@@ -24,7 +24,8 @@ def get_cognito_access_token():
         ClientId=os.getenv("PIPES_COGNITO_CLIENT_ID"),
     )
     access_token = response["AuthenticationResult"]["AccessToken"]
-    print(access_token)
+    export_access_token = f"export PIPES_COGNITO_ACCESS_TOKEN='{access_token}'"
+    print(export_access_token)
     return access_token
 
 
