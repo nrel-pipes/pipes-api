@@ -12,6 +12,7 @@ from pipes.common.exceptions import (
 )
 from pipes.db.manager import AbstractObjectManager
 from pipes.graph.constants import VertexLabel, EdgeLabel
+from pipes.projects.contexts import ProjectDocumentContext
 from pipes.graph.schemas import ModelVertexProperties, ModelVertex
 from pipes.projects.schemas import ProjectDocument
 from pipes.projectruns.contexts import (
@@ -34,7 +35,10 @@ class ModelManager(AbstractObjectManager):
 
     __label__ = VertexLabel.Model.value
 
-    def __init__(self, context: ProjectRunDocumentContext) -> None:
+    def __init__(
+        self,
+        context: ProjectRunDocumentContext | ProjectDocumentContext,
+    ) -> None:
         self.context = context
 
     async def create_model(
@@ -188,20 +192,27 @@ class ModelManager(AbstractObjectManager):
     async def get_models(self) -> list[ModelRead]:
         """Get all models under given project and project run"""
         p_doc = self.context.project
-        pr_doc = self.context.projectrun
+        pr_doc = getattr(self.context, "projectrun", None)
+
+        query = {
+            "context.project": p_doc.id,
+        }
+        if pr_doc:
+            query = {
+                "context.project": p_doc.id,
+                "context.projectrun": pr_doc.id,
+            }
 
         m_docs = await self.d.find_all(
             collection=ModelDocument,
-            query={
-                "context.project": p_doc.id,
-                "context.projectrun": pr_doc.id,
-            },
+            query=query,
         )
 
         team_manager = TeamManager(self.context)
         m_reads = []
         for m_doc in m_docs:
             data = m_doc.model_dump()
+            pr_doc = await self.d.get(ProjectRunDocument, m_doc.context.projectrun)
             data["context"] = ProjectRunSimpleContext(
                 project=p_doc.name,
                 projectrun=pr_doc.name,
