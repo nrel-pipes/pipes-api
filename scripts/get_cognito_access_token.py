@@ -67,7 +67,7 @@ def create_superuser(access_token):
 
     if "vertex" not in user:
         db.users.update_one(
-            {"_id": user["_id"]}, {"$set": {"vertex": user_attrs["vertex"]}}
+            {"_id": user["_id"]}, {"$set": {"vertex": user_attrs["vertex"]}},
         )
 
 
