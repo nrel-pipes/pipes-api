@@ -111,16 +111,6 @@ async def update_status(
     user: UserDocument = Depends(auth_required),
     status: str = "PENDING",
 ):
-    """
-    Logical steps:
-    1. Find if document exists
-    2. Adjust status to new status
-    3. Write to disk
-        1. Find if document
-    # Get modelrun -- pname, pr-name, model-run-name, context.
-    # Run validation. Use manager to update neptune and documentDb. Return ModelRunUpdate
-
-    """
     context = ModelSimpleContext(
         project=project,
         projectrun=projectrun,
