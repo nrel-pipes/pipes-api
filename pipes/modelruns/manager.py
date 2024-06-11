@@ -8,7 +8,7 @@ from pymongo.errors import DuplicateKeyError
 # from pymongo import UpdateOne
 # from fastapi import HTTPException
 
-from pipes.common.exceptions import DocumentAlreadyExists
+from pipes.common.exceptions import DocumentAlreadyExists, DocumentDoesNotExist
 from pipes.db.manager import AbstractObjectManager
 from pipes.projects.schemas import ProjectDocument
 from pipes.projectruns.schemas import ProjectRunDocument
@@ -108,7 +108,6 @@ class ModelRunManager(AbstractObjectManager):
                 "context.model": m_doc.id,
             },
         )
-
         mr_reads = []
         async for m_doc in mr_docs:
             data = m_doc.model_dump()
@@ -135,7 +134,6 @@ class ModelRunManager(AbstractObjectManager):
                 "name": mr_name,
             },
         )
-        print(type(mr_doc))
         if mr_doc:
             data = mr_doc.model_dump()
             data["context"] = ModelSimpleContext(
@@ -143,10 +141,10 @@ class ModelRunManager(AbstractObjectManager):
                 projectrun=pr_doc.name,
                 model=m_doc.name,
             )
+            print(f"Data: {data}")
             mr_read = ModelRunRead.model_validate(data)
             return mr_read
-        else:
-            return None
+        raise DocumentDoesNotExist("Document does not exist")
 
     async def update_status(self, p_doc, pr_doc, m_doc, mr_name, status):
         mr_doc = await ModelRunDocument.find_one(
@@ -157,73 +155,22 @@ class ModelRunManager(AbstractObjectManager):
                 "name": mr_name,
             },
         )
-
+        print(type(mr_doc))
         if mr_doc:
+            # Update the status field
+            mr_doc.status = status  # replace "new_status" with the actual status value
+            await mr_doc.save()
+            print("saved")
             data = mr_doc.model_dump()
             data["context"] = ModelSimpleContext(
                 project=p_doc.name,
                 projectrun=pr_doc.name,
                 model=m_doc.name,
             )
-            data["status"] = status  # Update the status field
-            print(data)
-            # Use the correct method to update the document in Motor
-            await ModelRunDocument.get_motor_collection().update_one(
-                {"_id": mr_doc.id},
-                {"$set": data},
-            )
-
             mr_read = ModelRunRead.model_validate(data)
             return mr_read
         else:
             return None
-
-        # mr_doc = await ModelRunDocument.find_one(
-        #     {
-        #         "context.project": p_doc.id,
-        #         "context.projectrun": pr_doc.id,
-        #         "context.model": m_doc.id,
-        #         "name": mr_name
-        #     }
-        # )
-
-        # if not mr_doc:
-        #     raise HTTPException(status_code=404, detail="ModelRun not found")
-
-        # # Create the context data
-        # context_data = ModelSimpleContext(
-        #     project=p_doc.name,  # Assuming p_doc.name is a str
-        #     projectrun=pr_doc.name,  # Assuming pr_doc.name is a str
-        #     model=m_doc.name  # Assuming m_doc.name is a str
-        # )
-
-        # # Update the status and context fields
-        # update_data = {"status": status, "context": context_data}
-
-        # # Update the document in the database
-        # await ModelRunDocument.get_motor_collection().update_one(
-        #     {"_id": mr_doc.id},
-        #     {"$set": update_data}
-        # )
-
-        # # Update the mr_doc object with the new data
-        # mr_doc.status = status
-        # mr_doc.context = context_data
-
-        # # Fetch updated document
-        # updated_mr_doc = await ModelRunDocument.find_one({"_id": mr_doc.id})
-
-        # if not updated_mr_doc:
-        #     raise HTTPException(status_code=404, detail="Updated ModelRun not found")
-
-        # # Create and return ModelRunRead object with all required fields
-        # return ModelRunRead(
-        #     id=str(updated_mr_doc.id),
-        #     name=updated_mr_doc.name,
-        #     version=updated_mr_doc.version,
-        #     context=ModelSimpleContext(**updated_mr_doc.context),
-        #     status=updated_mr_doc.status
-        # )
 
     async def read_modelrun(self, mr_doc: ModelRunDocument) -> ModelRunRead:
         p_id = mr_doc.context.project

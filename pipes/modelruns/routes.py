@@ -130,7 +130,7 @@ async def update_status(
         validator = ModelContextValidator()
         validated_context = await validator.validate(user, context)
     except ContextValidationError as e:
-        raise Exception(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
@@ -144,14 +144,6 @@ async def update_status(
     m_doc = validated_context.model
 
     manager = ModelRunManager()
-    try:
-        mr_doc = await manager.update_status(p_doc, pr_doc, m_doc, modelrun, status)
-    except (DocumentAlreadyExists, DomainValidationError, DocumentDoesNotExist) as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+    mr_doc = await manager.update_status(p_doc, pr_doc, m_doc, modelrun, status)
 
-    # mr_read = await manager.read_modelrun(mr_doc)
-    print("Got Here")
-    return ModelRunRead(status=status)
+    return mr_doc

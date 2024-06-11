@@ -112,6 +112,7 @@ class VersionStatus(str, Enum):
 
 class Status(str, Enum):
     PENDING = "PENDING"
+    RUNNING = "RUNNING"
     SUCCESS = "SUCCESS"
     DONE = "DONE"
     FAILED = "FAILED"
