@@ -10,10 +10,7 @@ root_dir = Path(__file__).parents[1].absolute()
 templates_dir = root_dir.joinpath("scripts", "templates")
 host = "http://127.0.0.1:8080"
 
-cognito_access_token = os.getenv(
-    "PIPES_COGNITO_ACCESS_TOKEN",
-    "",
-)
+cognito_access_token = os.getenv("PIPES_COGNITO_ACCESS_TOKEN", None)
 if not cognito_access_token:
     print("Please set the PIPES_COGNITO_ACCESS_TOKEN environment variable.")
     sys.exit(1)
