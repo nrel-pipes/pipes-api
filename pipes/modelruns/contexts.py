@@ -22,10 +22,10 @@ class ModelRunSimpleContext(BaseModel):
         title="modelrun",
         description="modelrun name",
     )
-    status: str = Field(
-        title="status",
-        description="""Status of model run -- []""",
-    )
+    # status: str = Field(
+    #     title="status",
+    #     description="""Status of model run -- []""",
+    # )
 
     def __str__(self) -> str:
         return f"[project:{self.project} | projectrun:{self.projectrun} | model:{self.model} | modelrun:{self.modelrun}]"  # noqa: E501
