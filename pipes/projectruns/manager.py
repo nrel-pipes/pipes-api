@@ -41,7 +41,7 @@ class ProjectRunManager(AbstractObjectManager):
 
         pr_name = pr_create.name
         context = ProjectObjectContext(project=p_doc.id)
-
+        print(f"PR_CREATE: {pr_create}")
         # Project run document
         pr_doc = ProjectRunDocument(
             context=context,

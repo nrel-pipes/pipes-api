@@ -24,7 +24,7 @@ class ProjectRunContextValidator(ProjectContextValidator):
         """Get project run document through validation"""
         p_context = await super().validate_document(context)
         p_doc = p_context.project
-
+        print(f"PDOC {p_doc}")
         pr_name = context.projectrun
         pr_doc = await ProjectRunDocument.find_one(ProjectRunDocument.name == pr_name)
 
@@ -116,14 +116,14 @@ class ProjectRunDomainValidator(DomainValidator):
 
         if pr_doc.scheduled_end < p_doc.scheduled_start:
             raise DomainValidationError(
-                f"Project run 'scheduled_end' could not be early than {p_doc.scheduled_start}",
+                f"Project run 'scheduled_end' could not be earlier than {p_doc.scheduled_start}",
             )
 
         if pr_doc.scheduled_end > p_doc.scheduled_end:
             raise DomainValidationError(
-                f"Project run 'scheduled_end' could not be late than {
+                f"""Project run 'scheduled_end' could not be later than {
                     p_doc.scheduled_end
-                }, {p_doc.scheduled_start, p_doc.scheduled_end}",
+                }, {p_doc.scheduled_start} - {p_doc.scheduled_end}""",
             )
 
         return pr_doc

@@ -46,6 +46,10 @@ class ProjectRunCreate(BaseModel):
         title="scheduled_end",
         description="Schedule project run end date in YYYY-MM-DD format",
     )
+    status: str = Field(
+        title="status",
+        description="Status of a task",
+    )
     # models: list[str] = Field(
     #     title="models",
     #     description="Model names",

@@ -28,8 +28,10 @@ async def create_projectrun(
     user: UserDocument = Depends(auth_required),
 ):
     """Create project run under given project"""
+    logger.info(f"User: {user} \n Data: {data} \n project: {project}")
+
     context = ProjectSimpleContext(project=project)
-    logger.info(f"User: {user} \n Data: {data}")
+    print(context)
     try:
         validator = ProjectContextValidator()
         validated_context = await validator.validate(user, context)
@@ -45,6 +47,7 @@ async def create_projectrun(
         )
 
     p_doc = validated_context.project
+    print(f"call: {p_doc}")
     manager = ProjectRunManager()
     try:
         pr_doc = await manager.create_projectrun(p_doc, data, user)
