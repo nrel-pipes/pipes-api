@@ -46,7 +46,6 @@ async def create_projectrun(
         )
 
     p_doc = validated_context.project
-    print(f"call: {p_doc}")
     manager = ProjectRunManager()
     try:
         pr_doc = await manager.create_projectrun(p_doc, data, user)
