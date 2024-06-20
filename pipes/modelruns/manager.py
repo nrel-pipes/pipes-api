@@ -152,12 +152,10 @@ class ModelRunManager(AbstractObjectManager):
                 "name": mr_name,
             },
         )
-        print(type(mr_doc))
         if mr_doc:
             # Update the status field
             mr_doc.status = status  # replace "new_status" with the actual status value
             await mr_doc.save()
-            print("saved")
             data = mr_doc.model_dump()
             data["context"] = ModelSimpleContext(
                 project=p_doc.name,

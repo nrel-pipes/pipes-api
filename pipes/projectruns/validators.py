@@ -24,7 +24,6 @@ class ProjectRunContextValidator(ProjectContextValidator):
         """Get project run document through validation"""
         p_context = await super().validate_document(context)
         p_doc = p_context.project
-        print(f"PDOC {p_doc}")
         pr_name = context.projectrun
         pr_doc = await ProjectRunDocument.find_one(ProjectRunDocument.name == pr_name)
 

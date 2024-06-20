@@ -31,7 +31,6 @@ async def create_projectrun(
     logger.info(f"User: {user} \n Data: {data} \n project: {project}")
 
     context = ProjectSimpleContext(project=project)
-    print(context)
     try:
         validator = ProjectContextValidator()
         validated_context = await validator.validate(user, context)
