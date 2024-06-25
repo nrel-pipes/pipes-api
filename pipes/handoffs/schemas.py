@@ -61,8 +61,8 @@ class HandoffCreate(BaseModel):
     @field_validator("scheduled_start", mode="before")
     @classmethod
     def validate_scheduled_start(cls, value):
-        if value is None:
-            return value
+        if not value:
+            return None
 
         try:
             value = parse_datetime(value)
@@ -73,8 +73,8 @@ class HandoffCreate(BaseModel):
     @field_validator("scheduled_end", mode="before")
     @classmethod
     def validate_scheduled_end(cls, value):
-        if value is None:
-            return value
+        if not value:
+            return None
 
         try:
             value = parse_datetime(value)
@@ -85,8 +85,8 @@ class HandoffCreate(BaseModel):
     @field_validator("submission_date", mode="before")
     @classmethod
     def validate_submission_date(cls, value):
-        if value is None:
-            return value
+        if not value:
+            return None
 
         try:
             value = parse_datetime(value)
