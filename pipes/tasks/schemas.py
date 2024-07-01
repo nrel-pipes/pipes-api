@@ -8,17 +8,10 @@ from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, EmailStr, Field
 from pymongo import IndexModel
 
-from pipes.common.schemas import SourceCode
+from pipes.common.schemas import SourceCode, ExecutionStatus
 from pipes.graph.schemas import TaskVertex
 from pipes.modelruns.contexts import ModelRunObjectContext, ModelRunSimpleContext
 from pipes.users.schemas import UserCreate, UserRead
-
-
-class TaskStatus(str, Enum):
-    Pending = "Pending"
-    Running = "Running"
-    Success = "Success"
-    Failed = "Failed"
 
 
 class TaskType(str, Enum):
@@ -59,10 +52,10 @@ class TaskCreate(BaseModel):
         default=None,
         description="The user who conducts this task",
     )
-    status: TaskStatus = Field(
+    status: ExecutionStatus = Field(
         title="status",
-        default=TaskStatus.Pending,
-        description="The task status - Pending, Running, Success, or Failed",
+        default=ExecutionStatus.PENDING,
+        description="The task status - PENDING, RUNNING, SUCCESS, or FAILURE",
     )
     # Each task should have at least one subtask
     subtasks: list[SubTask] = Field(

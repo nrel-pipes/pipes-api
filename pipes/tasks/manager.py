@@ -11,6 +11,7 @@ from pipes.common.exceptions import (
     DocumentDoesNotExist,
     VertexAlreadyExists,
 )
+from pipes.common.schemas import ExecutionStatus
 from pipes.datasets.manager import DatasetManager
 from pipes.datasets.schemas import DatasetRead
 from pipes.db.manager import AbstractObjectManager
@@ -65,8 +66,12 @@ class TaskManager(AbstractObjectManager):
         task_vtx_id = task_vtx_model.id
 
         # Add edges between task and assignee
-        u_vtx_id = assignee_doc.vertex.id
-        self.n.add_e(task_vtx_id, u_vtx_id, EdgeLabel.associated.value)
+        if assignee_doc:
+            u_vtx_id = assignee_doc.vertex.id
+            self.n.add_e(task_vtx_id, u_vtx_id, EdgeLabel.associated.value)
+            assignee_doc_id = assignee_doc.id
+        else:
+            assignee_doc_id = None
 
         # Task used datasets
         for d_doc in input_datasets:
@@ -96,7 +101,7 @@ class TaskManager(AbstractObjectManager):
             name=task_create.name,
             type=task_create.type,
             description=task_create.description,
-            task_assignee=assignee_doc.id,
+            task_assignee=assignee_doc_id,
             status=task_create.status,
             subtasks=task_create.subtasks,
             scheduled_start=task_create.scheduled_start,
@@ -193,6 +198,37 @@ class TaskManager(AbstractObjectManager):
             task_reads.append(task_read)
         return task_reads
 
+    async def update_task_status(self, name: str, status: ExecutionStatus) -> TaskRead:
+        _context = ModelRunObjectContext(
+            project=self.context.project.id,
+            projectrun=self.context.projectrun.id,
+            model=self.context.model.id,
+            modelrun=self.context.modelrun.id,
+        )
+        await self.d.update_one(
+            collection=TaskDocument,
+            find={
+                "context.project": _context.project,
+                "context.projectrun": _context.projectrun,
+                "context.model": _context.model,
+                "context.modelrun": _context.modelrun,
+                "name": name,
+            },
+            update={"$set": {"status": status}},
+        )
+        task_doc = await self.d.find_one(
+            collection=TaskDocument,
+            query={
+                "context.project": _context.project,
+                "context.projectrun": _context.projectrun,
+                "context.model": _context.model,
+                "context.modelrun": _context.modelrun,
+                "name": name,
+            },
+        )
+        task_read = await self.read_task(task_doc)
+        return task_read
+
     async def read_task(self, task_doc: TaskDocument) -> TaskRead:
         # Read context
         p_id = task_doc.context.project
@@ -218,10 +254,13 @@ class TaskManager(AbstractObjectManager):
         # task assignee
         assignee_doc = await self.d.get(
             collection=UserDocument,
-            id=task_doc.task_assignee,
+            id=task_doc.assignee,
         )
-        assigee_read = UserRead.model_validate(assignee_doc.model_dump())
-        data["task_assignee"] = assigee_read
+        if assignee_doc:
+            assigee_read = UserRead.model_validate(assignee_doc.model_dump())
+            data["assignee"] = assigee_read
+        else:
+            data["assignee"] = None
 
         # task input & output datasets
         # dataset_manager = DatasetManager(self.context)
