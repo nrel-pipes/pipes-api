@@ -11,6 +11,13 @@ class VersionStatus(str, Enum):
     Unresolved = "Unresolved"
 
 
+class ExecutionStatus(str, Enum):
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+
+
 class SourceCode(BaseModel):
     """Source Model Schema"""
 

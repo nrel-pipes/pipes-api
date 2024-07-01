@@ -9,7 +9,9 @@ from pipes.common.exceptions import DocumentAlreadyExists, VertexAlreadyExists
 from pipes.db.manager import AbstractObjectManager
 from pipes.graph.constants import VertexLabel, EdgeLabel
 from pipes.graph.schemas import ModelRunVertexProperties, ModelRunVertex
+from pipes.projects.contexts import ProjectDocumentContext
 from pipes.projects.schemas import ProjectDocument
+from pipes.projectruns.contexts import ProjectRunDocumentContext
 from pipes.projectruns.schemas import ProjectRunDocument
 from pipes.models.contexts import (
     ModelDocumentContext,
@@ -28,7 +30,12 @@ class ModelRunManager(AbstractObjectManager):
 
     __label__ = VertexLabel.ModelRun.value
 
-    def __init__(self, context: ModelDocumentContext) -> None:
+    def __init__(
+        self,
+        context: (
+            ModelDocumentContext | ProjectRunDocumentContext | ProjectDocumentContext
+        ),
+    ) -> None:
         self.context = context
 
     async def create_modelrun(
@@ -161,21 +168,34 @@ class ModelRunManager(AbstractObjectManager):
     async def get_modelruns(self) -> list[ModelRunRead]:
         """Get all model runs under given project, project run, model"""
         p_doc = self.context.project
-        pr_doc = self.context.projectrun
-        m_doc = self.context.model
+        pr_doc = getattr(self.context, "projectrun", None)
+        m_doc = getattr(self.context, "model", None)
 
-        mr_docs = await self.d.find_all(
-            collection=ModelRunDocument,
-            query={
+        query = {
+            "context.project": p_doc.id,
+        }
+        if pr_doc:
+            query = {
+                "context.project": p_doc.id,
+                "context.projectrun": pr_doc.id,
+            }
+        if m_doc:
+            query = {
                 "context.project": p_doc.id,
                 "context.projectrun": pr_doc.id,
                 "context.model": m_doc.id,
-            },
+            }
+
+        mr_docs = await self.d.find_all(
+            collection=ModelRunDocument,
+            query=query,
         )
 
         mr_reads = []
-        for m_doc in mr_docs:
-            data = m_doc.model_dump()
+        for mr_doc in mr_docs:
+            data = mr_doc.model_dump()
+            pr_doc = await self.d.get(ProjectRunDocument, mr_doc.context.projectrun)
+            m_doc = await self.d.get(ModelDocument, mr_doc.context.model)
             data["context"] = ModelSimpleContext(
                 project=p_doc.name,
                 projectrun=pr_doc.name,

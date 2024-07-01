@@ -105,14 +105,21 @@ class HandoffManager(AbstractObjectManager):
 
     async def get_handoffs(self, model: str | None = None) -> list[HandoffRead]:
         p_doc = self.context.project
-        pr_doc = self.context.projectrun
-
-        query = {
-            "context.project": p_doc.id,
-            "context.projectrun": pr_doc.id,
-        }
-        if model:
-            query["from_model"] = model
+        pr_doc = getattr(self.context, "projectrun", None)
+        if pr_doc:
+            query = {
+                "context.project": p_doc.id,
+                "context.projectrun": pr_doc.id,
+            }
+            if model:
+                m_query = query.copy()
+                m_query["name"] = model
+                m_doc = await self.d.find_one(ModelDocument, query=m_query)
+                query["from_model"] = m_doc.id
+        else:
+            query = {
+                "context.project": p_doc.id,
+            }
 
         h_docs = await self.d.find_all(
             collection=HandoffDocument,

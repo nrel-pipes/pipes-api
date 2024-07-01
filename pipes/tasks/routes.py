@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi import status as fastapi_status
 
 from pipes.common.exceptions import (
     ContextValidationError,
@@ -10,6 +11,7 @@ from pipes.common.exceptions import (
     UserPermissionDenied,
     VertexAlreadyExists,
 )
+from pipes.common.schemas import ExecutionStatus
 from pipes.modelruns.contexts import ModelRunSimpleContext
 from pipes.modelruns.validators import ModelRunContextValidator
 from pipes.tasks.schemas import TaskCreate, TaskRead
@@ -42,12 +44,12 @@ async def create_task(
         validated_context = await validator.validate(user, context)
     except ContextValidationError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=fastapi_status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
     except UserPermissionDenied as e:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=fastapi_status.HTTP_403_FORBIDDEN,
             detail=str(e),
         )
 
@@ -61,7 +63,7 @@ async def create_task(
         DocumentDoesNotExist,
     ) as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=fastapi_status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
 
@@ -91,16 +93,53 @@ async def get_tasks(
         validated_context = await validator.validate(user, context)
     except ContextValidationError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=fastapi_status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
     except UserPermissionDenied as e:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=fastapi_status.HTTP_403_FORBIDDEN,
             detail=str(e),
         )
 
     manager = TaskManager(context=validated_context)
-    d_reads = await manager.get_tasks()
+    task_reads = await manager.get_tasks()
 
-    return d_reads
+    return task_reads
+
+
+@router.patch("/tasks", response_model=TaskRead)
+async def update_task_status(
+    project: str,
+    projectrun: str,
+    model: str,
+    modelrun: str,
+    task: str,
+    status: ExecutionStatus,
+    user: UserDocument = Depends(auth_required),
+) -> TaskRead:
+    """Update the status of given task"""
+    context = ModelRunSimpleContext(
+        project=project,
+        projectrun=projectrun,
+        model=model,
+        modelrun=modelrun,
+    )
+
+    try:
+        validator = ModelRunContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=fastapi_status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=fastapi_status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    manager = TaskManager(context=validated_context)
+    task = await manager.update_task_status(name=task, status=status)
+    return task

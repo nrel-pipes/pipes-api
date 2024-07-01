@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from beanie import Document
+from pymongo.results import UpdateResult
 
 from pipes.db.abstract import AbstractDatabase
 
@@ -35,3 +36,11 @@ class DocumentDB(AbstractDatabase):
             return await collection.find(query).to_list()
 
         return await collection.find().to_list()
+
+    async def update_one(
+        self,
+        collection: Document,
+        find: dict,
+        update: dict,
+    ) -> UpdateResult:
+        return await collection.find_one(find).update(update)

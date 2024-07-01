@@ -14,6 +14,8 @@ from pipes.common.exceptions import (
 )
 from pipes.handoffs.manager import HandoffManager
 from pipes.handoffs.schemas import HandoffCreate, HandoffRead
+from pipes.projects.contexts import ProjectSimpleContext
+from pipes.projects.validators import ProjectContextValidator
 from pipes.projectruns.contexts import ProjectRunSimpleContext
 from pipes.projectruns.validators import ProjectRunContextValidator
 from pipes.users.auth import auth_required
@@ -86,28 +88,51 @@ async def create_handoff(
 @router.get("/handoffs", response_model=list[HandoffRead])
 async def get_handoffs(
     project: str,
-    projectrun: str,
+    projectrun: str | None = None,
     model: str | None = None,
     user: UserDocument = Depends(auth_required),
 ):
     """Get all models with given project and projectrun"""
-    context = ProjectRunSimpleContext(project=project, projectrun=projectrun)
+    if projectrun:
+        context = ProjectRunSimpleContext(project=project, projectrun=projectrun)
 
-    try:
-        validator = ProjectRunContextValidator()
-        validated_context = await validator.validate(user, context)
-    except ContextValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    except UserPermissionDenied as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e),
-        )
+        try:
+            validator1 = ProjectRunContextValidator()
+            validated_context = await validator1.validate(user, context)
+        except ContextValidationError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
+        except UserPermissionDenied as e:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=str(e),
+            )
 
-    manager = HandoffManager(context=validated_context)
-    h_reads = await manager.get_handoffs(model)
+        manager = HandoffManager(context=validated_context)
+        h_reads = await manager.get_handoffs(model)
 
-    return h_reads
+        return h_reads
+
+    else:
+        context = ProjectSimpleContext(project=project)
+
+        try:
+            validator2 = ProjectContextValidator()
+            validated_context = await validator2.validate(user, context)
+        except ContextValidationError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
+        except UserPermissionDenied as e:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=str(e),
+            )
+
+        manager = HandoffManager(context=validated_context)
+        h_reads = await manager.get_handoffs(model)
+
+        return h_reads

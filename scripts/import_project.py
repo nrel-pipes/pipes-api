@@ -138,6 +138,47 @@ else:
     print(f"Model run {mr_name} created successfully.")
 
 
+# Tasks
+mr_template_file = templates_dir.joinpath("test_model_run.toml")
+with open(mr_template_file) as f:
+    raw_modelrun = toml.load(f)
+
+mr_name = raw_modelrun["name"]
+clean_task = {
+    "name": "transX3",
+    "type": "Transformation",
+    "description": "",
+    "assignee": None,
+    "status": "PENDING",
+    "subtasks": [
+        {
+            "name": "trans_1",
+            "description": "30% of passenger cars on the road in 2045 are plug-in electric. Residential building equipment and appliance sales are distributed across all efficiency levels. 80% of new & retrofit equipment is 5 years ahead of California's Title 24 commercial building energy-efficiency code-minimum. 75% of residents have access to residential charging; 25% access to workplace charging.",
+        },
+        {
+            "name": "trans_2",
+            "description": "Appliances, heating within buildings switch from natural gas to electric. Residential building equipment and appliance sales are at highest efficiency available. 80% of passenger cars on the road in 2045 are plug-in electric. 60% of residents have access to residential charging; 50% access to workplace charging to encourage more daytime charging. Demand is more flexible in its timing.",
+        },
+    ],
+    "scheduled_start": None,
+    "scheduled_end": None,
+    "completion_date": None,
+    "source_code": None,
+    "input_datasets": [],
+    "input_parameters": {},
+    "output_datasets": [],
+    "output_values": {},
+    "logs": "",
+    "notes": "",
+}
+task_url = f"{host}/api/tasks?project={p_name}&projectrun={pr_name}&model=dsgrid&modelrun={mr_name}"
+response = requests.post(task_url, data=json.dumps(clean_task), headers=headers)
+if response.status_code != 201:
+    print(task_url, response.text)
+else:
+    print(f"Task 'trans' created successfully on '{pr_name}' - 'dsgrid' - '{mr_name}")
+
+
 # Checkin dataset
 d_template_file = templates_dir.joinpath("test_dataset.toml")
 with open(d_template_file) as f:
