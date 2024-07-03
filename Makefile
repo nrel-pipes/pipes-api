@@ -1,7 +1,6 @@
 -include env_make
 
-# BASE_IMAGE_TAG ?= 3-alpine
-BASE_IMAGE_TAG ?= 3
+BASE_IMAGE_TAG ?= py312bookworm
 
 PROJECT_NAME=pipes-api
 
@@ -35,8 +34,7 @@ $(info BRANCH_NAME="$(BRANCH_NAME)")
 
 # git release version - use for rollbacks
 
-# TAG ?= $(CODEBUILD_BUILD_NUMBER)-$(BASE_IMAGE_TAG)-$(BRANCH_NAME)-$(HEAD_VER)
-TAG ?= $(CODEBUILD_BUILD_NUMBER)-$(BRANCH_NAME)-$(HEAD_VER)
+TAG ?= $(CODEBUILD_BUILD_NUMBER)-$(BASE_IMAGE_TAG)-$(BRANCH_NAME)-$(HEAD_VER)
 
 .PHONY: build push
 
