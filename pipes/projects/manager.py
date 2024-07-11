@@ -118,38 +118,42 @@ class ProjectManager(AbstractObjectManager):
 
     async def get_basic_projects(self, user: UserDocument) -> list[ProjectDocument]:
         """Get all projects of current user, basic information only."""
-        # project created by current user
-        p1_docs = await self.d.find_all(
-            collection=ProjectDocument,
-            query={"created_by": {"$eq": user.id}},
-        )
+        if user.is_superuser:
+            available_p_docs = await self.d.find_all(collection=ProjectDocument)
+        else:
+            # project created by current user
+            p1_docs = await self.d.find_all(
+                collection=ProjectDocument,
+                query={"created_by": {"$eq": user.id}},
+            )
 
-        # project owner is current user
-        p2_docs = await self.d.find_all(
-            collection=ProjectDocument,
-            query={"owner": {"$eq": user.id}},
-        )
+            # project owner is current user
+            p2_docs = await self.d.find_all(
+                collection=ProjectDocument,
+                query={"owner": {"$eq": user.id}},
+            )
 
-        # project leads containing current user
-        p3_docs = await self.d.find_all(
-            collection=ProjectDocument,
-            query={"leads": user.id},
-        )
+            # project leads containing current user
+            p3_docs = await self.d.find_all(
+                collection=ProjectDocument,
+                query={"leads": user.id},
+            )
 
-        # project team containing current user
-        u_team_docs = await self.d.find_all(
-            collection=TeamDocument,
-            query={"members": user.id},
-        )
-        p_ids = [t_doc.context.project for t_doc in u_team_docs]
-        p4_docs = await self.d.find_all(
-            collection=ProjectDocument,
-            query={"_id": {"$in": p_ids}},
-        )
+            # project team containing current user
+            u_team_docs = await self.d.find_all(
+                collection=TeamDocument,
+                query={"members": user.id},
+            )
+            p_ids = [t_doc.context.project for t_doc in u_team_docs]
+            p4_docs = await self.d.find_all(
+                collection=ProjectDocument,
+                query={"_id": {"$in": p_ids}},
+            )
+            available_p_docs = chain(p1_docs, p2_docs, p3_docs, p4_docs)
 
         # return projects
         p_docs = {}
-        for p_doc in chain(p1_docs, p2_docs, p3_docs, p4_docs):
+        for p_doc in available_p_docs:
             if p_doc.id in p_docs:
                 continue
             p_docs[p_doc.id] = p_doc

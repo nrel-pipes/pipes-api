@@ -36,7 +36,7 @@ class ContextValidator:
         if user.is_superuser:
             return True
 
-        return False
+        raise UserPermissionDenied("No permission to retrieve this project.")
 
 
 class DomainValidator:
