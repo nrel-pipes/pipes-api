@@ -149,7 +149,14 @@ class ProjectManager(AbstractObjectManager):
                 collection=ProjectDocument,
                 query={"_id": {"$in": p_ids}},
             )
-            available_p_docs = chain(p1_docs, p2_docs, p3_docs, p4_docs)
+
+            # TODO: A hardcoded for all PIPES users accessing the test project.
+            p5_docs = await self.d.find_all(
+                collection=ProjectDocument,
+                query={"name": {"$in": ["test1", "pipes101"]}},
+            )
+
+            available_p_docs = chain(p1_docs, p2_docs, p3_docs, p4_docs, p5_docs)
 
         # return projects
         p_docs = {}
