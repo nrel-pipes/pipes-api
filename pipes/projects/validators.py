@@ -43,6 +43,10 @@ class ProjectContextValidator(ContextValidator):
 
         p_doc = self._validated_context.project
 
+        # TODO: Hardcoded granting PIPES test projects to all PIPES users
+        if p_doc.name in ["test1", "pipes101"]:
+            return True
+
         is_superuser = user.is_superuser
         is_owner = user.id == p_doc.owner
         is_lead = user.id in p_doc.leads

@@ -32,11 +32,7 @@ class ContextValidator:
         """Implement concrete validation method"""
         if not user.is_active:
             raise UserPermissionDenied("Inactive user is not allowed.")
-
-        if user.is_superuser:
-            return True
-
-        return False
+        return True
 
 
 class DomainValidator:

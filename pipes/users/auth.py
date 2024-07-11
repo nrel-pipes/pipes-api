@@ -113,7 +113,11 @@ class CognitoJWKsVerifier:
         message, signature = str(access_token).rsplit(".", 1)
         decoded_signature = base64url_decode(signature.encode("utf-8"))
 
-        publickey = self._get_publickey(access_token)
+        try:
+            publickey = self._get_publickey(access_token)
+        except JWTError:
+            return False
+
         is_verified = publickey.verify(message.encode("utf-8"), decoded_signature)
         if not is_verified:
             raise CognitoAuthError(
@@ -154,10 +158,11 @@ class CognitoAuth:
             if not cognito_user:
                 raise CognitoAuthError("Invalid access token.")
 
-            organization = parse_organization(cognito_user["email"])
+            email = cognito_user["email"].lower()
+            organization = parse_organization(email)
             u_create = CognitoUserCreate(
                 username=cognito_user["username"],
-                email=cognito_user["email"],
+                email=email,
                 first_name=cognito_user["first_name"],
                 last_name=cognito_user["last_name"],
                 organization=organization,
@@ -166,7 +171,7 @@ class CognitoAuth:
             try:
                 u_doc = await manager.create_user(u_create=u_create)
             except DocumentAlreadyExists:
-                u_doc = await manager.get_user_by_email(cognito_user["email"])
+                u_doc = await manager.get_user_by_email(email)
 
         if (not u_doc) or (not u_doc.is_active):
             return None

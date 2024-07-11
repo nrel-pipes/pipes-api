@@ -62,10 +62,10 @@ async def get_user_by_email(
     * Admin user could query detail of any user by email
     * Regular user could query detail of their own.
     """
-    if not user.is_superuser:
+    if (not user.is_superuser) and (email.lower() != user.email.lower()):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not permitted. Admin only.",
+            detail="Not permitted.",
         )
 
     try:
