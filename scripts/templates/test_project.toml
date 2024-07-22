@@ -1,7 +1,7 @@
 ################## Project data ####################
 
 [project]
-  name = "test1"  # A short name in one word as project identifier
+  name = "pipes101"  # A short name in one word as project identifier
   full_name = "Test Project 1"
   description = "This is the first test project for PIPES using some of the LA100 data and configs as a test case"
   assumptions = [
