@@ -8,6 +8,7 @@ from pipes.common.exceptions import (
     DocumentDoesNotExist,
     DomainValidationError,
     UserPermissionDenied,
+    VertexAlreadyExists,
 )
 from pipes.modelruns.contexts import ModelRunSimpleContext
 from pipes.modelruns.validators import ModelRunContextValidator
@@ -50,10 +51,15 @@ async def create_dataset(
             detail=str(e),
         )
 
-    manager = DatasetManager()
+    manager = DatasetManager(context=validated_context)
     try:
-        d_doc = await manager.create_dataset(user, data, validated_context)
-    except (DocumentAlreadyExists, DomainValidationError, DocumentDoesNotExist) as e:
+        d_doc = await manager.create_dataset(data, user)
+    except (
+        VertexAlreadyExists,
+        DocumentAlreadyExists,
+        DomainValidationError,
+        DocumentDoesNotExist,
+    ) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -65,7 +71,7 @@ async def create_dataset(
 
 
 @router.get("/datasets/", response_model=list[DatasetRead])
-async def get_all_datasets(
+async def get_datasets(
     project: str,
     projectrun: str,
     model: str,
@@ -94,7 +100,7 @@ async def get_all_datasets(
             detail=str(e),
         )
 
-    manager = DatasetManager()
-    d_reads = await manager.get_datasets(validated_context)
+    manager = DatasetManager(context=validated_context)
+    d_reads = await manager.get_datasets()
 
     return d_reads

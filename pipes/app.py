@@ -34,6 +34,14 @@ from pipes.modelruns.routes import router as modelruns_router
 from pipes.datasets.schemas import DatasetDocument
 from pipes.datasets.routes import router as datasets_router
 
+# Handoffs
+from pipes.handoffs.schemas import HandoffDocument
+from pipes.handoffs.routes import router as handoffs_router
+
+# Tasks
+from pipes.tasks.schemas import TaskDocument
+from pipes.tasks.routes import router as tasks_router
+
 # Teams
 from pipes.teams.routes import router as teams_router
 from pipes.teams.schemas import TeamDocument
@@ -41,18 +49,24 @@ from pipes.teams.schemas import TeamDocument
 # Users
 from pipes.users.schemas import UserDocument
 from pipes.users.routes import router as users_router
-
-__version__ = "0.0.1"
+from pipes.version import __version__
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """FastAPI application life span"""
     # Init beanie
-    if settings.PIPES_ENV == "testing":
-        docdb_uri = "mongodb://"  # TODO: testing docdb uri
-    elif settings.PIPES_ENV == "prod":
-        docdb_uri = "mongodb://"  # TODO: prod docdb uri
+    if settings.PIPES_ENV in ["dev", "stage", "prod"]:
+        docdb_uri = "mongodb://{}:{}@{}:{}/{}".format(
+            settings.PIPES_DOCDB_USER,
+            settings.PIPES_DOCDB_PASS,
+            settings.PIPES_DOCDB_HOST,
+            settings.PIPES_DOCDB_PORT,
+            settings.PIPES_DOCDB_NAME,
+        )
+        docdb_uri += (
+            "?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
+        )
     else:
         docdb_uri = f"mongodb://{settings.PIPES_DOCDB_HOST}:{settings.PIPES_DOCDB_PORT}/{settings.PIPES_DOCDB_NAME}"
 
@@ -66,6 +80,8 @@ async def lifespan(app: FastAPI):
             ModelDocument,
             ModelRunDocument,
             DatasetDocument,
+            HandoffDocument,
+            TaskDocument,
             TeamDocument,
             UserDocument,
         ],
@@ -97,10 +113,12 @@ app.include_router(projectruns_router, prefix="/api", tags=["projectruns"])
 app.include_router(models_router, prefix="/api", tags=["models"])
 app.include_router(modelruns_router, prefix="/api", tags=["modelruns"])
 app.include_router(datasets_router, prefix="/api", tags=["datasets"])
+app.include_router(handoffs_router, prefix="/api", tags=["handoffs"])
+app.include_router(tasks_router, prefix="/api", tags=["tasks"])
 app.include_router(teams_router, prefix="/api", tags=["teams"])
 app.include_router(users_router, prefix="/api", tags=["users"])
 
 
 @app.get("/")
 async def welcome():
-    return RedirectResponse("/api/")
+    return RedirectResponse("/api")

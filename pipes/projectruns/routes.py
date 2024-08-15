@@ -9,6 +9,7 @@ from pipes.common.exceptions import (
     UserPermissionDenied,
     DocumentAlreadyExists,
     DomainValidationError,
+    VertexAlreadyExists,
 )
 from pipes.projects.contexts import ProjectSimpleContext
 from pipes.projects.validators import ProjectContextValidator
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/projectruns/", response_model=ProjectRunRead, status_code=201)
+@router.post("/projectruns", response_model=ProjectRunRead, status_code=201)
 async def create_projectrun(
     project: str,
     data: ProjectRunCreate,
@@ -44,11 +45,10 @@ async def create_projectrun(
             detail=str(e),
         )
 
-    p_doc = validated_context.project
-    manager = ProjectRunManager()
+    manager = ProjectRunManager(context=validated_context)
     try:
-        pr_doc = await manager.create_projectrun(p_doc, data, user)
-    except (DocumentAlreadyExists, DomainValidationError) as e:
+        pr_doc = await manager.create_projectrun(data, user)
+    except (VertexAlreadyExists, DocumentAlreadyExists, DomainValidationError) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -59,7 +59,7 @@ async def create_projectrun(
     return pr_read
 
 
-@router.get("/projectruns/", response_model=list[ProjectRunRead])
+@router.get("/projectruns", response_model=list[ProjectRunRead])
 async def get_projectruns(
     project: str,
     user: UserDocument = Depends(auth_required),
@@ -81,8 +81,7 @@ async def get_projectruns(
             detail=str(e),
         )
 
-    p_doc = validated_context.project
-    manager = ProjectRunManager()
-    pr_docs = await manager.get_projectruns(p_doc)
+    manager = ProjectRunManager(context=validated_context)
+    pr_docs = await manager.get_projectruns()
 
     return pr_docs

@@ -22,7 +22,7 @@ async def welcome():
     return {"message": "Welcome to NREL PIPES!"}
 
 
-@router.get("/ping/")
+@router.get("/ping")
 async def ping(neptune: NeptuneDB = Depends(get_neptune_db)):
     """
     For ALB health check, need to ping Neptune regularly to avoid idle timeout - 20mins
@@ -37,5 +37,9 @@ async def ping(neptune: NeptuneDB = Depends(get_neptune_db)):
             detail=str(e),
         )
 
-    vertex = data[0] if len(data) > 0 else None
-    return {"message": "pong", "vertex": vertex.label}
+    vtx = data[0] if len(data) > 0 else None
+    if not vtx:
+        vid = None
+    else:
+        vid = vtx.id
+    return {"message": "pong", "vertex": vid}

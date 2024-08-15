@@ -6,6 +6,7 @@ from pymongo import IndexModel
 from beanie import Document
 from pydantic import BaseModel, Field
 
+from pipes.graph.schemas import TeamVertex
 from pipes.projects.contexts import ProjectSimpleContext, ProjectObjectContext
 from pipes.users.schemas import UserRead, UserCreate
 
@@ -84,6 +85,10 @@ class TeamBasicRead(BaseModel):
 class TeamDocument(TeamRead, Document):
     """Team document in db"""
 
+    vertex: TeamVertex = Field(
+        title="vertex",
+        description="The neptune vertex model",
+    )
     context: ProjectObjectContext = Field(
         title="context",
         description="project referenced context",

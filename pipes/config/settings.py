@@ -45,26 +45,26 @@ class TestingSettings(CommonSettings):
     TESTING: bool = True
 
 
-class ProductionSettings(CommonSettings):
+class DeploymentSettings(CommonSettings):
     DEBUG: bool = False
 
 
 def get_settings(env):
     """Get settings regarding the given environment"""
-    if env == "prod":
-        return ProductionSettings()
-
-    if env == "dev":
+    if env == "local":
         return DevelopmentSettings()
 
     if env == "testing":
         return TestingSettings()
 
+    if env in ["dev", "stage", "prod"]:
+        return DeploymentSettings()
+
     raise ValueError(
-        f"Not a valid environment '{env}', please use 'dev' or 'prod'",
+        f"Not a valid environment '{env}', please use 'local', 'dev', 'stage', or 'prod'",
     )
 
 
-PIPES_ENV = os.getenv("PIPES_ENV", "dev")
+PIPES_ENV = os.getenv("PIPES_ENV", "local")
 
 settings = get_settings(PIPES_ENV)

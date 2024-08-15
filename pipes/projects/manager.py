@@ -6,36 +6,89 @@ from itertools import chain
 
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import DocumentAlreadyExists
+from pipes.common.exceptions import DocumentAlreadyExists, VertexAlreadyExists
 from pipes.db.manager import AbstractObjectManager
-from pipes.projects.schemas import ProjectCreate, ProjectDocument, ProjectDetailRead
+from pipes.graph.constants import VertexLabel, EdgeLabel
+from pipes.graph.schemas import ProjectVertexProperties, ProjectVertex
+from pipes.projects.schemas import ProjectCreate, ProjectDetailRead, ProjectDocument
 from pipes.projects.validators import ProjectDomainValidator
 from pipes.teams.schemas import TeamDocument, TeamBasicRead
 from pipes.users.manager import UserManager
-from pipes.users.schemas import UserDocument, UserRead
+from pipes.users.schemas import UserCreate, UserDocument, UserRead
 
 logger = logging.getLogger(__name__)
 
 
 class ProjectManager(AbstractObjectManager):
 
+    __label__ = VertexLabel.Project.value
+
     async def create_project(
         self,
         p_create: ProjectCreate,
         user: UserDocument,
     ) -> ProjectDocument:
+        # Validate project domain business
+
+        domain_validator = ProjectDomainValidator()
+        p_create = await domain_validator.validate(p_create)
+
+        # Get or create user vertex & document
+        p_owner = await self._get_or_create_project_owner(p_create.owner)
+
+        # Create project vertex & document
+        p_vertex = await self._create_project_vertex(p_create.name)
+        p_doc = await self._create_project_document(p_create, p_vertex, p_owner, user)
+
+        # Add edget: user owns project
+        u_vtx_id = p_owner.vertex.id
+        p_vtx_id = p_vertex.id
+        self.n.add_e(u_vtx_id, p_vtx_id, EdgeLabel.owns.value)
+
+        return p_doc
+
+    async def _create_project_vertex(self, p_name: str) -> ProjectVertex:
+        properties = {"name": p_name}
+        if self.n.exists(self.label, **properties):
+            raise VertexAlreadyExists(f"Project vertex {properties} already exists.")
+
+        properties_model = ProjectVertexProperties(**properties)
+        properties = properties_model.model_dump()
+        p_vtx = self.n.add_v(self.label, **properties)
+
+        # Dcoument creation
+        p_vtx_model = ProjectVertex(
+            id=p_vtx.id,
+            label=self.label,
+            properties=properties_model,
+        )
+        return p_vtx_model
+
+    async def _get_or_create_project_owner(self, owner: UserCreate) -> UserDocument:
+        # Get or create user object
+        user_manager = UserManager()
+        p_owner_doc = await user_manager.get_or_create_user(owner)
+        return p_owner_doc
+
+    async def _create_project_document(
+        self,
+        p_create: ProjectCreate,
+        p_vertex: ProjectVertex,
+        p_owner: UserDocument,
+        user: UserDocument,
+    ) -> ProjectDocument:
         """Create a new project"""
         # NOTE: avoid db collection issue introduced from manual operations, like db.projects.drop()
         p_name = p_create.name
-        p_doc_exists = await ProjectDocument.find_one(ProjectDocument.name == p_name)
+        p_doc_exists = await self.d.exists(
+            collection=ProjectDocument,
+            query={"name": p_name},
+        )
         if p_doc_exists:
             raise DocumentAlreadyExists(f"Project '{p_create.name}' already exists.")
 
-        # Get user object
-        user_manager = UserManager()
-        p_owner_doc = await user_manager.get_or_create_user(p_create.owner)
-
         p_doc = ProjectDocument(
+            vertex=p_vertex,
             # project information
             name=p_create.name,
             title=p_create.title,
@@ -47,16 +100,13 @@ class ProjectManager(AbstractObjectManager):
             milestones=p_create.milestones,
             scheduled_start=p_create.scheduled_start,
             scheduled_end=p_create.scheduled_end,
-            owner=p_owner_doc.id,
+            owner=p_owner.id,
             # document information
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(),
             created_by=user.id,
-            last_modified=datetime.utcnow(),
+            last_modified=datetime.now(),
             modified_by=user.id,
         )
-
-        domain_validator = ProjectDomainValidator()
-        p_doc = await domain_validator.validate(p_doc)
 
         try:
             await p_doc.insert()
@@ -68,27 +118,49 @@ class ProjectManager(AbstractObjectManager):
 
     async def get_basic_projects(self, user: UserDocument) -> list[ProjectDocument]:
         """Get all projects of current user, basic information only."""
-        # project created by current user
-        p1_docs = await ProjectDocument.find(
-            {"created_by": {"$eq": user.id}},
-        ).to_list()
+        if user.is_superuser:
+            available_p_docs = await self.d.find_all(collection=ProjectDocument)
+        else:
+            # project created by current user
+            p1_docs = await self.d.find_all(
+                collection=ProjectDocument,
+                query={"created_by": {"$eq": user.id}},
+            )
 
-        # project owner is current user
-        p2_docs = await ProjectDocument.find(
-            {"owner": {"$eq": user.id}},
-        ).to_list()
+            # project owner is current user
+            p2_docs = await self.d.find_all(
+                collection=ProjectDocument,
+                query={"owner": {"$eq": user.id}},
+            )
 
-        # project leads containing current user
-        p3_docs = await ProjectDocument.find({"leads": user.id}).to_list()
+            # project leads containing current user
+            p3_docs = await self.d.find_all(
+                collection=ProjectDocument,
+                query={"leads": user.id},
+            )
 
-        # project team containing current user
-        u_team_docs = await TeamDocument.find({"members": user.id}).to_list()
-        p_ids = [t_doc.context.project for t_doc in u_team_docs]
-        p4_docs = await ProjectDocument.find({"_id": {"$in": p_ids}}).to_list()
+            # project team containing current user
+            u_team_docs = await self.d.find_all(
+                collection=TeamDocument,
+                query={"members": user.id},
+            )
+            p_ids = [t_doc.context.project for t_doc in u_team_docs]
+            p4_docs = await self.d.find_all(
+                collection=ProjectDocument,
+                query={"_id": {"$in": p_ids}},
+            )
+
+            # TODO: A hardcoded for all PIPES users accessing the test project.
+            p5_docs = await self.d.find_all(
+                collection=ProjectDocument,
+                query={"name": {"$in": ["test1", "pipes101"]}},
+            )
+
+            available_p_docs = chain(p1_docs, p2_docs, p3_docs, p4_docs, p5_docs)
 
         # return projects
         p_docs = {}
-        for p_doc in chain(p1_docs, p2_docs, p3_docs, p4_docs):
+        for p_doc in available_p_docs:
             if p_doc.id in p_docs:
                 continue
             p_docs[p_doc.id] = p_doc
@@ -101,8 +173,9 @@ class ProjectManager(AbstractObjectManager):
     # ) -> ProjectDocument | None:
     #     """Update project details"""
     #     p_doc = self.validated_context.project
-    #     p_doc_other = await ProjectDocument.find_one(
-    #         ProjectDocument.name == p_update.name,
+    #     p_doc_other = await self.d.find_one(
+    #         collection=ProjectDocument,
+    #         query={"name": p_update.name},
     #     )
     #     if p_doc_other and (p_doc_other.id != p_doc.id):
     #         raise DocumentAlreadyExists(
@@ -130,16 +203,22 @@ class ProjectManager(AbstractObjectManager):
         owner_read = UserRead.model_validate(owner_doc.model_dump())
 
         # leads
-        lead_docs = UserDocument.find({"_id": {"$in": p_doc.leads}})
+        lead_docs = await self.d.find_all(
+            collection=UserDocument,
+            query={"_id": {"$in": p_doc.leads}},
+        )
         lead_reads = []
-        async for lead_doc in lead_docs:
+        for lead_doc in lead_docs:
             lead_read = UserRead.model_validate(lead_doc.model_dump())
             lead_reads.append(lead_read)
 
         # teams
-        team_docs = TeamDocument.find({"_id": {"$in": p_doc.teams}})
+        team_docs = await self.d.find_all(
+            collection=TeamDocument,
+            query={"_id": {"$in": p_doc.teams}},
+        )
         team_reads = []
-        async for team_doc in team_docs:
+        for team_doc in team_docs:
             team_read = TeamBasicRead(
                 name=team_doc.name,
                 description=team_doc.description,

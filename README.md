@@ -25,7 +25,7 @@ In `.env` file,
 
 ```
 # Environment
-PIPES_ENV=dev
+PIPES_ENV=local
 
 # MongoDB
 PIPES_DOCDB_HOST=mongodb

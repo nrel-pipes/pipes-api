@@ -9,6 +9,7 @@ from pipes.common.exceptions import (
     ContextValidationError,
     DocumentAlreadyExists,
     DomainValidationError,
+    VertexAlreadyExists,
 )
 from pipes.projects.contexts import ProjectSimpleContext
 from pipes.projects.manager import ProjectManager
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/projects/", response_model=ProjectDetailRead, status_code=201)
+@router.post("/projects", response_model=ProjectDetailRead, status_code=201)
 async def create_project(
     data: ProjectCreate,
     user: UserDocument = Depends(auth_required),
@@ -30,7 +31,7 @@ async def create_project(
     try:
         manager = ProjectManager()
         p_doc = await manager.create_project(data, user)
-    except (DocumentAlreadyExists, DomainValidationError) as e:
+    except (VertexAlreadyExists, DocumentAlreadyExists, DomainValidationError) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -42,7 +43,7 @@ async def create_project(
     return p_read
 
 
-@router.get("/projects/", response_model=ProjectDetailRead)
+@router.get("/projects", response_model=ProjectDetailRead)
 async def get_project_detail(
     project: str,
     user: UserDocument = Depends(auth_required),
@@ -73,7 +74,7 @@ async def get_project_detail(
     return p_read
 
 
-@router.get("/projects/basics/", response_model=list[ProjectBasicRead])
+@router.get("/projects/basics", response_model=list[ProjectBasicRead])
 async def get_basic_projects(user: UserDocument = Depends(auth_required)):
     """Get all projects with basic information"""
     manager = ProjectManager()
@@ -81,7 +82,7 @@ async def get_basic_projects(user: UserDocument = Depends(auth_required)):
     return p_read_docs
 
 
-# @router.put("/projects/detail/", response_model=ProjectDetailRead)
+# @router.put("/projects/detail", response_model=ProjectDetailRead)
 # async def update_project_detail(
 #     project: str,
 #     data: ProjectUpdate,

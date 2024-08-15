@@ -22,6 +22,14 @@ class DocumentAlreadyExists(Exception):
     """Raise when user already exists in docdb."""
 
 
+class EdgeDoesNotExist(Exception):
+    """Raise when an edge does not exist in graph db."""
+
+
+class EdgeAlreadyExists(Exception):
+    """Raise when an edge already exists in graph db."""
+
+
 class VertextDoesNotExist(Exception):
     """Raise when a vertex does not exist in graphdb."""
 

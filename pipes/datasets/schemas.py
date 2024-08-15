@@ -4,10 +4,11 @@ from datetime import datetime
 
 import pymongo
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pymongo import IndexModel
 
 from pipes.common.schemas import SourceCode, VersionStatus
+from pipes.graph.schemas import DatasetVertex
 from pipes.modelruns.contexts import ModelRunSimpleContext, ModelRunObjectContext
 from pipes.users.schemas import UserCreate, UserRead
 
@@ -192,6 +193,7 @@ class DatasetCreate(BaseModel):
         default={},
         description="other metadata info about the dataset",
     )
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class DatasetRead(DatasetCreate):
@@ -206,6 +208,10 @@ class DatasetRead(DatasetCreate):
 
 
 class DatasetDocument(DatasetRead, Document):
+    vertex: DatasetVertex = Field(
+        title="vertex",
+        description="The dataset vertex pydantic model",
+    )
     context: ModelRunObjectContext = Field(
         title="context",
         description="model run context reference",
@@ -213,6 +219,25 @@ class DatasetDocument(DatasetRead, Document):
     registration_author: PydanticObjectId = Field(
         title="registration_author",
         description="registration author reference",
+    )
+
+    # document information
+    created_at: datetime = Field(
+        title="created_at",
+        description="project creation time",
+    )
+    created_by: PydanticObjectId = Field(
+        title="created_by",
+        description="user who created the project",
+    )
+    last_modified: datetime = Field(
+        title="last_modified",
+        default=datetime.now(),
+        description="last modification datetime",
+    )
+    modified_by: PydanticObjectId = Field(
+        title="modified_by",
+        description="user who modified the project",
     )
 
     class Settings:

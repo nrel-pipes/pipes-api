@@ -23,8 +23,15 @@ class ModelRunSimpleContext(BaseModel):
         description="modelrun name",
     )
 
-    def __str__(self) -> str:
-        return f"[project:{self.project} | projectrun:{self.projectrun} | model:{self.model} | modelrun:{self.modelrun}]"  # noqa: E501
+    def __str__(self):
+        return (
+            "{"
+            f"project: {self.project},"
+            f"projectrun: {self.projectrun},"
+            f"model: {self.model},"
+            f"modelrun: {self.modelrun}"
+            "}"
+        )
 
 
 class ModelRunDocumentContext(BaseModel):
@@ -45,8 +52,15 @@ class ModelRunDocumentContext(BaseModel):
         description="modelrun document",
     )
 
-    def __str__(self) -> str:
-        return f"[project:{self.project.name} | projectrun:{self.projectrun.name} | model:{self.model.name} | modelrun:{self.modelrun.name}]"  # noqa: E501
+    def __str__(self):
+        return (
+            "{"
+            f"project: {self.project.name},"
+            f"projectrun: {self.projectrun.name},"
+            f"model: {self.model.name},"
+            f"modelrun: {self.modelrun.name}"
+            "}"
+        )
 
 
 class ModelRunObjectContext(BaseModel):
@@ -63,3 +77,13 @@ class ModelRunObjectContext(BaseModel):
         title="modelrun",
         description="modelrun id",
     )
+
+    def __str__(self):
+        return (
+            "{"
+            f"project: {self.project},"
+            f"projectrun: {self.projectrun},"
+            f"model: {self.model},"
+            f"modelrun: {self.modelrun}"
+            "}"
+        )

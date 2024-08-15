@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
 
 import pymongo
 from pymongo import IndexModel
 from beanie import Document
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+from pipes.graph.schemas import UserVertex
 
 
 # User
@@ -34,6 +37,28 @@ class UserCreate(BaseModel):
     )
 
 
+class CognitoUserCreate(UserCreate):
+    username: str | None = Field(
+        title="username",
+        description="Cognito username in uuid string",
+    )
+
+    @field_validator("username", mode="before")
+    @classmethod
+    def validate_username(cls, value):
+        """Ensure the value is valid UUID string"""
+        if not value:
+            return None
+
+        value = str(value)
+        try:
+            UUID(value)
+        except ValueError as e:
+            raise e
+
+        return value
+
+
 class UserRead(UserCreate):
     """Schema for user read"""
 
@@ -50,6 +75,10 @@ class UserRead(UserCreate):
 class UserDocument(UserRead, Document):
     """User document in db"""
 
+    vertex: UserVertex = Field(
+        title="vertex",
+        description="The neptune vertex model",
+    )
     username: str | None = Field(
         title="username",
         default=None,
@@ -83,3 +112,18 @@ class UserDocument(UserRead, Document):
     def read(self) -> UserRead:
         data = self.model_dump()
         return UserRead.model_validate(data)
+
+    @field_validator("username", mode="before")
+    @classmethod
+    def validate_username(cls, value):
+        """Ensure the value is valid UUID string"""
+        if not value:
+            return None
+
+        value = str(value)
+        try:
+            UUID(value)
+        except ValueError as e:
+            raise e
+
+        return value

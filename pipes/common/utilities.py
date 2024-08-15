@@ -7,7 +7,7 @@ from dateutil import parser
 from pydantic import EmailStr
 from shortuuid import ShortUUID
 
-from pipes.common.mapping import DNS_ORG_MAPPING
+from pipes.common.constants import DNS_ORG_MAPPING
 
 
 def generate_shortuuid() -> str:

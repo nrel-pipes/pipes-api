@@ -8,24 +8,24 @@ ENV PYTHONDONTWRITEBYTECODE=TRUE
 ENV PYTHONUNBUFFERED=TRUE
 
 # install system dependencies
-RUN apt-get update -y --fix-missing \
+RUN apt-get update -y --fix-missing && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
     build-essential \
+    netcat-openbsd \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get autoclean
 
 # install python packages
 WORKDIR /app
 COPY ./requirements.txt requirements.txt
-COPY ./requirements-dev.txt requirements-dev.txt
 RUN pip3 install --upgrade pip setuptools
-RUN pip3 install -r requirements-dev.txt
+RUN pip3 install -r requirements.txt
 
 # operations
-COPY ./wait-for-mongo.sh /wait-for-mongo.sh
-RUN chmod +x /wait-for-mongo.sh
-COPY ./entrypoint.sh /entrypoint.sh
+COPY ./deployment/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # all code
 COPY . .
+
+EXPOSE 8080

@@ -7,10 +7,84 @@ from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field, field_validator
 
-from pipes.common.schemas import Milestone, Scenario, Sensitivity
 from pipes.common.utilities import parse_datetime
+from pipes.graph.schemas import ProjectVertex
 from pipes.teams.schemas import TeamBasicRead
 from pipes.users.schemas import UserCreate, UserRead
+
+
+class Milestone(BaseModel):
+    name: str = Field(
+        title="name",
+        description="milestone name must be unique from each other.",
+    )
+    description: list[str] = Field(
+        title="description",
+        description="description of milestone",
+    )
+    milestone_date: datetime = Field(
+        title="milestone_date",
+        description="format YYYY-MM-DD, it must be within the dates of the project.",
+    )
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def validate_description(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
+
+    @field_validator("milestone_date", mode="before")
+    @classmethod
+    def validate_milestone_date(cls, value):
+        try:
+            value = parse_datetime(value)
+        except Exception as e:
+            raise ValueError(f"Invalid milestone_date value: {value}; Error: {e}")
+
+        return value
+
+
+class Sensitivity(BaseModel):
+    name: str = Field(
+        title="name",
+        description="sensitivity name",
+    )
+    description: list[str] = Field(
+        titleee="description",
+        description="sensitivity description",
+    )
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def validate_description(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
+
+
+class Scenario(BaseModel):
+    name: str = Field(
+        title="name",
+        description="scenario name",
+    )
+    description: list[str] = Field(
+        title="description",
+        default="",
+        description="scenario description",
+    )
+    other: dict = Field(
+        title="other",
+        default={},
+        description="other properties applied to scenario",
+    )
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def validate_description(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
 
 
 # Project
@@ -133,6 +207,10 @@ class ProjectDetailRead(ProjectCreate):
 
 
 class ProjectDocument(ProjectDetailRead, Document):
+    vertex: ProjectVertex = Field(
+        title="vertex",
+        description="The project vertex model",
+    )
     owner: PydanticObjectId = Field(
         title="owner",
         description="project owner",
@@ -157,7 +235,7 @@ class ProjectDocument(ProjectDetailRead, Document):
     )
     last_modified: datetime = Field(
         title="last_modified",
-        default=datetime.utcnow(),
+        default=datetime.now(),
         description="last modification datetime",
     )
     modified_by: PydanticObjectId = Field(
