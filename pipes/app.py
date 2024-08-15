@@ -49,8 +49,7 @@ from pipes.teams.schemas import TeamDocument
 # Users
 from pipes.users.schemas import UserDocument
 from pipes.users.routes import router as users_router
-
-__version__ = "0.0.1"
+from pipes.version import __version__
 
 
 @asynccontextmanager
