@@ -11,7 +11,7 @@ from botocore.exceptions import ClientError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwk, jwt
-from jose.exceptions import JWTError
+from jose.exceptions import JWTError, JWKError
 from jose.utils import base64url_decode
 
 from pipes.config.settings import settings
@@ -69,13 +69,13 @@ class CognitoJWKsVerifier:
 
         kid = headers.get("kid")
         if not kid:
-            raise CognitoAuthError("Not authenticated. Invalid access token - kid.")
+            raise CognitoAuthError("Not authenticated. Invalid access token - not kid.")
 
         try:
             key = self.keys.get(kid)
             publickey = jwk.construct(key)
-        except KeyError:
-            raise CognitoAuthError("Not authenticated. Invalid access token - key.")
+        except (KeyError, JWKError) as e:
+            raise CognitoAuthError(f"Not authenticated. Invalid access token. {e}.")
         return publickey
 
     def _verify_claims(self, claims: dict) -> bool:

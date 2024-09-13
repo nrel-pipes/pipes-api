@@ -30,7 +30,10 @@ class ProjectRunContextValidator(ProjectContextValidator):
         docdb = DocumentDB()
         pr_doc = await docdb.find_one(
             collection=ProjectRunDocument,
-            query={"name": pr_name},
+            query={
+                "context": {"project": p_doc.id},
+                "name": pr_name,
+            },
         )
 
         if not pr_doc:
