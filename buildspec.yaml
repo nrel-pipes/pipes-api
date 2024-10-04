@@ -8,8 +8,7 @@ env:
 phases:
   install:
     runtime-versions:
-      docker: 19
-  install:
+      docker: 20
     commands:
       - git submodule init
       - git submodule update --recursive
