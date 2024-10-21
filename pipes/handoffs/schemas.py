@@ -9,7 +9,7 @@ from pymongo import IndexModel
 
 from pipes.common.utilities import parse_datetime
 from pipes.graph.schemas import FeedsEdge
-from pipes.projectruns.contexts import ProjectRunSimpleContext, ProjectRunObjectContext
+from pipes.projectruns.contexts import ProjectRunSimpleContext, ProjectRunObjectContext, ProjectRunDocumentContext
 
 
 # Handoffs
@@ -146,6 +146,32 @@ class HandoffDocument(HandoffRead, Document):
         description="user who modified the project",
     )
     model_config = ConfigDict(protected_namespaces=())
+
+    class Settings:
+        name = "handoffs"
+        indexes = [
+            IndexModel(
+                [
+                    ("context", pymongo.ASCENDING),
+                    ("name", pymongo.ASCENDING),
+                ],
+                unique=True,
+            ),
+        ]
+
+class HandoffDelete(Document):
+    context: ProjectRunDocumentContext = Field(
+        title="context",
+        description="the project run object id",
+    )
+    model: str = Field(
+        title="model",
+        description="Unique model identifier",
+    )
+    name: str = Field(
+        title="name",
+        description="Unique handoff identifier",
+    )
 
     class Settings:
         name = "handoffs"

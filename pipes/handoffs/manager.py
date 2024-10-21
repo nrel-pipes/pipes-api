@@ -9,8 +9,8 @@ from pipes.common.exceptions import DocumentAlreadyExists
 from pipes.db.manager import AbstractObjectManager
 from pipes.graph.constants import EdgeLabel
 from pipes.graph.schemas import FeedsEdgeProperties, FeedsEdge
-from pipes.handoffs.schemas import HandoffCreate, HandoffDocument, HandoffRead
-from pipes.handoffs.validators import HandoffDomainValidator
+from pipes.handoffs.schemas import HandoffCreate, HandoffDocument, HandoffRead, HandoffDelete
+from pipes.handoffs.validators import HandoffDomainValidator, HandoffDeleteValidator
 from pipes.models.schemas import ModelDocument
 from pipes.modelruns.schemas import ModelRunDocument
 from pipes.projects.schemas import ProjectDocument
@@ -131,6 +131,59 @@ class HandoffManager(AbstractObjectManager):
             h_read = await self.read_handoff(h_doc)
             h_reads.append(h_read)
         return h_reads
+
+    async def delete_handoff(self, h_delete_doc: HandoffDelete) -> HandoffDelete:
+        """
+        Workflow:
+        1. Delete from mongo
+            - query for modelrun with name of model
+        2. Delete from Neptune
+        """
+        # Delete from Neptune
+        p_doc = self.context.project
+        pr_doc = self.context.projectrun
+
+        # # Validate handoff domain business
+        domain_validator = HandoffDeleteValidator(self.context)
+        handoff_delete = await domain_validator.validate(h_delete_doc)
+
+        # # Create feeds edge between models for handoff
+        # from_m_vtx_id = domain_validator.from_model_doc.vertex.id  # type: ignore
+        # to_m_vtx_id = domain_validator.to_model_doc.vertex.id  # type: ignore
+        # properties_model = FeedsEdgeProperties(
+        #     project=p_doc.name,
+        #     projectrun=pr_doc.name,
+        #     handoff=h_create.name,
+        # )
+        # properties = properties_model.model_dump()
+        # edge = self.n.get_or_add_e(from_m_vtx_id, to_m_vtx_id, self.label, **properties)
+
+
+        # Delete from Mongo
+
+        # print("HERE")
+        # p_id = h_delete_doc.context.project
+        # pr_id = h_delete_doc.context.projectrun
+        # model_doc = await self.d.find_one(
+        #     collection=ModelDocument,
+        #     query={
+        #         "context.project": self.context.project.id,
+        #         "context.projectrun": self.context.projectrun.id,
+        #         "name": h_delete_doc.model
+        #     },
+        # )
+        # handoff_doc = await self.d.delete_one(
+        #     collection=HandoffDocument,
+        #     query={
+        #         "context.project": self.context.project.id,
+        #         "context.projectrun": self.context.projectrun.id,
+        #         "from_model": model_doc.id,
+        #         "name": h_delete_doc.name
+        #     },
+        # )
+        # Delete from Neptune
+
+        return h_delete_doc
 
     async def read_handoff(self, h_doc: HandoffDocument) -> HandoffRead:
         # Read context

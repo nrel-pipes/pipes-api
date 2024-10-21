@@ -14,7 +14,7 @@ from pipes.common.exceptions import (
 from pipes.common.schemas import ExecutionStatus
 from pipes.modelruns.contexts import ModelRunSimpleContext
 from pipes.modelruns.validators import ModelRunContextValidator
-from pipes.tasks.schemas import TaskCreate, TaskRead
+from pipes.tasks.schemas import TaskCreate, TaskRead, TaskDelete
 from pipes.tasks.manager import TaskManager
 from pipes.users.auth import auth_required
 from pipes.users.schemas import UserDocument
@@ -143,3 +143,38 @@ async def update_task_status(
     manager = TaskManager(context=validated_context)
     task = await manager.update_task_status(name=task, status=status)
     return task
+
+
+@router.delete("/tasks", response_model=TaskDelete)
+async def delete_task(
+    project: str,
+    projectrun: str,
+    model: str,
+    modelrun: str,
+    task: str,
+    user: UserDocument = Depends(auth_required),
+) -> TaskDelete:
+    context = ModelRunSimpleContext(
+        project=project,
+        projectrun=projectrun,
+        model=model,
+        modelrun=modelrun,
+    )
+
+    try:
+        validator = ModelRunContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=fastapi_status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=fastapi_status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    manager = TaskManager(context=validated_context)
+    task_delete = await manager.delete_task(task=task, user=user)
+    return task_delete

@@ -4,7 +4,7 @@ from beanie import Document
 from pymongo.results import UpdateResult
 
 from pipes.db.abstract import AbstractDatabase
-
+from pipes.common.exceptions import DocumentDoesNotExist
 
 class DocumentDB(AbstractDatabase):
 
@@ -22,6 +22,12 @@ class DocumentDB(AbstractDatabase):
 
     async def find_one(self, collection: Document, query: dict) -> Document | None:
         return await collection.find_one(query)
+    
+    async def delete_one(self, collection: Document, query: dict) -> Document | None:
+        collection = await collection.find_one(query)
+        if not collection:
+            raise DocumentDoesNotExist()
+        return await collection.delete()
 
     async def exists(self, collection: Document, query: dict) -> bool:
         doc = await collection.find_one(query)

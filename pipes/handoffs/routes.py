@@ -13,7 +13,7 @@ from pipes.common.exceptions import (
     EdgeAlreadyExists,
 )
 from pipes.handoffs.manager import HandoffManager
-from pipes.handoffs.schemas import HandoffCreate, HandoffRead
+from pipes.handoffs.schemas import HandoffCreate, HandoffRead, HandoffDelete
 from pipes.projects.contexts import ProjectSimpleContext
 from pipes.projects.validators import ProjectContextValidator
 from pipes.projectruns.contexts import ProjectRunSimpleContext
@@ -136,3 +136,38 @@ async def get_handoffs(
         h_reads = await manager.get_handoffs(model)
 
         return h_reads
+
+
+@router.delete("/handoffs", response_model=HandoffDelete)
+async def delete_handoffs(
+    project: str,
+    projectrun: str | None = None,
+    model: str | None = None,
+    handoff: str | None = None,
+    user: UserDocument = Depends(auth_required),
+):
+    """Get all models with given project and projectrun"""
+    context = ProjectRunSimpleContext(
+        project=project,
+        projectrun=projectrun,
+    )
+
+    try:
+        validator = ProjectRunContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    manager = HandoffManager(context=validated_context)
+    print(type(manager.context), "here")
+    h_delete_doc = HandoffDelete(context=validated_context, model=model, name=handoff)
+    h_reads = await manager.delete_handoff(h_delete_doc)
+    return h_delete_doc

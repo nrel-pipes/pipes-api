@@ -170,3 +170,8 @@ class HandoffDomainValidator(DomainValidator):
             )
 
         return h_create
+
+
+class HandoffDeleteValidator(DomainValidator):
+    def __init__(self, context: ProjectRunDocumentContext) -> None:
+        self.context = context

@@ -83,6 +83,19 @@ class NeptuneDB(AbstractDatabase):
             traversal = traversal.property(k, v)
         return traversal.next()
 
+    def delete_v(self, label, **properties):
+        """Delete a vertex with the specified label and properties"""
+        # Start the traversal by finding vertices with the specified label
+        traversal = self.g.V().hasLabel(label)
+        
+        # Add filters for the provided properties
+        for k, v in properties.items():
+            traversal = traversal.has(k, v)
+        
+        # Drop the found vertices
+        traversal.drop().iterate()  # Use iterate() to execute the drop
+        return 1
+
     def get_or_add_v(self, label, **properties):
         """Get or create vertex"""
         vlist = self.get_v(label, **properties)

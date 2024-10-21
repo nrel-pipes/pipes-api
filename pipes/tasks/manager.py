@@ -10,6 +10,7 @@ from pipes.common.exceptions import (
     DocumentAlreadyExists,
     DocumentDoesNotExist,
     VertexAlreadyExists,
+    VertextDoesNotExist
 )
 from pipes.common.schemas import ExecutionStatus
 from pipes.datasets.manager import DatasetManager
@@ -25,8 +26,9 @@ from pipes.modelruns.contexts import (
     ModelRunSimpleContext,
     ModelRunObjectContext,
 )
+from pipes.tasks.contexts import TaskContext
 from pipes.modelruns.schemas import ModelRunDocument
-from pipes.tasks.schemas import TaskCreate, TaskDocument, TaskRead
+from pipes.tasks.schemas import TaskCreate, TaskDocument, TaskRead, TaskDelete
 from pipes.tasks.validators import TaskDomainValidator
 from pipes.users.manager import UserManager
 from pipes.users.schemas import UserCreate, UserDocument, UserRead
@@ -40,6 +42,30 @@ class TaskManager(AbstractObjectManager):
 
     def __init__(self, context: ModelRunDocumentContext) -> None:
         self.context = context
+
+    async def delete_task(
+            self, 
+            task: str,
+            user: UserDocument
+    ) -> TaskDelete:
+        _context = ModelRunObjectContext(
+            project=self.context.project.id,
+            projectrun=self.context.projectrun.id,
+            model=self.context.model.id,
+            modelrun=self.context.modelrun.id
+        )
+        task_docs = await self.d.delete_one(
+            collection=TaskDocument,
+            query={
+                "context.project": _context.project,
+                "context.projectrun": _context.projectrun,
+                "context.model": _context.model,
+                "context.modelrun": _context.modelrun,
+                "name": task,
+            },
+        )
+        task_delete = TaskDelete(name=task, context=_context)
+        return task_delete
 
     async def create_task(
         self,
@@ -145,6 +171,32 @@ class TaskManager(AbstractObjectManager):
         properties_model = TaskVertexProperties(**properties)
         properties = properties_model.model_dump()
         task_vtx = self.n.add_v(self.label, **properties)
+
+        # Dcoument creation
+        task_vtx_model = TaskVertex(
+            id=task_vtx.id,
+            label=self.label,
+            properties=properties_model,
+        )
+        return task_vtx_model
+
+
+    async def _delete_task_vertex(self, task_name: str) -> TaskVertex:
+        properties = {
+            "project": self.context.project.name,
+            "projectrun": self.context.projectrun.name,
+            "model": self.context.model.name,
+            "modelrun": self.context.modelrun.name,
+            "name": task_name,
+        }
+        if not self.n.exists(self.label, **properties):
+            raise VertextDoesNotExist(
+                f"Task vertex {properties} does not exist under context: {self.context}",
+            )
+
+        properties_model = TaskVertexProperties(**properties)
+        properties = properties_model.model_dump()
+        task_vtx = self.n.delete_v(self.label, **properties)
 
         # Dcoument creation
         task_vtx_model = TaskVertex(

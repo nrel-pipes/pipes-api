@@ -123,16 +123,6 @@ class TaskRead(TaskCreate):
         title="assignee",
         description="Assignee in user read schema",
     )
-    # input_datasets: list[DatasetRead] = Field(
-    #     title="input_datasets",
-    #     description="List of input datasets in read schema",
-    # )
-    # output_datasets: list[DatasetRead] = Field(
-    #     title="output_datasets",
-    #     description="List of output datasets in read schema",
-    #     default=[],
-    # )
-
 
 class TaskDocument(TaskRead, Document):
     vertex: TaskVertex = Field(
@@ -177,6 +167,27 @@ class TaskDocument(TaskRead, Document):
         description="user who modified the project",
     )
 
+    class Settings:
+        name = "tasks"
+        indexes = [
+            IndexModel(
+                [
+                    ("context", pymongo.ASCENDING),
+                    ("name", pymongo.ASCENDING),
+                ],
+                unique=True,
+            ),
+        ]
+
+class TaskDelete(Document):
+    name: str = Field(
+        title="name",
+        description="task name, must be unique to this model run.",
+    )
+    context: ModelRunObjectContext = Field(
+        title="context",
+        description="model run context",
+    )
     class Settings:
         name = "tasks"
         indexes = [

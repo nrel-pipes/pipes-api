@@ -35,11 +35,11 @@ from pipes.datasets.schemas import DatasetDocument
 from pipes.datasets.routes import router as datasets_router
 
 # Handoffs
-from pipes.handoffs.schemas import HandoffDocument
+from pipes.handoffs.schemas import HandoffDocument, HandoffDelete
 from pipes.handoffs.routes import router as handoffs_router
 
 # Tasks
-from pipes.tasks.schemas import TaskDocument
+from pipes.tasks.schemas import TaskDocument, TaskDelete
 from pipes.tasks.routes import router as tasks_router
 
 # Teams
@@ -84,6 +84,8 @@ async def lifespan(app: FastAPI):
             TaskDocument,
             TeamDocument,
             UserDocument,
+            TaskDelete,
+            HandoffDelete
         ],
     )
 

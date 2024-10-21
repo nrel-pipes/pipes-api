@@ -40,11 +40,13 @@ class DomainValidator:
 
     async def validate(self, instance: BaseModel) -> BaseModel:
         """Call validation methods with names starting with validate_"""
+        print("here")
         for attr_name in dir(self):
             if not attr_name.startswith("validate_"):
                 continue
 
             validate_method = getattr(self, attr_name)
+            print("validate_method ", validate_method)
             instance = await validate_method(instance)
 
         return instance
