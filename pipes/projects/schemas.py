@@ -187,6 +187,11 @@ class ProjectBasicRead(BaseModel):
         default="",
         description="project description",
     )
+    milestones: list[Milestone] = Field(
+        title="milestones",
+        default=[],
+        description="project milestones",
+    )
 
 
 class ProjectDetailRead(ProjectCreate):
