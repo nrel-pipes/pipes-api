@@ -21,7 +21,7 @@ headers = {
     "Authorization": "Bearer " + cognito_access_token,
 }
 
-
+print(f"Templates_dir: {templates_dir}")
 # Read template
 p_template_file = templates_dir.joinpath("test_project.toml")
 with open(p_template_file) as f:
@@ -33,7 +33,7 @@ raw_teams = data["model_teams"]
 
 # Create project
 p_name = raw_project["name"]
-
+print(" ".join(raw_project["description"]))
 clean_project = dict(
     name=p_name,
     title=raw_project["full_name"],

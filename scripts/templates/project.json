@@ -1,0 +1,87 @@
+{
+    "name": "pipes101",
+    "full_name": "Test Project 1",
+    "description": "This is the first test project for PIPES using some of the LA100 data and configs as a test case",
+    "assumptions": [
+      "We can use LA100 as a test project for the C2C data pipeline.",
+      "No effects of climate change on power system outside of increased demand for cooling are measured.",
+      "LADWP will need to achieve a 100% clean energy by 2030 or 2045 completely on its own (e.g., no other utilities will be trading energy).",
+      "Path to 100% is based off today's technology options.",
+      "https://maps.nrel.gov/la100/la100-study/topics/renewable-energy-pathways#renewable-energy-pathways-assumptions"
+    ],
+    "scheduled_start": "2022-09-27",
+    "scheduled_end": "2024-01-01",
+    "sensitivities": [],
+    "owner": {
+      "first_name": "Jordan",
+      "last_name": "Eisenman",
+      "email": "Jordan.Eisenman@nrel.gov",
+      "username": "jeisenman"
+    },
+    "project": {
+      "milestones": [
+        {
+          "name": "Milestone 1",
+          "description": "First test project milestone",
+          "milestone_date": "2022-11-01"
+        },
+        {
+          "name": "Milestone 2",
+          "description": "Second test project milestone",
+          "milestone_date": "2022-12-01"
+        }
+      ],
+      "requirements": {
+        "weather_years": [2012],
+        "model_years": [2020, 2025, 2030, 2040, 2045],
+        "geographic_extent": "LA City"
+      },
+      "scenarios": [
+        {
+          "name": "sb100_high",
+          "description": "100% clean energy by 2045. Only scenario with a target based on retail sales, not generation. Evaluated under High Load Electrification.",
+          "other": {
+            "color": "#1BC1AF"
+          }
+        },
+        {
+          "name": "sb100_moderate",
+          "description": "100% clean energy by 2045. Only scenario with a target based on retail sales, not generation. Evaluated under Moderate Load Electrification.",
+          "other": {
+            "color": "#FA6504"
+          }
+        },
+        {
+          "name": "sb100_stress",
+          "description": "100% clean energy by 2045. Only scenario with a target based on retail sales, not generation. Evaluated under High Stress Load Electrification.",
+          "other": {
+            "color": "#5369E5"
+          }
+        },
+        {
+          "name": "earlynobio_high",
+          "description": "100% clean energy by 2035, 10 years sooner than other scenarios. No natural gas generation or biofuels. Allows existing nuclear and upgrades to transmission. Evaluated under High Load Electrification."
+        },
+        {
+          "name": "earlynobio_moderate",
+          "description": "100% clean energy by 2035, 10 years sooner than other scenarios. No natural gas generation or biofuels. Allows existing nuclear and upgrades to transmission. Evaluated under Moderate Load Electrification."
+        },
+        {
+          "name": "trans_high",
+          "description": "100% clean energy by 2045. Only scenario that builds new transmission corridors. No natural gas or nuclear generation. Evaluated under High Load Electrification."
+        },
+        {
+          "name": "trans_moderate",
+          "description": "100% clean energy by 2045. Only scenario that builds new transmission corridors. No natural gas or nuclear generation. Evaluated under Moderate Load Electrification."
+        },
+        {
+          "name": "ltdnewtrans_high",
+          "description": "100% clean by 2045. Only scenario that does not allow upgrades to transmission beyond currently planned projects. No natural gas or nuclear generation. Evaluated under High Load Electrification."
+        },
+        {
+          "name": "ltdnewtrans_moderate",
+          "description": "100% clean by 2045. Only scenario that does not allow upgrades to transmission beyond currently planned projects. No natural gas or nuclear generation. Evaluated under Moderate Load Electrification."
+        }
+      ]
+    }
+  }
