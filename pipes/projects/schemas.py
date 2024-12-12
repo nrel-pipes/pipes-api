@@ -171,6 +171,9 @@ class ProjectCreate(BaseModel):
         return value
 
 
+class ProjectUpdate(ProjectCreate):
+    ...
+
 class ProjectBasicRead(BaseModel):
     name: str = Field(
         title="name",
@@ -186,6 +189,11 @@ class ProjectBasicRead(BaseModel):
         title="description",
         default="",
         description="project description",
+    )
+    milestones: list[Milestone] = Field(
+        title="milestones",
+        default=[],
+        description="project milestones",
     )
 
 

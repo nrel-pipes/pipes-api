@@ -5,16 +5,22 @@ from datetime import datetime
 from itertools import chain
 
 from pymongo.errors import DuplicateKeyError
-
+from fastapi import HTTPException
 from pipes.common.exceptions import DocumentAlreadyExists, VertexAlreadyExists
 from pipes.db.manager import AbstractObjectManager
 from pipes.graph.constants import VertexLabel, EdgeLabel
 from pipes.graph.schemas import ProjectVertexProperties, ProjectVertex
-from pipes.projects.schemas import ProjectCreate, ProjectDetailRead, ProjectDocument
-from pipes.projects.validators import ProjectDomainValidator
+from pipes.projects.schemas import ProjectCreate, ProjectDetailRead, ProjectDocument, ProjectUpdate
+from pipes.projects.validators import ProjectDomainValidator, ProjectUpdateDomainValidator, ProjectContextValidator
 from pipes.teams.schemas import TeamDocument, TeamBasicRead
 from pipes.users.manager import UserManager
 from pipes.users.schemas import UserCreate, UserDocument, UserRead
+from pipes.common.exceptions import (
+    DocumentAlreadyExists,
+    VertexAlreadyExists,
+    DocumentDoesNotExist
+)
+from pipes.projectruns.schemas import ProjectRunRead
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +52,28 @@ class ProjectManager(AbstractObjectManager):
         self.n.add_e(u_vtx_id, p_vtx_id, EdgeLabel.owns.value)
 
         return p_doc
+    async def get_project(self, project: str, user: UserDocument):
+        ...
+
+
+    async def update_project(
+        self,
+        p_update: ProjectUpdate,
+        projectrun_docs: list[ProjectRunRead],
+        project: str,
+        user: UserDocument,
+    ) -> ProjectDocument:
+        """
+        - Get project runs. Then validate project runs against the project.
+        """
+
+        # Validate project domain business
+        # Make sure to check, project exists. Also, that schedule is within bounds of children. Also, that includes all the scenarios that are found in the children.
+        domain_validator = ProjectUpdateDomainValidator()
+        p_update = await domain_validator.project_validate(p_update, projectrun_docs)
+        p_owner = await self._get_or_create_project_owner(p_update.owner)
+        p_update_doc = await self._update_project_document(p_update, p_owner, project, user)
+        return p_update_doc
 
     async def _create_project_vertex(self, p_name: str) -> ProjectVertex:
         properties = {"name": p_name}
@@ -70,6 +98,70 @@ class ProjectManager(AbstractObjectManager):
         p_owner_doc = await user_manager.get_or_create_user(owner)
         return p_owner_doc
 
+    async def _update_project_document(
+        self,
+        p_update: ProjectUpdate,
+        p_owner: UserDocument,
+        project: str,
+        user: UserDocument,
+    ):
+        """
+        Logic to function:
+        - If project name does not exist, throw error.
+        - If project name not equal to new name and new name does exist, throw error. 
+        Overwrite the existing project. 
+        """
+        # Validation
+        old_p_doc_exists = await self.d.exists(
+            collection=ProjectDocument,
+            query={"name": project},
+        )
+        p_doc_exists = await self.d.exists(
+            collection=ProjectDocument,
+            query={"name": p_update.name},
+        )
+        if not old_p_doc_exists:
+            raise DocumentDoesNotExist(f"Project '{p_update.name}' does not exist.")
+        if project != p_update.name and p_doc_exists:
+            raise DocumentAlreadyExists(f"You are renaming '{project}' to an existing project, {p_update.name}.")
+        
+        # Get the existing document
+        existing_p_doc = await self.d.find_one(
+            collection=ProjectDocument,
+            query={"name": project},
+        )
+
+        # Prepare update dictionary
+        update_dict = {
+            "$set": {
+                'name': p_update.name,
+                'title': p_update.title,
+                'description': p_update.description,
+                'assumptions': p_update.assumptions,
+                'requirements': p_update.requirements,
+                'scenarios': p_update.scenarios,
+                'sensitivities': p_update.sensitivities,
+                'milestones': p_update.milestones,
+                'scheduled_start': p_update.scheduled_start,
+                'scheduled_end': p_update.scheduled_end,
+                'owner': p_owner.id,
+                'last_modified': datetime.now(),
+                'modified_by': user.id
+            }
+        }
+
+        await self.d.update_one(
+            collection=ProjectDocument,
+            find={"name": project},
+            update=update_dict
+        )
+
+        updated_doc = await self.d.find_one(
+            collection=ProjectDocument,
+            query={"name": p_update.name}
+        )
+        return updated_doc
+    
     async def _create_project_document(
         self,
         p_create: ProjectCreate,
@@ -166,34 +258,6 @@ class ProjectManager(AbstractObjectManager):
             p_docs[p_doc.id] = p_doc
 
         return list(p_docs.values())
-
-    # async def update_project_detail(
-    #     self,
-    #     p_update: ProjectUpdate,
-    # ) -> ProjectDocument | None:
-    #     """Update project details"""
-    #     p_doc = self.validated_context.project
-    #     p_doc_other = await self.d.find_one(
-    #         collection=ProjectDocument,
-    #         query={"name": p_update.name},
-    #     )
-    #     if p_doc_other and (p_doc_other.id != p_doc.id):
-    #         raise DocumentAlreadyExists(
-    #             f"Project with name '{p_update.name}' already exists, use another name.",
-    #         )
-
-    #     data = p_update.model_dump()
-    #     await p_doc.set(data)
-
-    #     # await p_doc.save()
-    #     logger.info("Project '%s' got updated successfully.", p_doc.name)
-
-    #     return p_doc
-
-    # async def get_project_detail(self) -> ProjectDocument:
-    #     """Get project details"""
-    #     p_doc = self.validated_context.project
-    #     return p_doc
 
     async def read_project_detail(self, p_doc: ProjectDocument) -> ProjectDetailRead:
         """Dump project document into dictionary"""

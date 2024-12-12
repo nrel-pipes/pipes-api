@@ -1,8 +1,8 @@
 ################## Project data ####################
 
 [project]
-  name = "pipes101"  # A short name in one word as project identifier
-  full_name = "Test Project 1"
+  name = "pipes102"  # A short name in one word as project identifier
+  full_name = "Test Project 2"
   description = "This is the first test project for PIPES using some of the LA100 data and configs as a test case"
   assumptions = [
     "We can use LA100 as a test project for the C2C data pipeline.",
@@ -11,18 +11,18 @@
     "Path to 100% is based off today's technology options.",
     "https://maps.nrel.gov/la100/la100-study/topics/renewable-energy-pathways#renewable-energy-pathways-assumptions"
   ]
-  scheduled_start = "2022-09-27"
-  scheduled_end = "2024-01-01"
+  scheduled_start = "2024-11-03"
+  scheduled_end = "2024-11-30"
   sensitivities = []
 
   [[project.milestones]]
     name = "Milestone 1"
     description = "First test project milestone"
-    milestone_date = "2022-11-01"
+    milestone_date = "2024-11-01"
   [[project.milestones]]
     name = "Milestone 2"
     description = "Second test project milestone"
-    milestone_date = "2022-12-01"
+    milestone_date = "2024-12-01"
 
   [project.owner] # who will be the main POC for the project?
     first_name = "Jordan"
@@ -123,8 +123,8 @@
     description = "Single scenario, single year, simple test"
     assumptions = ["The single scenario, single year, simple tests assumes 1 scenario and 1 model year at the project run level which is different than the project level. The project run also has 2 models with one edge. Each model has its own example of a different model requirement for geographic_extent compared to the run-level."]
     scenarios = ["earlynobio_moderate"]
-    scheduled_start = "2022-09-27"
-    scheduled_end = "2022-10-15"
+    scheduled_start = "2024-11-04"
+    scheduled_end = "2024-11-29"
 
   [project_runs.requirements] # these become the new requirements for all datasets in this run
     model_years = [2020]
@@ -135,8 +135,8 @@
     description = "The Demand-Side Grid Model used for LA100 project Run 1"
     assumptions = ["This is a dsgrid assumption"]
     expected_scenarios = ["demand_moderate"] # scenarios we're expecting the model to checkin datasets under
-    scheduled_start = "2022-09-28"
-    scheduled_end = "2022-10-05"
+    scheduled_start = "2024-11-05"
+    scheduled_end = "2024-11-28"
 
   [[project_runs.models.scenario_mappings]] # need to check that either all project scenarios are accounted for or that all project_run scenarios are accounted for if models.scenario_mappings are provided
     model_scenario = "demand_moderate"
@@ -156,8 +156,8 @@
     description = "Resource Planning Model for LADWP and WECC from the LA100 Project"
     assumptions = ["LADWP is treated as an island"]
     expected_scenarios = ["earlynobio_moderate"]
-    scheduled_start = "2022-10-05"
-    scheduled_end = "2022-10-15"
+    scheduled_start = "2024-11-06"
+    scheduled_end = "2024-11-27"
 
   [project_runs.models.requirements]
     geographic_extent = "RS-C"
@@ -170,14 +170,14 @@
     id = "handoff_id1"
     description = "8760 system-level load profiles, including T&D losses, before distributed generation, at the RS nodal level"
     scheduled_start = ""  # some date
-    scheduled_end = "2023-06-30"  # *Required* some date
+    scheduled_end = "2024-11-26"  # *Required* some date
     notes = ""
 
     [[project_runs.topology.handoffs]]
     id = "handoff_id2"
     description = "EV locations"
     scheduled_start = ""  # some date
-    scheduled_end = "2023-07-10"  # *Required* some date
+    scheduled_end = "2024-11-25"  # *Required* some date
     notes = ""
 
   # -------- Run 2 --------
@@ -196,8 +196,8 @@
       "ltdnewtrans_high",
       "ltdnewtrans_moderate"
     ]
-    scheduled_start = "2022-10-20"
-    scheduled_end = "2023-01-01"
+    scheduled_start = "2024-11-07"
+    scheduled_end = "2024-11-24"
 
     [project_runs.requirements]
     # Empty, inherits requirements from project
@@ -209,8 +209,8 @@
       type = "Energy Demand"
       description = "The Demand-Side Grid Model used for LA100 project as an example for PIPES Test Project 1 Run 2"
       expected_scenarios = ["demand_moderate", "demand_high", "demand_stress"]
-      scheduled_start = "2022-10-20"
-      scheduled_end = "2022-11-15"
+      scheduled_start = "2024-11-08"
+      scheduled_end = "2024-11-23"
 
       [project_runs.models.requirements]
       # None
@@ -251,8 +251,8 @@
       type = "Distributed Generation Adoption"
       description = "The Distributed Generation Model (dGen) - A customer behind-the-meter adoption model for rooftop solar and distributed storage. Tuned for the LA100 project and used as an example for PIPES development."
       expected_scenarios = ["dg_moderate", "dg_high"]
-      scheduled_start = "2022-11-15"
-      scheduled_end = "2022-11-30"
+      scheduled_start = "2024-11-09"
+      scheduled_end = "2024-11-22"
 
       [project_runs.models.requirements]
       # None
@@ -272,8 +272,8 @@
       type = "Capacity Expansion"
       description = "Resource Planning Model for LADWP and WECC from the LA100 Project"
       assumptions = ["LADWP is treated as an island"]
-      scheduled_start = "2022-11-30"
-      scheduled_end = "2023-01-01"
+      scheduled_start = "2024-11-10"
+      scheduled_end = "2024-11-21"
 
       [project_runs.models.requirements]
       # None
@@ -287,7 +287,7 @@
         id = "handoff_id3"
         description = "8760 system-level load profiles, including T&D losses, before distributed generation, at the RS nodal level, including gap-system level loads but not including load shifting from demand response."
         scheduled_start = ""  # some date
-        scheduled_end = "2023-05-20"  # *Required* some date
+        scheduled_end = "2024-11-20"  # *Required* some date
         notes = ""
 
     [[project_runs.topology]]
@@ -297,7 +297,7 @@
         id = "handoff_id4"
         description = "8760 customer-level behind-the-meter load profiles (before distributed generation), at the agent level (i.e., property level). Includes residential building, commercial building, industrial, and gap-agent loads plus transportation of electric vehicles."
         scheduled_start = ""  # some date
-        scheduled_end = "2023-05-21"  # *Required* some date
+        scheduled_end = "2024-11-19"  # *Required* some date
         notes = ""
 
     [[project_runs.topology]]
@@ -307,7 +307,7 @@
         id = "handoff_id5"
         description = "Includes distributed PV generation 8760s at the RS nodal level for each dg scenario."
         scheduled_start = ""  # some date
-        scheduled_end = "2023-09-30"  # *Required* some date
+        scheduled_end = "2024-11-18"  # *Required* some date
         notes = ""
 
 
