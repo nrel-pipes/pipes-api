@@ -33,8 +33,7 @@ raw_teams = data["model_teams"]
 
 # Create project
 p_name = raw_project["name"]
-
-raw_project["requirements"]
+print(" ".join(raw_project["description"]))
 clean_project = dict(
     name=p_name,
     title=raw_project["full_name"],
