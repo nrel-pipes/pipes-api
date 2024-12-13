@@ -18,7 +18,7 @@ class Milestone(BaseModel):
         title="name",
         description="milestone name must be unique from each other.",
     )
-    description: list[str] = Field(
+    description: str = Field(
         title="description",
         description="description of milestone",
     )
@@ -186,6 +186,11 @@ class ProjectBasicRead(BaseModel):
         title="description",
         default="",
         description="project description",
+    )
+    milestones: list[Milestone] = Field(
+        title="milestones",
+        default=[],
+        description="project milestones",
     )
 
 

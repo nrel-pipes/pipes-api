@@ -166,5 +166,4 @@ cython_debug/
 # Cognito Auth
 cognito-idp-auth.json
 
-
 token.sh
