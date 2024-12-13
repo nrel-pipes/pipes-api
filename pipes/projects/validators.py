@@ -119,7 +119,6 @@ class ProjectUpdateDomainValidator(DomainValidator):
 
     async def project_validate(self, instance: BaseModel, projectrun_docs: list[ProjectRunRead]) -> BaseModel:
         """Call validation methods with names starting with validate_"""
-        # Get scenarios, max scheduled start and end. 
         dependency_data = self.get_dependency_data(projectrun_docs)
         for attr_name in dir(self):
             if attr_name.startswith("validate_dependency_"):
