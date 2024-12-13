@@ -52,9 +52,6 @@ class ProjectManager(AbstractObjectManager):
         self.n.add_e(u_vtx_id, p_vtx_id, EdgeLabel.owns.value)
 
         return p_doc
-    async def get_project(self, project: str, user: UserDocument):
-        ...
-
 
     async def update_project(
         self,
@@ -63,12 +60,6 @@ class ProjectManager(AbstractObjectManager):
         project: str,
         user: UserDocument,
     ) -> ProjectDocument:
-        """
-        - Get project runs. Then validate project runs against the project.
-        """
-
-        # Validate project domain business
-        # Make sure to check, project exists. Also, that schedule is within bounds of children. Also, that includes all the scenarios that are found in the children.
         domain_validator = ProjectUpdateDomainValidator()
         p_update = await domain_validator.project_validate(p_update, projectrun_docs)
         p_owner = await self._get_or_create_project_owner(p_update.owner)
@@ -105,12 +96,6 @@ class ProjectManager(AbstractObjectManager):
         project: str,
         user: UserDocument,
     ):
-        """
-        Logic to function:
-        - If project name does not exist, throw error.
-        - If project name not equal to new name and new name does exist, throw error. 
-        Overwrite the existing project. 
-        """
         # Validation
         old_p_doc_exists = await self.d.exists(
             collection=ProjectDocument,
