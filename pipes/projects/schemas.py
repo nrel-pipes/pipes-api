@@ -30,8 +30,8 @@ class Milestone(BaseModel):
     @field_validator("description", mode="before")
     @classmethod
     def validate_description(cls, value):
-        if isinstance(value, str):
-            return [value]
+        if isinstance(value, list):
+            return " ".join(value)
         return value
 
     @field_validator("milestone_date", mode="before")
