@@ -91,33 +91,43 @@ class ProjectUpdateDomainValidator(DomainValidator):
         dependency_data = {
             "scenarios": [],
             "scheduled_start": datetime.max,
-            "scheduled_end": datetime.min
+            "scheduled_end": datetime.min,
         }
 
         # Create a set to collect unique scenarios
         scenarios_set = set()
-        
+
         for projectrun in projectrun_docs:
             # Add scenarios to set
             if projectrun.scenarios:
                 scenarios_set.update(projectrun.scenarios)
-            
+
             # Update earliest start time
             if projectrun.scheduled_start:
-                if dependency_data["scheduled_start"] is None or projectrun.scheduled_start < dependency_data["scheduled_start"]:
+                if dependency_data["scheduled_start"] is None or (
+                    isinstance(dependency_data["scheduled_start"], datetime)
+                    and projectrun.scheduled_start < dependency_data["scheduled_start"]
+                ):
                     dependency_data["scheduled_start"] = projectrun.scheduled_start
-                    
+
             # Update latest end time
             if projectrun.scheduled_end:
-                if dependency_data["scheduled_end"] is None or projectrun.scheduled_end > dependency_data["scheduled_end"]:
+                if dependency_data["scheduled_end"] is None or (
+                    isinstance(dependency_data["scheduled_end"], datetime)
+                    and projectrun.scheduled_end > dependency_data["scheduled_end"]
+                ):
                     dependency_data["scheduled_end"] = projectrun.scheduled_end
-        
+
         # Convert scenarios set to list
         dependency_data["scenarios"] = list(scenarios_set)
-        
+
         return dependency_data
 
-    async def project_validate(self, instance: BaseModel, projectrun_docs: list[ProjectRunRead]) -> BaseModel:
+    async def project_validate(
+        self,
+        instance: BaseModel,
+        projectrun_docs: list[ProjectRunRead],
+    ) -> BaseModel:
         """Call validation methods with names starting with validate_"""
         dependency_data = self.get_dependency_data(projectrun_docs)
         for attr_name in dir(self):
@@ -129,10 +139,12 @@ class ProjectUpdateDomainValidator(DomainValidator):
                 instance = await validate_method(instance)
             else:
                 continue
-        
+
         # return instance
         return instance
+
     """Project run domain validator class"""
+
     async def validate_name(self, p_update: ProjectUpdate) -> ProjectUpdate:
         """Validates name no none or empty string. Make sure document does not already exist"""
         if p_update.name in ["", None]:
@@ -141,50 +153,68 @@ class ProjectUpdateDomainValidator(DomainValidator):
             )
         return p_update
 
-    async def validate_dependency_scheduled_start(self, p_update: ProjectUpdate, dependency_data: dict) -> ProjectUpdate:
+    async def validate_dependency_scheduled_start(
+        self,
+        p_update: ProjectUpdate,
+        dependency_data: dict,
+    ) -> ProjectUpdate:
         """Project scheduled start <= scheduled_end. Also, should be less than or equal to dependency_data[start]."""
         if p_update.scheduled_start > p_update.scheduled_end:
             raise DomainValidationError(
-                "Project 'scheduled_start' could not be larger than 'scheduled_end'."
+                "Project 'scheduled_start' could not be larger than 'scheduled_end'.",
             )
-        
+
         # Check if the new start time would conflict with dependent runs
         if p_update.scheduled_start > dependency_data["scheduled_start"]:
             raise DomainValidationError(
-                "Project 'scheduled_start' cannot be later than the earliest dependent run start time."
+                "Project 'scheduled_start' cannot be later than the earliest dependent run start time.",
             )
 
         return p_update
 
-    async def validate_dependency_project_scheduled_end(self, p_update: ProjectUpdate, dependency_data: dict) -> ProjectUpdate:
-        """Project scheduled start <= scheduled_end. Also, time should be greater than or equal to dependency_data[end]."""
+    async def validate_dependency_project_scheduled_end(
+        self,
+        p_update: ProjectUpdate,
+        dependency_data: dict,
+    ) -> ProjectUpdate:
+        """
+        Project scheduled start <= scheduled_end. Also, time should be greater than or equal to dependency_data[end].
+        """
         if p_update.scheduled_end < p_update.scheduled_start:
             raise DomainValidationError(
-                "Project 'scheduled_end' could not be smaller than 'scheduled_start'."
+                "Project 'scheduled_end' could not be smaller than 'scheduled_start'.",
             )
-        
+
         # Check if the new end time would conflict with dependent runs
         if p_update.scheduled_end < dependency_data["scheduled_end"]:
             raise DomainValidationError(
-                "Project 'scheduled_end' cannot be earlier than the latest dependent run end time."
+                "Project 'scheduled_end' cannot be earlier than the latest dependent run end time.",
             )
 
         return p_update
 
-    async def validate_dependency_project_scenarios(self, p_update: ProjectUpdate, dependency_data: dict) -> ProjectUpdate:
+    async def validate_dependency_project_scenarios(
+        self,
+        p_update: ProjectUpdate,
+        dependency_data: dict,
+    ) -> ProjectUpdate:
         """Validates that p_update.scenarios contains all scenarios from dependency_data['scenarios']"""
-        if not hasattr(p_update, 'scenarios'):
+        if not hasattr(p_update, "scenarios"):
             return p_update
 
         # Extract just the names from p_update.scenarios
-        update_scenario_names = {scenario.name for scenario in p_update.scenarios} if p_update.scenarios else set()
+        update_scenario_names = (
+            {scenario.name for scenario in p_update.scenarios}
+            if p_update.scenarios
+            else set()
+        )
         dependent_scenario_names = set(dependency_data["scenarios"])
-        
+
         # Check if update_scenario_names is a superset of dependent_scenario_names
         missing_scenarios = dependent_scenario_names - update_scenario_names
         if missing_scenarios:
             raise DomainValidationError(
-                f"Project update must contain all dependent scenarios. Missing: {', '.join(missing_scenarios)}"
+                f"Project update must contain all dependent scenarios. Missing: {', '.join(missing_scenarios)}",
             )
 
         return p_update
