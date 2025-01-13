@@ -363,9 +363,3 @@
   last_name = "Eisenman"
   email = "Jordan.Eisenman@nrel.gov"
   username = "jeisenman"
-
-  [[model_teams.members]]
-  first_name = "Jordan"
-  last_name = "Eisenman"
-  email = "Jordan.Eisenman@nrel.gov"
-  username = "jeisenman"
