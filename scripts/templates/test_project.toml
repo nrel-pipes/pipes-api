@@ -356,3 +356,10 @@
   last_name = "Rager"
   email = "David.Rager@nrel.gov"
   username = "drager"
+
+
+  [[model_teams.members]]
+  first_name = "Jordan"
+  last_name = "Eisenman"
+  email = "Jordan.Eisenman@nrel.gov"
+  username = "jeisenman"

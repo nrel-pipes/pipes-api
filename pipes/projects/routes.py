@@ -7,13 +7,19 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pipes.common.exceptions import (
     UserPermissionDenied,
     ContextValidationError,
-    DocumentAlreadyExists,
+    DocumentDoesNotExist,
     DomainValidationError,
     VertexAlreadyExists,
 )
+from pipes.projectruns.manager import ProjectRunManager
 from pipes.projects.contexts import ProjectSimpleContext
 from pipes.projects.manager import ProjectManager
-from pipes.projects.schemas import ProjectCreate, ProjectBasicRead, ProjectDetailRead
+from pipes.projects.schemas import (
+    ProjectCreate,
+    ProjectBasicRead,
+    ProjectDetailRead,
+    ProjectUpdate,
+)
 from pipes.projects.validators import ProjectContextValidator
 from pipes.users.auth import auth_required
 from pipes.users.schemas import UserDocument
@@ -31,7 +37,7 @@ async def create_project(
     try:
         manager = ProjectManager()
         p_doc = await manager.create_project(data, user)
-    except (VertexAlreadyExists, DocumentAlreadyExists, DomainValidationError) as e:
+    except (VertexAlreadyExists, DocumentDoesNotExist, DomainValidationError) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -39,6 +45,55 @@ async def create_project(
 
     # Read referenced documents
     p_read = await manager.read_project_detail(p_doc)
+
+    return p_read
+
+
+@router.put("/projects/{project}", response_model=ProjectDetailRead, status_code=200)
+async def update_project(
+    project: str,
+    data: ProjectUpdate,
+    user: UserDocument = Depends(auth_required),
+):
+    """
+    Update Project workflow
+    - Gets project runs
+    - Update Project logic
+    """
+    # Gets all the project runs
+    context = ProjectSimpleContext(project=project)
+    try:
+        validator = ProjectContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    pr_manager = ProjectRunManager(context=validated_context)
+    pr_docs = await pr_manager.get_projectruns()
+
+    try:
+        p_manager = ProjectManager()
+        p_doc = await p_manager.update_project(
+            p_update=data,
+            projectrun_docs=pr_docs,
+            project=project,
+            user=user,
+        )
+    except (DocumentDoesNotExist, DomainValidationError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    # Read referenced documents
+    p_read = await p_manager.read_project_detail(p_doc)
 
     return p_read
 

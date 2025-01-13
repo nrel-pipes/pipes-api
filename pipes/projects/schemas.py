@@ -171,6 +171,9 @@ class ProjectCreate(BaseModel):
         return value
 
 
+class ProjectUpdate(ProjectCreate):
+    ...
+
 class ProjectBasicRead(BaseModel):
     name: str = Field(
         title="name",
