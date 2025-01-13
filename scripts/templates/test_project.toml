@@ -25,10 +25,10 @@
     milestone_date = "2022-12-01"
 
   [project.owner] # who will be the main POC for the project?
-    first_name = "Jordan"
-    last_name = "Eisenman"
-    email = "Jordan.Eisenman@nrel.gov"
-    username = "Jordan.Eisenman@nrel.gov"
+    first_name = "Joe"
+    last_name = "Shmo"
+    email = "joe.shmo@nrel.gov"
+    username = "jshmo"
 
   [project.requirements] # these are default requirements to be used unless otherwise specified at a project run level or for individual models
     weather_years = [2012]
@@ -357,6 +357,12 @@
   email = "David.Rager@nrel.gov"
   username = "drager"
 
+
+  [[model_teams.members]]
+  first_name = "Jordan"
+  last_name = "Eisenman"
+  email = "Jordan.Eisenman@nrel.gov"
+  username = "jeisenman"
 
   [[model_teams.members]]
   first_name = "Jordan"

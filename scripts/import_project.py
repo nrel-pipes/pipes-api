@@ -22,8 +22,8 @@ headers = {
 }
 
 # Read template
-p_template_file = templates_dir.joinpath("test_project2.toml")
-p_template_file = "scripts/templates/test_project2.toml"
+print(f"Templates_dir: {templates_dir}")
+p_template_file = templates_dir.joinpath("test_project.toml")
 with open(p_template_file) as f:
     data = toml.load(f)
 
