@@ -141,11 +141,11 @@ class ProjectCreate(BaseModel):
         title="owner",
         description="project owner",
     )
-    # leads: set[UserCreate] = Field(
-    #     title="leads",
-    #     default=[],
-    #     description="list of project lead",
-    # )
+    leads: set[UserCreate] = Field(
+        title="leads",
+        default=[],
+        description="list of project lead",
+    )
     # teams: set[TeamCreate] = Field(
     #     title="teams",
     #     default=[],
