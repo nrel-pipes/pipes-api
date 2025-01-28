@@ -117,10 +117,10 @@ class DatasetCreate(BaseModel):
         default=None,
         description="data format, or a list of formats separated by commas",
     )
-    schema_info: str | None = Field(
+    schema_info: dict | None = Field(
         title="schema_info",
         default="",
-        description="The schema description of the dataset",
+        description="The schema json mapping column names to types.",
     )
     location: dict = Field(  # NOTE: validate based on specific system.
         title="location",
