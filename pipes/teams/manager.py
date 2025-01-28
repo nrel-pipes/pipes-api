@@ -205,14 +205,15 @@ class TeamManager(AbstractObjectManager):
                 f"Team '{team}' not exist in project '{p_doc.name}'",
             )
 
-        other_t_doc = await self.d.find_one(
-            collection=TeamDocument,
-            query={"context.project": p_doc.id, "name": data.name},
-        )
-        if other_t_doc and (t_doc.name == other_t_doc.name):
-            raise DocumentAlreadyExists(
-                f"Team '{data.name}' already exists in project '{p_doc.name}'",
+        if data.name != team:
+            other_t_doc = await self.d.find_one(
+                collection=TeamDocument,
+                query={"context.project": p_doc.id, "name": data.name},
             )
+            if other_t_doc and (t_doc.name == other_t_doc.name):
+                raise DocumentAlreadyExists(
+                    f"Team '{data.name}' already exists in project '{p_doc.name}'",
+                )
 
         user_manager = UserManager()
         member_doc_ids = set()
@@ -220,8 +221,11 @@ class TeamManager(AbstractObjectManager):
             u_doc = await user_manager.get_or_create_user(member)
 
             # Add edge (member of Team)
-            # TODO: may case duplicated edges?
-            self.n.add_e(u_doc.vertex.id, t_doc.vertex.id, EdgeLabel.member.value)
+            # TODO: No edge added if existing relationship, update base query?
+            try:
+                self.n.add_e(u_doc.vertex.id, t_doc.vertex.id, EdgeLabel.member.value)
+            except IndexError:
+                pass
 
             member_doc_ids.add(u_doc.id)
 
@@ -235,5 +239,7 @@ class TeamManager(AbstractObjectManager):
     async def read_team(self, t_doc: TeamDocument) -> TeamRead:
         """Convert team document to read object"""
         data = t_doc.model_dump()
+        p_doc = self.context.project
+        data["context"]["project"] = p_doc.name
         data["members"] = await self.get_team_members(t_doc)
         return TeamRead.model_validate(data)

@@ -97,7 +97,7 @@ async def get_teams(
     return p_teams
 
 
-@router.put("/teams/detail")
+@router.patch("/teams/detail")
 async def update_team(
     project: str,
     team: str,
