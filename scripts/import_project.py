@@ -21,8 +21,8 @@ headers = {
     "Authorization": "Bearer " + cognito_access_token,
 }
 
-print(f"Templates_dir: {templates_dir}")
 # Read template
+print(f"Templates_dir: {templates_dir}")
 p_template_file = templates_dir.joinpath("test_project.toml")
 with open(p_template_file) as f:
     data = toml.load(f)

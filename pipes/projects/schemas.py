@@ -31,8 +31,8 @@ class Milestone(BaseModel):
     @classmethod
     def validate_description(cls, value):
         if isinstance(value, str):
-            return [value]
-        return value
+            return value
+        return " ".join(value)
 
     @field_validator("milestone_date", mode="before")
     @classmethod
@@ -141,11 +141,11 @@ class ProjectCreate(BaseModel):
         title="owner",
         description="project owner",
     )
-    # leads: set[UserCreate] = Field(
-    #     title="leads",
-    #     default=[],
-    #     description="list of project lead",
-    # )
+    leads: set[UserCreate] = Field(
+        title="leads",
+        default=[],
+        description="list of project lead",
+    )
     # teams: set[TeamCreate] = Field(
     #     title="teams",
     #     default=[],
@@ -170,6 +170,9 @@ class ProjectCreate(BaseModel):
             raise ValueError(f"Invalid scheduled_end value: {value}; Error: {e}")
         return value
 
+
+class ProjectUpdate(ProjectCreate):
+    ...
 
 class ProjectBasicRead(BaseModel):
     name: str = Field(
