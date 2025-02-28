@@ -98,7 +98,20 @@ AWS Cognito has been integrated to authenticate access. Steps:
 The access token would last for 12 hour before it expires.
 After the expiration, you will need to re-run the script to get a new one.
 
-Besides, you'll be granted as superuser at local for development.
+## Superuser
+You can grant yourself as superuser at local for development.
+
+```bash
+$ docker-compose exec mongodb bash
+```
+
+Then type `mongo` to run mongo shell, and use `pipes_dev` database.
+
+```
+$ db.users.findOne({'email': <Your-Email>});
+
+$ db.users.updateOne({'email': <Your-Email>}, {'$set': {is_superuser: true}})
+```
 
 
 ## API Documentation
