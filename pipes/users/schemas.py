@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
+from pipes.graph.schemas import UserVertex
 from uuid import UUID
 
 import pymongo
-from pymongo import IndexModel
 from beanie import Document
 from pydantic import BaseModel, EmailStr, Field, field_validator
-
-from pipes.graph.schemas import UserVertex
+from pymongo import IndexModel
 
 
 # User
@@ -70,6 +69,31 @@ class UserRead(UserCreate):
         title="is_superuser",
         description="Is superuser or not",
     )
+
+
+class UserUpdate(BaseModel):
+    """Schema for updating user information"""
+
+    first_name: str | None = None
+    last_name: str | None = None
+    organization: str | None = None
+    is_active: bool | None = None
+    is_superuser: bool | None = None
+    updated_at: datetime | None = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Timestamp of when the user was last updated",
+    )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "first_name": "Jane",
+                "last_name": "Doe",
+                "organization": "ACME Corp",
+                "is_active": True,
+                "is_superuser": False,
+            },
+        }
 
 
 class UserDocument(UserRead, Document):
