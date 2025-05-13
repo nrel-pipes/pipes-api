@@ -59,40 +59,6 @@ async def create_projectrun(
     return pr_read
 
 
-# @router.put("/projectruns", response_model=ProjectRunRead, status_code=201)
-@router.put("/projectruns", status_code=201) # Put in line once we get the projectruns
-async def create_projectrun(
-    project: str,
-    data: ProjectRunCreate,
-    user: UserDocument = Depends(auth_required),
-):
-    context = ProjectSimpleContext(project=project)
-    try:
-        validator = ProjectContextValidator()
-        validated_context = await validator.validate(user, context)
-    except ContextValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    except UserPermissionDenied as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e),
-        )
-    manager = ProjectRunManager(context=validated_context)
-    try:
-        pr_doc = await manager.update_projectrun(data, user)
-    except (VertexAlreadyExists, DocumentAlreadyExists, DomainValidationError) as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-
-    pr_read = await manager.read_projectrun(pr_doc)
-
-    return pr_read
-
 @router.get("/projectruns", response_model=list[ProjectRunRead])
 async def get_projectruns(
     project: str,
