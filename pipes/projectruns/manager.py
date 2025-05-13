@@ -61,33 +61,6 @@ class ProjectRunManager(AbstractObjectManager):
 
         return pr_doc
 
-    async def update_projectrun(
-            self,
-        pr_create: ProjectRunCreate,
-        user: UserDocument,
-    ) -> ProjectRunDocument:
-        """Create project run vertex and document"""
-        p_doc = self.context.project
-
-        # Validate project run create
-        domain_validator = ProjectRunDomainValidator(self.context)
-        pr_create = await domain_validator.validate(pr_create)
-
-        # Add project run vertex
-        pr_vertex = await self._create_projectrun_vertex(p_doc.name, pr_create.name)
-        pr_doc = await self._create_projectrun_document(
-            pr_create,
-            pr_vertex,
-            user,
-        )
-
-        # Add edge: project -(runs)- project run
-        # p_vtx_id = p_doc.vertex.id
-        # pr_vtx_id = pr_vertex.id
-        # self.n.add_e(p_vtx_id, pr_vtx_id, EdgeLabel.runs.value)
-
-        return pr_doc
-
     async def _create_projectrun_vertex(
         self,
         p_name: str,
