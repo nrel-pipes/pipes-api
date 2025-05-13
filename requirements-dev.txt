@@ -1,6 +1,6 @@
 -r ./requirements.txt
 httpx==0.28.1
-pre-commit==5.0.0
+pre-commit==4.2.0
 pytest==8.3.4
 pytest-cov==6.0.0
 pytz==2024.2
