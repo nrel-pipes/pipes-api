@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
-
 from pipes.common.exceptions import (
     ContextValidationError,
     DocumentAlreadyExists,
@@ -10,17 +8,19 @@ from pipes.common.exceptions import (
     UserPermissionDenied,
     VertexAlreadyExists,
 )
-from pipes.modelruns.contexts import ModelRunSimpleContext
-from pipes.modelruns.validators import ModelRunContextValidator
 from pipes.datasets.manager import DatasetManager
 from pipes.datasets.schemas import DatasetCreate, DatasetRead
+from pipes.modelruns.contexts import ModelRunSimpleContext
+from pipes.modelruns.validators import ModelRunContextValidator
 from pipes.users.auth import auth_required
 from pipes.users.schemas import UserDocument
+
+from fastapi import APIRouter, Depends, HTTPException, status
 
 router = APIRouter()
 
 
-@router.post("/datasets/", response_model=DatasetRead, status_code=201)
+@router.post("/datasets", response_model=DatasetRead, status_code=201)
 async def create_dataset(
     project: str,
     projectrun: str,
@@ -70,7 +70,7 @@ async def create_dataset(
     return d_read
 
 
-@router.get("/datasets/", response_model=list[DatasetRead])
+@router.get("/datasets", response_model=list[DatasetRead])
 async def get_datasets(
     project: str,
     projectrun: str,

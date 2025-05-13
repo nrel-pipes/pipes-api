@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 from datetime import datetime
-
-import pymongo
-from pymongo import IndexModel
-from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field, field_validator
-
 from pipes.common.utilities import parse_datetime
 from pipes.graph.schemas import ProjectVertex
 from pipes.teams.schemas import TeamBasicRead
 from pipes.users.schemas import UserCreate, UserRead
+
+import pymongo
+from beanie import Document, PydanticObjectId
+from pydantic import BaseModel, Field, field_validator
+from pymongo import IndexModel
 
 
 class Milestone(BaseModel):
@@ -171,8 +170,8 @@ class ProjectCreate(BaseModel):
         return value
 
 
-class ProjectUpdate(ProjectCreate):
-    ...
+class ProjectUpdate(ProjectCreate): ...
+
 
 class ProjectBasicRead(BaseModel):
     name: str = Field(
@@ -202,7 +201,7 @@ class ProjectDetailRead(ProjectCreate):
         title="owner",
         description="project owner",
     )
-    leads: list[UserRead] = Field(
+    leads: list[UserRead] = Field(  # type: ignore[assignment]
         title="leads",
         default=[],
         description="list of project lead",
