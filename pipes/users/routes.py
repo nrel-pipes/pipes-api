@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import EmailStr
 
@@ -8,35 +9,46 @@ from pipes.common.exceptions import (
     DocumentDoesNotExist,
     DocumentAlreadyExists,
     VertexAlreadyExists,
+    CognitoUserAlreadyExists
 )
 from pipes.users.manager import UserManager
-from pipes.users.schemas import UserCreate, UserRead, UserDocument
+from pipes.users.schemas import UserCreate, UserRead, UserDocument, UserPasswordUpdate
+from pipes.users.validators import UserManagerValidator
 
 router = APIRouter()
 
 
 @router.post("/users", response_model=UserRead, status_code=201)
 async def create_user(
-    data: UserCreate,
-    user: UserDocument = Depends(auth_required),
+    data: UserCreate
 ):
     """Create a new user"""
-    if not user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not permitted. Admin only.",
-        )
-
+    if not data.email:
+        raise ValueError("Email is required")
     try:
         manager = UserManager()
         u_doc = await manager.create_user(data)
-    except (VertexAlreadyExists, DocumentAlreadyExists) as e:
+    except (VertexAlreadyExists, DocumentAlreadyExists, CognitoUserAlreadyExists) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
     return u_doc
 
+@router.post("/users/set-password", status_code=200)
+async def set_user_password(
+    data: UserPasswordUpdate
+):
+    """Set a permanent password for a user, bypassing the temporary password flow"""
+    validator = UserManagerValidator(data)
+    manager = UserManager()
+    try:
+        u_doc = await manager.set_user_password(validator.user)
+    except DocumentDoesNotExist as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
 
 @router.get("/users", response_model=list[UserRead])
 async def get_all_users(user: UserDocument = Depends(auth_required)):

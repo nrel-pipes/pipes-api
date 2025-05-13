@@ -1,25 +1,32 @@
 from __future__ import annotations
-
+import os
 import logging
 from datetime import datetime
 
 from beanie import PydanticObjectId
 from pydantic import EmailStr
 from pymongo.errors import DuplicateKeyError
+from dotenv import load_dotenv
+import boto3
+from botocore.exceptions import ClientError
 
 from pipes.common.exceptions import (
     DocumentDoesNotExist,
     DocumentAlreadyExists,
     VertexAlreadyExists,
+    CognitoDoesNotExists
 )
 from pipes.common.utilities import parse_organization
 from pipes.db.manager import AbstractObjectManager
 from pipes.graph.constants import VertexLabel
 from pipes.graph.schemas import UserVertexProperties, UserVertex
-from pipes.users.schemas import UserCreate, CognitoUserCreate, UserDocument
+from pipes.users.schemas import (
+    UserCreate, CognitoUserCreate, UserDocument, UserPasswordUpdate
+)
+from pipes.config.settings import settings
+
 
 logger = logging.getLogger(__name__)
-
 
 class UserManager(AbstractObjectManager):
     """Manager class for user management"""
@@ -31,6 +38,10 @@ class UserManager(AbstractObjectManager):
         u_create: UserCreate | CognitoUserCreate,
     ) -> UserDocument:
         """Admin create new user"""
+        u_create.email = u_create.email.lower()
+        cognito_user = await self._create_cognito_user(u_create.email)
+        if not cognito_user:
+            raise CognitoDoesNotExists(f"User '{u_create.email}' not found")
         u_vertex = await self._get_or_create_user_vertex(u_create.email)
         return await self._create_user_document(u_create, u_vertex)
 
@@ -47,6 +58,76 @@ class UserManager(AbstractObjectManager):
             properties=properties_model,
         )
         return user_vertex_model
+
+    async def set_user_password(self, password_update: UserPasswordUpdate) -> bool:
+        """Update user password in Cognito"""
+        try:
+            print(password_update.email)
+            user_pool_id = settings.PIPES_COGNITO_USER_POOL_ID
+            cognito_client = boto3.client(
+                'cognito-idp',
+                region_name=settings.PIPES_REGION
+            )
+
+            # Verify passwords match (should already be validated by the model)
+            if password_update.new_password != password_update.confirm_password:
+                raise ValueError("New password and confirmation password do not match")
+
+            # Change the password using admin privileges
+            response = cognito_client.admin_set_user_password(
+                UserPoolId=user_pool_id,
+                Username=password_update.email,
+                Password=password_update.new_password,
+                Permanent=True
+            )
+
+            logger.info(f"Password updated for user: {password_update.email}")
+            return True
+        except ClientError as e:
+            logger.error(f"Error updating Cognito user password: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"Error in Cognito password operation: {str(e)}")
+            return False
+
+    async def _get_user_vertex(self, email: EmailStr) -> UserVertex | None:
+        vlist = self.n.get_v(self.label, email=email)
+        if not vlist:
+            return None
+
+        u_vtx = vlist[0]
+        properties_model = UserVertexProperties(email=email)
+        user_vertex_model = UserVertex(
+            id=u_vtx.id,
+            label=self.label,
+            properties=properties_model,
+        )
+        return user_vertex_model
+
+    async def _create_cognito_user(self, email: EmailStr) -> dict:
+        """Create a new user in Cognito"""
+        try:
+            user_pool_id = settings.PIPES_COGNITO_USER_POOL_ID
+            cognito_client = boto3.client(
+                'cognito-idp',
+                region_name=settings.PIPES_REGION
+            )
+
+            response = cognito_client.admin_create_user(
+                UserPoolId=user_pool_id,
+                Username=email,
+                UserAttributes=[
+                    {'Name': 'email', 'Value': email},
+                    {'Name': 'email_verified', 'Value': 'true'}
+                ]
+            )
+            return response
+        except ClientError as e:
+            logger.error(f"Error creating Cognito user: {str(e)}")
+            return None
+        except Exception as e:
+            logger.error(f"Error in Cognito operation: {str(e)}")
+            return None
 
     async def _create_user_vertex(self, email: EmailStr) -> UserVertex | None:
         if self.n.exists(self.label, email=email):
