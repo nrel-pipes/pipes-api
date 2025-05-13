@@ -1,9 +1,10 @@
 
 from pipes.common.validators import DomainValidator
-from pipes.users.schemas import UserPasswordUpdate
+from pipes.users.schemas import UserPasswordUpdate, UserCreate
+from pipes.common.utilities import parse_organization, DNS_ORG_MAPPING
 
 
-class UserManagerValidator(DomainValidator):
+class UserPasswordUpdateValidator(DomainValidator):
     """Validates that user exists in cognito and mongo"""
     def __init__(self, user: UserPasswordUpdate) -> None:
         self.user = user
@@ -20,4 +21,3 @@ class UserManagerValidator(DomainValidator):
         if data.new_password != data.confirm_password:
             raise ValueError("New password and confirm password do not match")
         return data
-

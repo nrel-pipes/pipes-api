@@ -27,7 +27,6 @@ class CognitoUserAlreadyExists(Exception):
 class CognitoDoesNotExists(Exception):
     """Raise when user already exists in docdb."""
 
-
 class EdgeDoesNotExist(Exception):
     """Raise when an edge does not exist in graph db."""
 

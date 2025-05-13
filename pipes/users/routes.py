@@ -13,7 +13,7 @@ from pipes.common.exceptions import (
 )
 from pipes.users.manager import UserManager
 from pipes.users.schemas import UserCreate, UserRead, UserDocument, UserPasswordUpdate
-from pipes.users.validators import UserManagerValidator
+from pipes.users.validators import UserPasswordUpdateValidator
 
 router = APIRouter()
 
@@ -40,10 +40,11 @@ async def set_user_password(
     data: UserPasswordUpdate
 ):
     """Set a permanent password for a user, bypassing the temporary password flow"""
-    validator = UserManagerValidator(data)
+    validator = UserPasswordUpdateValidator(data)
+    validated_user = await validator.validate_user_passsword_update(data)
     manager = UserManager()
     try:
-        u_doc = await manager.set_user_password(validator.user)
+        u_doc = await manager.set_user_password(validated_user.user)
     except DocumentDoesNotExist as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

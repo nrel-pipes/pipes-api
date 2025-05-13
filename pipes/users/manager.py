@@ -62,18 +62,15 @@ class UserManager(AbstractObjectManager):
     async def set_user_password(self, password_update: UserPasswordUpdate) -> bool:
         """Update user password in Cognito"""
         try:
-            print(password_update.email)
             user_pool_id = settings.PIPES_COGNITO_USER_POOL_ID
             cognito_client = boto3.client(
                 'cognito-idp',
                 region_name=settings.PIPES_REGION
             )
 
-            # Verify passwords match (should already be validated by the model)
             if password_update.new_password != password_update.confirm_password:
                 raise ValueError("New password and confirmation password do not match")
 
-            # Change the password using admin privileges
             response = cognito_client.admin_set_user_password(
                 UserPoolId=user_pool_id,
                 Username=password_update.email,
