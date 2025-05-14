@@ -27,7 +27,7 @@ class CommonSettings(BaseSettings):
     # DocumentDB
     PIPES_DOCDB_HOST: str
     PIPES_DOCDB_PORT: str
-    PIPES_DOCDB_NAME: str
+    PIPES_DOCDB_NAME: str = "pipes"
     PIPES_DOCDB_USER: str | None
     PIPES_DOCDB_PASS: str | None
 
