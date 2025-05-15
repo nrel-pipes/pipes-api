@@ -14,7 +14,6 @@ from pipes.graph.schemas import UserVertex
 # User
 class UserCreate(BaseModel):
     """User base model"""
-
     email: EmailStr = Field(
         title="email",
         to_lower=True,
@@ -35,6 +34,42 @@ class UserCreate(BaseModel):
         default=None,
         description="Organization name",
     )
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def email_to_lowercase(cls, value):
+        """Convert email to lowercase"""
+        if isinstance(value, str):
+            return value.lower()
+        return value
+
+class UserPasswordUpdate(BaseModel):
+    """User password update model"""
+
+    email: EmailStr = Field(
+        title="email",
+        to_lower=True,
+        description="Email address",
+    )
+    old_password: str = Field(
+        title="old_password",
+        description="Old password",
+    )
+    new_password: str = Field(
+        title="new_password",
+        description="New password",
+    )
+    confirm_password: str = Field(
+        title="confirm_password",
+        description="Confirm new password",
+    )
+    @field_validator("email", mode="before")
+    @classmethod
+    def email_to_lowercase(cls, value):
+        """Convert email to lowercase"""
+        if isinstance(value, str):
+            return value.lower()
+        return value
 
 
 class CognitoUserCreate(UserCreate):
