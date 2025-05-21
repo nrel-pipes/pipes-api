@@ -198,6 +198,24 @@ class ModelRead(ModelCreate):
 
 
 class ModelCatalogDocument(CatalogModelCreate, Document):
+    created_at: datetime = Field(
+        title="created_at",
+        description="project creation time",
+    )
+    created_by: PydanticObjectId = Field(
+        title="created_by",
+        description="user who created the project",
+    )
+    last_modified: datetime = Field(
+        title="last_modified",
+        default=datetime.now(),
+        description="last modification datetime",
+    )
+    modified_by: PydanticObjectId = Field(
+        title="modified_by",
+        description="user who modified the project",
+    )
+
     class Settings:
         name = "model_catalog"
         indexes = [

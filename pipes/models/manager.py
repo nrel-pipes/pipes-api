@@ -47,15 +47,6 @@ class ModelCatalogManager(AbstractObjectManager):
         m_doc = await self._create_model_document(m_create, user)
         return m_doc
 
-    async def read_model(
-        self,
-        mc_doc: CatalogModelCreate
-    ) -> ModelCatalogDocument:
-        print(mc_doc)
-        data = mc_doc.model_dump()
-        validated_data = ModelCatalogDocument.model_validate(data)
-        return validated_data
-
     async def get_models(self) -> List[ModelCatalogDocument]:
         """Read a model from given model document"""
         m_docs = await self.d.find_all(
@@ -67,11 +58,31 @@ class ModelCatalogManager(AbstractObjectManager):
             mc_reads.append(CatalogModelCreate.model_validate(data))
         return mc_reads
 
+    async def read_model(
+        self,
+        model_name: str
+    ):
+        """Retrieve a specific model from the database by name"""
+
+        # Find the model in the database by name
+        query = {"name": model_name}
+        model_doc = await self.d.find_one(
+            collection=ModelCatalogDocument,
+            query=query
+        )
+        if not model_doc:
+            raise ValueError(f"Model with name '{model_name}' not found")
+
+        # Convert the document to a model document
+        data = model_doc.model_dump()
+        return ModelCatalogDocument.model_validate(data)
+
+
     async def _create_model_document(
         self,
         m_create: CatalogModelCreate,
         user: UserDocument,
-    ) -> ModelDocument:
+    ) -> ModelCatalogDocument:
         """Create a new model under given project and project run"""
 
         # Check if model already exists or not
@@ -87,6 +98,7 @@ class ModelCatalogManager(AbstractObjectManager):
                 f"Model '{m_name}' already exists under context: {self.context}",
             )
         # object context
+        current_time = datetime.now()
         m_doc = ModelCatalogDocument(
             # model information
             name=m_name,
@@ -96,14 +108,18 @@ class ModelCatalogManager(AbstractObjectManager):
             assumptions=m_create.assumptions,
             requirements=m_create.requirements,
             expected_scenarios=m_create.expected_scenarios,
-            other=m_create.other
+            other=m_create.other,
+            created_at=current_time,
+            created_by=user.id,
+            last_modified=current_time,
+            modified_by=user.id
         )
         # Create document
         try:
             m_doc = await self.d.insert(m_doc)
         except DuplicateKeyError:
             raise DocumentAlreadyExists(
-                f"Model document '{m_name}' already exists under context: {self.context}.",
+                f"Model document '{m_name}'.",
             )
 
         logger.info(

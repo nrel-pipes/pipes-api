@@ -13,7 +13,7 @@ from pipes.common.exceptions import (
     VertexAlreadyExists,
 )
 from pipes.models.manager import ModelManager, ModelCatalogManager
-from pipes.models.schemas import ModelCreate, ModelRead, CatalogModelCreate
+from pipes.models.schemas import ModelCreate, ModelRead, CatalogModelCreate, ModelCatalogDocument
 from pipes.projects.contexts import ProjectSimpleContext, ProjectDocumentContext
 from pipes.projects.validators import ProjectContextValidator
 from pipes.projectruns.contexts import ProjectRunSimpleContext
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/model_catalog", response_model=ModelRead, status_code=201)
+@router.post("/model_catalog", response_model=ModelCatalogDocument, status_code=201)
 async def create_catalog_model(
     data: CatalogModelCreate,
     user: UserDocument = Depends(auth_required),
@@ -42,7 +42,7 @@ async def create_catalog_model(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-    mr_doc = manager.read_model(mc_doc)
+    mr_doc = await manager.read_model(mc_doc.name)
     return mr_doc
 
 
@@ -97,7 +97,7 @@ async def create_model(
             detail=str(e),
         )
 
-    m_read = await manager.read_model(m_doc)
+    m_read = await manager.read_model(m_doc.name)
 
     return m_read
 
