@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from pipes.common.exceptions import (
@@ -12,8 +12,8 @@ from pipes.common.exceptions import (
     DomainValidationError,
     VertexAlreadyExists,
 )
-from pipes.models.manager import ModelManager
-from pipes.models.schemas import ModelCreate, ModelRead
+from pipes.models.manager import ModelManager, ModelCatalogManager
+from pipes.models.schemas import ModelCreate, ModelRead, CatalogModelCreate
 from pipes.projects.contexts import ProjectSimpleContext, ProjectDocumentContext
 from pipes.projects.validators import ProjectContextValidator
 from pipes.projectruns.contexts import ProjectRunSimpleContext
@@ -23,6 +23,37 @@ from pipes.users.schemas import UserDocument
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+@router.post("/model_catalog", response_model=ModelRead, status_code=201)
+async def create_catalog_model(
+    data: CatalogModelCreate,
+    user: UserDocument = Depends(auth_required),
+):
+    manager = ModelCatalogManager()
+    try:
+        mc_doc = await manager.create_model(data, user)
+    except (
+        DocumentAlreadyExists,
+        DomainValidationError,
+        DocumentDoesNotExist,
+    ) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    mr_doc = manager.read_model(mc_doc)
+    return mr_doc
+
+
+@router.get("/model_catalog", response_model=List[CatalogModelCreate], status_code=200)  # Changed to List[ModelRead]
+async def get_catalog_models(
+    user: UserDocument = Depends(auth_required)
+):
+    manager = ModelCatalogManager()
+    model_catalog = await manager.get_models()
+    print("model_catalog", model_catalog)
+    return model_catalog
 
 
 @router.post("/models", response_model=ModelRead, status_code=201)

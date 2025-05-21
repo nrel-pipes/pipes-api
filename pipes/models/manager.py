@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import List
 from datetime import datetime
 
 from pymongo.errors import DuplicateKeyError
@@ -21,13 +22,95 @@ from pipes.projectruns.contexts import (
     ProjectRunSimpleContext,
 )
 from pipes.projectruns.schemas import ProjectRunDocument
-from pipes.models.schemas import ModelCreate, ModelDocument, ModelRead
+from pipes.models.schemas import (
+    ModelCreate,
+    ModelDocument,
+    ModelRead,
+    CatalogModelCreate,
+    ModelCatalogDocument
+)
 from pipes.models.validators import ModelDomainValidator
 from pipes.teams.manager import TeamManager
 from pipes.teams.schemas import TeamDocument
 from pipes.users.schemas import UserDocument
 
 logger = logging.getLogger(__name__)
+
+
+class ModelCatalogManager(AbstractObjectManager):
+    async def create_model(
+        self,
+        m_create: CatalogModelCreate,
+        user: UserDocument,
+    ) -> ModelCatalogDocument:
+
+        m_doc = await self._create_model_document(m_create, user)
+        return m_doc
+
+    async def read_model(
+        self,
+        mc_doc: CatalogModelCreate
+    ) -> ModelCatalogDocument:
+        print(mc_doc)
+        data = mc_doc.model_dump()
+        validated_data = ModelCatalogDocument.model_validate(data)
+        return validated_data
+
+    async def get_models(self) -> List[ModelCatalogDocument]:
+        """Read a model from given model document"""
+        m_docs = await self.d.find_all(
+            collection=ModelCatalogDocument
+        )
+        mc_reads = []
+        for m_doc in m_docs:
+            data = m_doc.model_dump()
+            mc_reads.append(CatalogModelCreate.model_validate(data))
+        return mc_reads
+
+    async def _create_model_document(
+        self,
+        m_create: CatalogModelCreate,
+        user: UserDocument,
+    ) -> ModelDocument:
+        """Create a new model under given project and project run"""
+
+        # Check if model already exists or not
+        m_name = m_create.name
+        m_doc_exits = await self.d.exists(
+            collection=ModelCatalogDocument,
+            query={
+                "name": m_name
+            },
+        )
+        if m_doc_exits:
+            raise DocumentAlreadyExists(
+                f"Model '{m_name}' already exists under context: {self.context}",
+            )
+        # object context
+        m_doc = ModelCatalogDocument(
+            # model information
+            name=m_name,
+            display_name=m_create.display_name,
+            type=m_create.type,
+            description=m_create.description,
+            assumptions=m_create.assumptions,
+            requirements=m_create.requirements,
+            expected_scenarios=m_create.expected_scenarios,
+            other=m_create.other
+        )
+        # Create document
+        try:
+            m_doc = await self.d.insert(m_doc)
+        except DuplicateKeyError:
+            raise DocumentAlreadyExists(
+                f"Model document '{m_name}' already exists under context: {self.context}.",
+            )
+
+        logger.info(
+            "New model '%s' was created successfully under context: %s",
+            m_name
+        )
+        return m_doc
 
 
 class ModelManager(AbstractObjectManager):

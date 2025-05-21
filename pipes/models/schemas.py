@@ -47,6 +47,59 @@ class ScenarioMapping(BaseModel):
         return value
 
 
+class CatalogModelCreate(BaseModel):
+    """Model schema for catalog"""
+
+    name: str = Field(
+        title="model_catalog",
+        min_length=1,
+        description="the model name",
+    )
+    display_name: str | None = Field(
+        title="display_name",
+        default=None,
+        description="Display name for this model vertex.",
+    )
+    type: str = Field(
+        title="type",
+        description="Type of model to use in graphic headers (e.g, 'Capacity Expansion')",
+    )
+    description: list[str] = Field(
+        title="description",
+        description="Description of the model",
+    )
+    assumptions: list[str] = Field(
+        title="assumptions",
+        description="List of model assumptions",
+        default=[],
+    )
+    requirements: dict = Field(
+        title="requirements",
+        default={},
+        description="Model specific requirements (if different from Project and Project-Run)",
+    )
+    expected_scenarios: list[str] = Field(
+        title="expected_scenarios",  # Fixed the title here
+        description="List of expected model scenarios",
+        default=[],
+    )
+    other: dict = Field(
+        title="other",
+        default={},
+        description="other metadata info about the model in dictionary",
+    )
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def validate_description(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
+
+    class Settings:  # Fixed the typo here
+        name = "model_catalog"
+
+
 class ModelCreate(BaseModel):
     """Model schema"""
 
@@ -142,6 +195,19 @@ class ModelRead(ModelCreate):
         title="model",
         description="The modeling team object",
     )
+
+
+class ModelCatalogDocument(CatalogModelCreate, Document):
+    class Settings:
+        name = "model_catalog"
+        indexes = [
+            IndexModel(
+                [
+                    ("name", pymongo.ASCENDING)
+                ],
+                unique=True,
+            ),
+        ]
 
 
 class ModelDocument(ModelRead, Document):
