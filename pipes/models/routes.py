@@ -46,7 +46,7 @@ async def create_catalog_model(
     return mr_doc
 
 
-@router.get("/model_catalog", response_model=List[CatalogModelCreate], status_code=200)  # Changed to List[ModelRead]
+@router.get("/model_catalog", response_model=List[CatalogModelCreate], status_code=200)
 async def get_catalog_models(
     user: UserDocument = Depends(auth_required)
 ):

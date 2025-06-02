@@ -79,7 +79,7 @@ class CatalogModelCreate(BaseModel):
         description="Model specific requirements (if different from Project and Project-Run)",
     )
     expected_scenarios: list[str] = Field(
-        title="expected_scenarios",  # Fixed the title here
+        title="expected_scenarios",
         description="List of expected model scenarios",
         default=[],
     )
@@ -96,7 +96,7 @@ class CatalogModelCreate(BaseModel):
             return [value]
         return value
 
-    class Settings:  # Fixed the typo here
+    class Settings:
         name = "model_catalog"
 
 
