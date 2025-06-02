@@ -52,7 +52,6 @@ async def get_catalog_models(
 ):
     manager = ModelCatalogManager()
     model_catalog = await manager.get_models()
-    print("model_catalog", model_catalog)
     return model_catalog
 
 
