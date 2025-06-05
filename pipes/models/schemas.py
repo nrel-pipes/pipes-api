@@ -47,7 +47,7 @@ class ScenarioMapping(BaseModel):
         return value
 
 
-class CatalogModelCreate(BaseModel):
+class CatalogModel(BaseModel):
     """Model schema for catalog"""
 
     name: str = Field(
@@ -197,7 +197,7 @@ class ModelRead(ModelCreate):
     )
 
 
-class ModelCatalogDocument(CatalogModelCreate, Document):
+class CatalogModelDocument(CatalogModelCreate, Document):
     created_at: datetime = Field(
         title="created_at",
         description="project creation time",

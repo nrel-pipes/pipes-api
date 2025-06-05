@@ -24,7 +24,7 @@ from pipes.projectruns.routes import router as projectruns_router
 
 # Models
 from pipes.models.routes import router as models_router
-from pipes.models.schemas import ModelDocument, ModelCatalogDocument
+from pipes.models.schemas import ModelDocument, CatalogModelDocument
 
 # Modelruns
 from pipes.modelruns.schemas import ModelRunDocument
@@ -84,7 +84,7 @@ async def lifespan(app: FastAPI):
             TaskDocument,
             TeamDocument,
             UserDocument,
-            ModelCatalogDocument
+            CatalogModelDocument
         ],
     )
 

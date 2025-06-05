@@ -27,7 +27,7 @@ from pipes.models.schemas import (
     ModelDocument,
     ModelRead,
     CatalogModelCreate,
-    ModelCatalogDocument
+    CatalogModelDocument
 )
 from pipes.models.validators import ModelDomainValidator
 from pipes.teams.manager import TeamManager
@@ -42,15 +42,15 @@ class ModelCatalogManager(AbstractObjectManager):
         self,
         m_create: CatalogModelCreate,
         user: UserDocument,
-    ) -> ModelCatalogDocument:
+    ) -> CatalogModelDocument:
 
         m_doc = await self._create_model_document(m_create, user)
         return m_doc
 
-    async def get_models(self) -> List[ModelCatalogDocument]:
+    async def get_models(self) -> List[CatalogModelDocument]:
         """Read a model from given model document"""
         m_docs = await self.d.find_all(
-            collection=ModelCatalogDocument
+            collection=CatalogModelDocument
         )
         mc_reads = []
         for m_doc in m_docs:
@@ -67,7 +67,7 @@ class ModelCatalogManager(AbstractObjectManager):
         # Find the model in the database by name
         query = {"name": model_name}
         model_doc = await self.d.find_one(
-            collection=ModelCatalogDocument,
+            collection=CatalogModelDocument,
             query=query
         )
         if not model_doc:
@@ -75,20 +75,20 @@ class ModelCatalogManager(AbstractObjectManager):
 
         # Convert the document to a model document
         data = model_doc.model_dump()
-        return ModelCatalogDocument.model_validate(data)
+        return CatalogModelDocument.model_validate(data)
 
 
     async def _create_model_document(
         self,
         m_create: CatalogModelCreate,
         user: UserDocument,
-    ) -> ModelCatalogDocument:
+    ) -> CatalogModelDocument:
         """Create a new model under given project and project run"""
 
         # Check if model already exists or not
         m_name = m_create.name
         m_doc_exits = await self.d.exists(
-            collection=ModelCatalogDocument,
+            collection=CatalogModelDocument,
             query={
                 "name": m_name
             },
@@ -99,7 +99,7 @@ class ModelCatalogManager(AbstractObjectManager):
             )
         # object context
         current_time = datetime.now()
-        m_doc = ModelCatalogDocument(
+        m_doc = CatalogModelDocument(
             # model information
             name=m_name,
             display_name=m_create.display_name,
