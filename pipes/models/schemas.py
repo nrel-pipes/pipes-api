@@ -47,7 +47,7 @@ class ScenarioMapping(BaseModel):
         return value
 
 
-class CatalogModel(BaseModel):
+class CatalogModelCreate(BaseModel):
     """Model schema for catalog"""
 
     name: str = Field(

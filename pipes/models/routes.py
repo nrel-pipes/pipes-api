@@ -13,7 +13,7 @@ from pipes.common.exceptions import (
     VertexAlreadyExists,
 )
 from pipes.models.manager import ModelManager, ModelCatalogManager
-from pipes.models.schemas import ModelCreate, ModelRead, CatalogModelCreate, ModelCatalogDocument
+from pipes.models.schemas import ModelCreate, ModelRead, CatalogModelCreate, CatalogModelDocument
 from pipes.projects.contexts import ProjectSimpleContext, ProjectDocumentContext
 from pipes.projects.validators import ProjectContextValidator
 from pipes.projectruns.contexts import ProjectRunSimpleContext
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/model_catalog", response_model=ModelCatalogDocument, status_code=201)
+@router.post("/model_catalog", response_model=CatalogModelDocument, status_code=201)
 async def create_catalog_model(
     data: CatalogModelCreate,
     user: UserDocument = Depends(auth_required),
