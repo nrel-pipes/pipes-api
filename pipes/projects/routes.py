@@ -137,34 +137,41 @@ async def get_basic_projects(user: UserDocument = Depends(auth_required)):
     return p_read_docs
 
 
-# @router.put("/projects/detail", response_model=ProjectDetailRead)
-# async def update_project_detail(
-#     project: str,
-#     data: ProjectUpdate,
-#     user: UserDocument = Depends(auth_required),
-# ):
-#     """Update project detail information"""
-#     context = dict(project=project)
-#     manager = ProjectManager(user)
-#     try:
-#         await manager.validate_context(context)
-#     except ContextValidationError as e:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail=str(e),
-#         )
-#     except ContextPermissionDenied as e:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail=str(e),
-#         )
+@router.delete("/projects", status_code=204)
+async def delete_project(
+    project: str,
+    user: UserDocument = Depends(auth_required),
+):
+    """Delete a project by given project name"""
+    context = ProjectSimpleContext(project=project)
 
-#     try:
-#         p_doc = await manager.update_project_detail(p_update=data)
-#     except DocumentAlreadyExists as e:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail=str(e),
-#         )
+    try:
+        validator = ProjectContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
 
-#     return p_doc
+    manager = ProjectManager()
+    p_doc = validated_context.project
+    try:
+        await manager.delete_project(p_doc.name)
+    except DocumentDoesNotExist as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except Exception as e:
+        # Handle any unexpected errors (e.g., Neptune connection issues)
+        logger.error(f"Error deleting project '{project}': {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete project: {str(e)}",
+        )
