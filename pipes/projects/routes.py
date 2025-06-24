@@ -11,7 +11,6 @@ from pipes.common.exceptions import (
     DomainValidationError,
     VertexAlreadyExists,
 )
-from pipes.projectruns.manager import ProjectRunManager
 from pipes.projects.contexts import ProjectSimpleContext
 from pipes.projects.manager import ProjectManager
 from pipes.projects.schemas import (
@@ -26,6 +25,14 @@ from pipes.users.schemas import UserDocument
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+@router.get("/projects/basics", response_model=list[ProjectBasicRead])
+async def get_basic_projects(user: UserDocument = Depends(auth_required)):
+    """Get all projects with basic information"""
+    manager = ProjectManager()
+    p_read_docs = await manager.get_basic_projects(user)
+    return p_read_docs
 
 
 @router.post("/projects", response_model=ProjectDetailRead, status_code=201)
@@ -49,57 +56,8 @@ async def create_project(
     return p_read
 
 
-@router.put("/projects/{project}", response_model=ProjectDetailRead, status_code=200)
-async def update_project(
-    project: str,
-    data: ProjectUpdate,
-    user: UserDocument = Depends(auth_required),
-):
-    """
-    Update Project workflow
-    - Gets project runs
-    - Update Project logic
-    """
-    # Gets all the project runs
-    context = ProjectSimpleContext(project=project)
-    try:
-        validator = ProjectContextValidator()
-        validated_context = await validator.validate(user, context)
-    except ContextValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    except UserPermissionDenied as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e),
-        )
-
-    pr_manager = ProjectRunManager(context=validated_context)
-    pr_docs = await pr_manager.get_projectruns()
-
-    try:
-        p_manager = ProjectManager()
-        p_doc = await p_manager.update_project(
-            p_update=data,
-            projectrun_docs=pr_docs,
-            project=project,
-            user=user,
-        )
-    except (DocumentDoesNotExist, DomainValidationError) as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    # Read referenced documents
-    p_read = await p_manager.read_project_detail(p_doc)
-
-    return p_read
-
-
 @router.get("/projects", response_model=ProjectDetailRead)
-async def get_project_detail(
+async def get_project(
     project: str,
     user: UserDocument = Depends(auth_required),
 ):
@@ -129,12 +87,46 @@ async def get_project_detail(
     return p_read
 
 
-@router.get("/projects/basics", response_model=list[ProjectBasicRead])
-async def get_basic_projects(user: UserDocument = Depends(auth_required)):
-    """Get all projects with basic information"""
-    manager = ProjectManager()
-    p_read_docs = await manager.get_basic_projects(user)
-    return p_read_docs
+@router.put("/projects", response_model=ProjectDetailRead, status_code=200)
+async def update_project(
+    project: str,
+    data: ProjectUpdate,
+    user: UserDocument = Depends(auth_required),
+):
+    """
+    Update Project by given project name and data.
+    """
+    context = ProjectSimpleContext(project=project)
+    try:
+        validator = ProjectContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    target_p_doc = validated_context.project
+    try:
+        p_manager = ProjectManager()
+        p_doc = await p_manager.update_project(
+            p_doc=target_p_doc,
+            p_update=data,
+            user=user,
+        )
+    except (DocumentDoesNotExist, DomainValidationError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    p_read = await p_manager.read_project_detail(p_doc)
+
+    return p_read
 
 
 @router.delete("/projects", status_code=204)
