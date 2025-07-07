@@ -321,3 +321,37 @@ class ProjectManager(AbstractObjectManager):
             )
 
         return updated_doc
+
+    async def delete_project(self, project: str) -> None:
+        """Delete a project by name"""
+        try:
+            # First delete the project vertex and all related edges from Neptune
+            p_vertices = self.n.get_v(self.label, name=project)
+            if p_vertices:
+                p_vtx = p_vertices[0]
+                # Delete vertex and all connected edges
+                self.n.delete_v_and_edges(p_vtx.id)
+                logger.info(
+                    "Project vertex '%s' and related edges deleted from Neptune",
+                    project,
+                )
+        except Exception as e:
+            logger.warning("Failed to delete project vertex from Neptune: %s", str(e))
+            # Continue with document deletion even if Neptune deletion fails
+
+        # Delete the project document from documentdb
+        try:
+            await self.d.delete_one(
+                collection=ProjectDocument,
+                query={"name": project},
+            )
+            logger.info("Project document '%s' deleted from documentdb", project)
+        except Exception as e:
+            logger.error(
+                "Failed to delete project document from documentdb: %s",
+                str(e),
+            )
+            # Re-raise this error as document deletion is critical
+            raise
+
+        logger.info("Project '%s' deleted successfully", project)

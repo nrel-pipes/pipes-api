@@ -44,3 +44,12 @@ class DocumentDB(AbstractDatabase):
         update: dict,
     ) -> UpdateResult:
         return await collection.find_one(find).update(update)
+
+    async def delete_one(
+        self,
+        collection: Document,
+        query: dict,
+    ) -> int:
+        """Delete one document matching the query"""
+        result = await collection.find_one(query).delete()
+        return result.deleted_count if result else 0
