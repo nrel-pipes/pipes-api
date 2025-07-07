@@ -119,3 +119,15 @@ class NeptuneDB(AbstractDatabase):
         if elist:
             return elist[0]
         return self.add_e(v1, v2, label, **properties)
+
+    def delete_v(self, vertex_id):
+        """Delete graph vertex by id"""
+        return self.g.V(vertex_id).drop().iterate()
+
+    def delete_e(self, edge_id):
+        """Delete graph edge by id"""
+        return self.g.E(edge_id).drop().iterate()
+
+    def delete_v_and_edges(self, vertex_id):
+        """Delete graph vertex and all its connected edges"""
+        return self.g.V(vertex_id).bothE().drop().V(vertex_id).drop().iterate()
