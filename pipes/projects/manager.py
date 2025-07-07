@@ -5,22 +5,29 @@ from datetime import datetime
 from itertools import chain
 
 from pymongo.errors import DuplicateKeyError
-from fastapi import HTTPException
-from pipes.common.exceptions import DocumentAlreadyExists, VertexAlreadyExists
-from pipes.db.manager import AbstractObjectManager
-from pipes.graph.constants import VertexLabel, EdgeLabel
-from pipes.graph.schemas import ProjectVertexProperties, ProjectVertex
-from pipes.projects.schemas import ProjectCreate, ProjectDetailRead, ProjectDocument, ProjectUpdate
-from pipes.projects.validators import ProjectDomainValidator, ProjectUpdateDomainValidator, ProjectContextValidator
-from pipes.teams.schemas import TeamDocument, TeamBasicRead
-from pipes.users.manager import UserManager
-from pipes.users.schemas import UserCreate, UserDocument, UserRead
 from pipes.common.exceptions import (
     DocumentAlreadyExists,
     VertexAlreadyExists,
-    DocumentDoesNotExist
+    DocumentDoesNotExist,
 )
-from pipes.projectruns.schemas import ProjectRunRead
+from pipes.db.manager import AbstractObjectManager
+from pipes.graph.constants import VertexLabel, EdgeLabel
+from pipes.graph.schemas import ProjectVertexProperties, ProjectVertex
+from pipes.projects.contexts import ProjectDocumentContext
+from pipes.projects.schemas import (
+    ProjectCreate,
+    ProjectDetailRead,
+    ProjectDocument,
+    ProjectUpdate,
+)
+from pipes.projects.validators import (
+    ProjectDomainValidator,
+    ProjectUpdateDomainValidator,
+)
+from pipes.projectruns.manager import ProjectRunManager
+from pipes.teams.schemas import TeamDocument, TeamBasicRead
+from pipes.users.manager import UserManager
+from pipes.users.schemas import UserCreate, UserDocument, UserRead
 
 logger = logging.getLogger(__name__)
 
@@ -53,19 +60,6 @@ class ProjectManager(AbstractObjectManager):
 
         return p_doc
 
-    async def update_project(
-        self,
-        p_update: ProjectUpdate,
-        projectrun_docs: list[ProjectRunRead],
-        project: str,
-        user: UserDocument,
-    ) -> ProjectDocument:
-        domain_validator = ProjectUpdateDomainValidator()
-        p_update = await domain_validator.project_validate(p_update, projectrun_docs)
-        p_owner = await self._get_or_create_project_owner(p_update.owner)
-        p_update_doc = await self._update_project_document(p_update, p_owner, project, user)
-        return p_update_doc
-
     async def _create_project_vertex(self, p_name: str) -> ProjectVertex:
         properties = {"name": p_name}
         if self.n.exists(self.label, **properties):
@@ -89,64 +83,6 @@ class ProjectManager(AbstractObjectManager):
         p_owner_doc = await user_manager.get_or_create_user(owner)
         return p_owner_doc
 
-    async def _update_project_document(
-        self,
-        p_update: ProjectUpdate,
-        p_owner: UserDocument,
-        project: str,
-        user: UserDocument,
-    ):
-        # Validation
-        old_p_doc_exists = await self.d.exists(
-            collection=ProjectDocument,
-            query={"name": project},
-        )
-        p_doc_exists = await self.d.exists(
-            collection=ProjectDocument,
-            query={"name": p_update.name},
-        )
-        if not old_p_doc_exists:
-            raise DocumentDoesNotExist(f"Project '{p_update.name}' does not exist.")
-        if project != p_update.name and p_doc_exists:
-            raise DocumentAlreadyExists(f"You are renaming '{project}' to an existing project, {p_update.name}.")
-        
-        # Get the existing document
-        existing_p_doc = await self.d.find_one(
-            collection=ProjectDocument,
-            query={"name": project},
-        )
-
-        # Prepare update dictionary
-        update_dict = {
-            "$set": {
-                'name': p_update.name,
-                'title': p_update.title,
-                'description': p_update.description,
-                'assumptions': p_update.assumptions,
-                'requirements': p_update.requirements,
-                'scenarios': p_update.scenarios,
-                'sensitivities': p_update.sensitivities,
-                'milestones': p_update.milestones,
-                'scheduled_start': p_update.scheduled_start,
-                'scheduled_end': p_update.scheduled_end,
-                'owner': p_owner.id,
-                'last_modified': datetime.now(),
-                'modified_by': user.id
-            }
-        }
-
-        await self.d.update_one(
-            collection=ProjectDocument,
-            find={"name": project},
-            update=update_dict
-        )
-
-        updated_doc = await self.d.find_one(
-            collection=ProjectDocument,
-            query={"name": p_update.name}
-        )
-        return updated_doc
-    
     async def _create_project_document(
         self,
         p_create: ProjectCreate,
@@ -286,3 +222,136 @@ class ProjectManager(AbstractObjectManager):
         p_read = ProjectDetailRead.model_validate(p_data)
 
         return p_read
+
+    async def update_project(
+        self,
+        p_doc: ProjectDocument,
+        p_update: ProjectUpdate,
+        user: UserDocument,
+    ) -> ProjectDocument:
+        domain_validator = ProjectUpdateDomainValidator()
+
+        pr_manager = ProjectRunManager(context=ProjectDocumentContext(project=p_doc))
+        projectrun_docs = await pr_manager.get_projectruns()
+
+        p_update = await domain_validator.project_validate(p_update, projectrun_docs)
+        p_owner = await self._get_or_create_project_owner(p_update.owner)
+
+        other_p_doc_exists = await self.d.exists(
+            collection=ProjectDocument,
+            query={"name": p_update.name},
+        )
+
+        project = p_doc.name
+        if project != p_update.name and other_p_doc_exists:
+            raise DocumentAlreadyExists(
+                "The project name '{p_update.name}' is already in use. Please choose a different one.",
+            )
+
+        # Process leads: get or create user documents for each lead
+        lead_ids = []
+        if p_update.leads:
+            user_manager = UserManager()
+            for lead in p_update.leads:
+                lead_doc = await user_manager.get_or_create_user(lead)
+                lead_ids.append(lead_doc.id)
+
+        # Prepare update dictionary - serialize complex objects properly
+        update_dict = {
+            "$set": {
+                "name": p_update.name,
+                "title": p_update.title,
+                "description": p_update.description,
+                "assumptions": p_update.assumptions,
+                "requirements": p_update.requirements,
+                "scenarios": (
+                    [s.model_dump() for s in p_update.scenarios]
+                    if p_update.scenarios
+                    else []
+                ),
+                "sensitivities": (
+                    [s.model_dump() for s in p_update.sensitivities]
+                    if p_update.sensitivities
+                    else []
+                ),
+                "milestones": (
+                    [m.model_dump() for m in p_update.milestones]
+                    if p_update.milestones
+                    else []
+                ),
+                "scheduled_start": p_update.scheduled_start,
+                "scheduled_end": p_update.scheduled_end,
+                "owner": p_owner.id,
+                # 'leads': lead_ids,
+                "last_modified": datetime.now(),
+                "modified_by": user.id,
+            },
+        }
+
+        try:
+            result = await self.d.update_one(
+                collection=ProjectDocument,
+                find={"name": project},
+                update=update_dict,
+            )
+
+            if result.matched_count == 0:
+                raise DocumentDoesNotExist(
+                    f"Project '{project}' not found during update.",
+                )
+
+            if result.modified_count == 0:
+                logger.warning(
+                    f"Project '{project}' was matched but not modified - possibly no changes detected.",
+                )
+
+        except Exception as e:
+            logger.error(f"Failed to update project '{project}': {e}")
+            raise
+
+        # Get the updated document
+        updated_doc = await self.d.find_one(
+            collection=ProjectDocument,
+            query={"name": p_update.name},
+        )
+
+        if not updated_doc:
+            raise DocumentDoesNotExist(
+                f"Failed to retrieve updated project '{p_update.name}'.",
+            )
+
+        return updated_doc
+
+    async def delete_project(self, project: str) -> None:
+        """Delete a project by name"""
+        try:
+            # First delete the project vertex and all related edges from Neptune
+            p_vertices = self.n.get_v(self.label, name=project)
+            if p_vertices:
+                p_vtx = p_vertices[0]
+                # Delete vertex and all connected edges
+                self.n.delete_v_and_edges(p_vtx.id)
+                logger.info(
+                    "Project vertex '%s' and related edges deleted from Neptune",
+                    project,
+                )
+        except Exception as e:
+            logger.warning("Failed to delete project vertex from Neptune: %s", str(e))
+            # Continue with document deletion even if Neptune deletion fails
+
+        # Delete the project document from documentdb
+        try:
+            await self.d.delete_one(
+                collection=ProjectDocument,
+                query={"name": project},
+            )
+            logger.info("Project document '%s' deleted from documentdb", project)
+        except Exception as e:
+            logger.error(
+                "Failed to delete project document from documentdb: %s",
+                str(e),
+            )
+            # Re-raise this error as document deletion is critical
+            raise
+
+        logger.info("Project '%s' deleted successfully", project)

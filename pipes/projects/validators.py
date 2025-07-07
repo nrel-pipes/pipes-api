@@ -87,6 +87,10 @@ class ProjectDomainValidator(DomainValidator):
 
 
 class ProjectUpdateDomainValidator(DomainValidator):
+    """Project run domain validator class"""
+
+    # TODO: Check and refactor this class for project update logic validation later.
+
     def get_dependency_data(self, projectrun_docs: list[ProjectRunRead]):
         dependency_data = {
             "scenarios": [],
@@ -129,6 +133,7 @@ class ProjectUpdateDomainValidator(DomainValidator):
         projectrun_docs: list[ProjectRunRead],
     ) -> BaseModel:
         """Call validation methods with names starting with validate_"""
+
         dependency_data = self.get_dependency_data(projectrun_docs)
         for attr_name in dir(self):
             if attr_name.startswith("validate_dependency_"):
@@ -142,8 +147,6 @@ class ProjectUpdateDomainValidator(DomainValidator):
 
         # return instance
         return instance
-
-    """Project run domain validator class"""
 
     async def validate_name(self, p_update: ProjectUpdate) -> ProjectUpdate:
         """Validates name no none or empty string. Make sure document does not already exist"""
