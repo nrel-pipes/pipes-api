@@ -137,6 +137,14 @@ async def delete_project(
     """Delete a project by given project name"""
     context = ProjectSimpleContext(project=project)
 
+    # NOTE: Hard-coded, to project pipes101 project
+    # Only superuser can delete this project.
+    if project == "pipes101" and not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Permission denied, you don't have permission to delete this project.",
+        )
+
     try:
         validator = ProjectContextValidator()
         validated_context = await validator.validate(user, context)
