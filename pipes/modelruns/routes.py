@@ -10,7 +10,6 @@ from pipes.common.exceptions import (
     DocumentDoesNotExist,
     DomainValidationError,
     UserPermissionDenied,
-    VertexAlreadyExists,
 )
 from pipes.models.contexts import ModelSimpleContext
 from pipes.models.validators import ModelContextValidator
@@ -60,7 +59,6 @@ async def create_modelrun(
     try:
         mr_doc = await manager.create_modelrun(data, user)
     except (
-        VertexAlreadyExists,
         DocumentAlreadyExists,
         DomainValidationError,
         DocumentDoesNotExist,

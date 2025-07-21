@@ -7,8 +7,7 @@ from pymongo.errors import DuplicateKeyError
 
 from pipes.common.exceptions import DocumentAlreadyExists
 from pipes.db.manager import AbstractObjectManager
-from pipes.graph.constants import EdgeLabel
-from pipes.graph.schemas import FeedsEdgeProperties, FeedsEdge
+from pipes.common.constants import EdgeLabel
 from pipes.handoffs.schemas import HandoffCreate, HandoffDocument, HandoffRead
 from pipes.handoffs.validators import HandoffDomainValidator
 from pipes.models.schemas import ModelDocument
@@ -45,31 +44,13 @@ class HandoffManager(AbstractObjectManager):
         domain_validator = HandoffDomainValidator(self.context)
         h_create = await domain_validator.validate(h_create)
 
-        # Create feeds edge between models for handoff
-        from_m_vtx_id = domain_validator.from_model_doc.vertex.id  # type: ignore
-        to_m_vtx_id = domain_validator.to_model_doc.vertex.id  # type: ignore
-        properties_model = FeedsEdgeProperties(
-            project=p_doc.name,
-            projectrun=pr_doc.name,
-            handoff=h_create.name,
-        )
-        properties = properties_model.model_dump()
-        edge = self.n.get_or_add_e(from_m_vtx_id, to_m_vtx_id, self.label, **properties)
-
         # Create handoff document
-        feeds_edge_model = FeedsEdge(
-            id=edge.id,
-            label=EdgeLabel.feeds.value,
-            properties=properties_model,
-        )
-
         mr_doc = domain_validator.from_modelrun_doc
         _context = ProjectRunObjectContext(
             project=p_doc.id,
             projectrun=pr_doc.id,
         )
         h_doc = HandoffDocument(
-            edge=feeds_edge_model,
             context=_context,
             from_model=domain_validator.from_model_doc.id,  # type: ignore
             to_model=domain_validator.to_model_doc.id,  # type: ignore

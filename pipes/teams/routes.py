@@ -7,7 +7,6 @@ from pipes.common.exceptions import (
     UserPermissionDenied,
     DocumentAlreadyExists,
     DocumentDoesNotExist,
-    VertexAlreadyExists,
 )
 from pipes.db.document import DocumentDB
 from pipes.projects.contexts import ProjectSimpleContext
@@ -47,7 +46,7 @@ async def create_team(
     try:
         manager = TeamManager(context=validated_context)
         t_doc = await manager.create_team(data)
-    except (VertexAlreadyExists, DocumentAlreadyExists) as e:
+    except DocumentAlreadyExists as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -124,7 +123,7 @@ async def update_team(
     try:
         manager = TeamManager(context=validated_context)
         t_doc = await manager.update_team(team, data)
-    except (VertexAlreadyExists, DocumentDoesNotExist, DocumentAlreadyExists) as e:
+    except (DocumentDoesNotExist, DocumentAlreadyExists) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),

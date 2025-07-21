@@ -9,7 +9,6 @@ from pydantic import BaseModel, EmailStr, Field
 from pymongo import IndexModel
 
 from pipes.common.schemas import SourceCode, ExecutionStatus
-from pipes.graph.schemas import TaskVertex
 from pipes.modelruns.contexts import ModelRunObjectContext, ModelRunSimpleContext
 from pipes.users.schemas import UserCreate, UserRead
 
@@ -135,10 +134,6 @@ class TaskRead(TaskCreate):
 
 
 class TaskDocument(TaskRead, Document):
-    vertex: TaskVertex = Field(
-        title="vertex",
-        description="The task vertex pydantic model",
-    )
     context: ModelRunObjectContext = Field(
         title="context",
         description="model run context reference",

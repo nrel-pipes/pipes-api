@@ -9,7 +9,6 @@ from pipes.common.exceptions import (
     ContextValidationError,
     DocumentDoesNotExist,
     DomainValidationError,
-    VertexAlreadyExists,
 )
 from pipes.projects.contexts import ProjectSimpleContext
 from pipes.projects.manager import ProjectManager
@@ -44,7 +43,7 @@ async def create_project(
     try:
         manager = ProjectManager()
         p_doc = await manager.create_project(data, user)
-    except (VertexAlreadyExists, DocumentDoesNotExist, DomainValidationError) as e:
+    except (DocumentDoesNotExist, DomainValidationError) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -169,7 +168,6 @@ async def delete_project(
             detail=str(e),
         )
     except Exception as e:
-        # Handle any unexpected errors (e.g., Neptune connection issues)
         logger.error(f"Error deleting project '{project}': {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
