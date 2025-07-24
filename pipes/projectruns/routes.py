@@ -9,7 +9,6 @@ from pipes.common.exceptions import (
     UserPermissionDenied,
     DocumentAlreadyExists,
     DomainValidationError,
-    VertexAlreadyExists,
 )
 from pipes.projects.contexts import ProjectSimpleContext
 from pipes.projects.validators import ProjectContextValidator
@@ -48,7 +47,7 @@ async def create_projectrun(
     manager = ProjectRunManager(context=validated_context)
     try:
         pr_doc = await manager.create_projectrun(data, user)
-    except (VertexAlreadyExists, DocumentAlreadyExists, DomainValidationError) as e:
+    except (DocumentAlreadyExists, DomainValidationError) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),

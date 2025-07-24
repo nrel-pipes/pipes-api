@@ -9,7 +9,6 @@ from pipes.common.exceptions import (
     DocumentDoesNotExist,
     DomainValidationError,
     UserPermissionDenied,
-    VertexAlreadyExists,
 )
 from pipes.common.schemas import ExecutionStatus
 from pipes.modelruns.contexts import ModelRunSimpleContext
@@ -57,7 +56,6 @@ async def create_task(
     try:
         task_doc = await manager.create_task(data, user)
     except (
-        VertexAlreadyExists,
         DocumentAlreadyExists,
         DomainValidationError,
         DocumentDoesNotExist,

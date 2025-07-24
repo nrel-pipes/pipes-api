@@ -5,15 +5,10 @@ from datetime import datetime
 
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import (
-    DocumentAlreadyExists,
-    DocumentDoesNotExist,
-    VertexAlreadyExists,
-)
+from pipes.common.exceptions import DocumentAlreadyExists, DocumentDoesNotExist
 from pipes.db.manager import AbstractObjectManager
-from pipes.graph.constants import VertexLabel, EdgeLabel
+from pipes.common.constants import NodeLabel
 from pipes.projects.contexts import ProjectDocumentContext
-from pipes.graph.schemas import ModelVertexProperties, ModelVertex
 from pipes.projects.schemas import ProjectDocument
 from pipes.projectruns.contexts import (
     ProjectRunDocumentContext,
@@ -33,7 +28,7 @@ logger = logging.getLogger(__name__)
 class ModelManager(AbstractObjectManager):
     """Model object manager class"""
 
-    __label__ = VertexLabel.Model.value
+    __label__ = NodeLabel.Model.value
 
     def __init__(
         self,
@@ -46,33 +41,12 @@ class ModelManager(AbstractObjectManager):
         m_create: ModelCreate,
         user: UserDocument,
     ) -> ModelDocument:
-        p_doc = self.context.project
-        pr_doc = self.context.projectrun
-
         # Validate model domain business
         domain_validator = ModelDomainValidator(self.context)
         m_create = await domain_validator.validate(m_create)
 
-        # Create model & modeling team vertex, edge
-        modeling_team_doc = await self._get_modeling_team(
-            p_doc.name,
-            m_create.modeling_team,
-        )
-        m_vertex = await self._create_model_vertex(
-            p_doc.name,
-            pr_doc.name,
-            m_create.name,
-        )
-        m_vtx_id = m_vertex.id
-        t_vtx_id = modeling_team_doc.vertex.id
-        self.n.add_e(m_vtx_id, t_vtx_id, EdgeLabel.affiliated.value)
-
         # Create model document
-        m_doc = await self._create_model_document(m_create, m_vertex, user)
-
-        # Add edge: project run -(requires)- model
-        pr_vtx_id = pr_doc.vertex.id
-        self.n.add_e(pr_vtx_id, m_vtx_id, EdgeLabel.requires.value)
+        m_doc = await self._create_model_document(m_create, user)
 
         return m_doc
 
@@ -86,34 +60,9 @@ class ModelManager(AbstractObjectManager):
             )
         return model_team_doc
 
-    async def _create_model_vertex(
-        self,
-        p_name: str,
-        pr_name: str,
-        m_name: str,
-    ) -> ModelVertex:
-        properties = {"project": p_name, "projectrun": pr_name, "name": m_name}
-        if self.n.exists(self.label, **properties):
-            raise VertexAlreadyExists(
-                f"Model vertex '{m_name}' already exists in context: {self.context}.",
-            )
-
-        properties_model = ModelVertexProperties(**properties)
-        properties = properties_model.model_dump()
-        m_vtx = self.n.add_v(self.label, **properties)
-
-        # Dcoument creation
-        m_vertex_model = ModelVertex(
-            id=m_vtx.id,
-            label=self.label,
-            properties=properties_model,
-        )
-        return m_vertex_model
-
     async def _create_model_document(
         self,
         m_create: ModelCreate,
-        m_vertex: ModelVertex,
         user: UserDocument,
     ) -> ModelDocument:
         """Create a new model under given project and project run"""
@@ -151,7 +100,6 @@ class ModelManager(AbstractObjectManager):
             )
 
         m_doc = ModelDocument(
-            vertex=m_vertex,
             context=context,
             # model information
             name=m_name,

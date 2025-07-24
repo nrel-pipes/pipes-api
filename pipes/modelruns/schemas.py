@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field, field_validator
 from pymongo import IndexModel
 
 from pipes.common.schemas import SourceCode
-from pipes.graph.schemas import ModelRunVertex
 from pipes.models.contexts import ModelSimpleContext, ModelObjectContext
 from pipes.datasets.schemas import DatasetSchedule
 
@@ -79,10 +78,6 @@ class ModelRunRead(ModelRunCreate):
 
 
 class ModelRunDocument(ModelRunRead, Document):
-    vertex: ModelRunVertex = Field(
-        title="vertex",
-        description="The model run vertex pydantic model",
-    )
     context: ModelObjectContext = Field(
         title="context",
         description="model context",

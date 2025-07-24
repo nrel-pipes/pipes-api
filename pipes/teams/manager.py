@@ -4,14 +4,9 @@ import logging
 
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import (
-    DocumentAlreadyExists,
-    DocumentDoesNotExist,
-    VertexAlreadyExists,
-)
+from pipes.common.exceptions import DocumentAlreadyExists, DocumentDoesNotExist
 from pipes.db.manager import AbstractObjectManager
-from pipes.graph.constants import VertexLabel, EdgeLabel
-from pipes.graph.schemas import TeamVertexProperties, TeamVertex
+from pipes.common.constants import NodeLabel
 from pipes.projects.contexts import ProjectDocumentContext
 from pipes.teams.schemas import TeamCreate, TeamRead, TeamUpdate, TeamDocument
 from pipes.users.manager import UserManager
@@ -21,92 +16,36 @@ logger = logging.getLogger(__name__)
 
 
 class TeamManager(AbstractObjectManager):
-    """Manager class for team anagement"""
+    """Manager class for team management"""
 
-    __label__ = VertexLabel.Team.value
+    __label__ = NodeLabel.Team.value
 
     def __init__(self, context: ProjectDocumentContext) -> None:
         self.context = context
 
     async def create_team(self, t_create: TeamCreate) -> TeamDocument:
-        """Create vetex in neptune, then create document in docdb"""
-        p_doc = self.context.project
-
-        # Add team vertex
-        t_vertex = await self._create_team_vertex(p_doc.name, t_create.name)
-
-        # Add team member vertexes and edges (member to Team)
-        t_members = await self._add_team_members(t_vertex, t_create.members)
-
-        t_doc = await self._create_team_document(
-            t_create,
-            t_members,
-            t_vertex,
-        )
+        """Create document in docdb"""
+        # Add team member
+        t_members = await self._add_team_members(t_create.members)
+        t_doc = await self._create_team_document(t_create, t_members)
         return t_doc
 
     async def _add_team_members(
         self,
-        t_vertex: TeamVertex,
         t_members: list[UserCreate],
     ) -> list[UserDocument]:
-        """Create user vertexes in neptune"""
+        """Add user to team"""
         user_manager = UserManager()
         member_docs = []
         for u_create in t_members:
             u_doc = await user_manager.get_or_create_user(u_create)
-            self.n.add_e(u_doc.vertex.id, t_vertex.id, EdgeLabel.member.value)
             member_docs.append(u_doc)
         return member_docs
-
-    async def _create_team_vertex(
-        self,
-        p_name: str,
-        t_name: str,
-    ) -> TeamVertex:
-        properties = {"project": p_name, "name": t_name}
-        if self.n.exists(self.label, **properties):
-            raise VertexAlreadyExists(
-                f"Team vertex {properties} already exists under project {p_name}.",
-            )
-
-        properties_model = TeamVertexProperties(**properties)
-        properties = properties_model.model_dump()
-        t_vtx = self.n.add_v(self.label, **properties)
-
-        # Dcoument creation
-        team_vertex_model = TeamVertex(
-            id=t_vtx.id,
-            label=self.label,
-            properties=properties_model,
-        )
-        return team_vertex_model
-
-    async def _get_team_vertex(
-        self,
-        p_name: str,
-        t_name: str,
-    ) -> TeamVertex | None:
-        """Create vetex in neptune"""
-        properties = {"project": p_name, "name": t_name}
-        vlist = self.n.get_v(self.label, **properties)
-        if not vlist:
-            return None
-
-        t_vtx = vlist[0]
-        properties_model = TeamVertexProperties(**properties)
-        team_vertex_model = TeamVertex(
-            id=t_vtx.id,
-            label=self.label,
-            properties=properties_model,
-        )
-        return team_vertex_model
 
     async def _create_team_document(
         self,
         t_create: TeamCreate,
         t_members: list[UserDocument],
-        t_vertex: TeamVertex,
     ) -> TeamDocument:
         """Create new team"""
         t_name = t_create.name
@@ -124,7 +63,6 @@ class TeamManager(AbstractObjectManager):
         u_doc_ids = [u_doc.id for u_doc in t_members]
 
         t_doc = TeamDocument(
-            vertex=t_vertex,
             context={"project": p_doc.id},
             name=t_create.name,
             description=t_create.description,
@@ -219,14 +157,6 @@ class TeamManager(AbstractObjectManager):
         member_doc_ids = set()
         for member in data.members:
             u_doc = await user_manager.get_or_create_user(member)
-
-            # Add edge (member of Team)
-            # TODO: No edge added if existing relationship, update base query?
-            try:
-                self.n.add_e(u_doc.vertex.id, t_doc.vertex.id, EdgeLabel.member.value)
-            except IndexError:
-                pass
-
             member_doc_ids.add(u_doc.id)
 
         t_doc.name = data.name

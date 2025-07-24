@@ -2,7 +2,6 @@ import os
 import boto3
 
 from pathlib import Path
-from uuid import uuid4
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
@@ -35,13 +34,6 @@ def create_superuser(access_token):
         AccessToken=access_token,
     )
     user_attrs = {
-        "vertex": {
-            "id": str(uuid4()),
-            "label": "User",
-            "properties": {
-                "email": None,
-            },
-        },
         "username": response["Username"],
         "email": None,
         "first_name": None,
@@ -53,8 +45,6 @@ def create_superuser(access_token):
         if item["Name"] in user_attrs:
             user_attrs[item["Name"]] = item["Value"]
 
-    user_attrs["vertex"]["properties"]["email"] = user_attrs["email"]
-
     mongodb_uri = "mongodb://localhost:27019/"
     client = MongoClient(mongodb_uri)
     db = client["pipes_dev"]
@@ -64,11 +54,6 @@ def create_superuser(access_token):
         db.users.update_one({"_id": user["_id"]}, {"$set": {"is_superuser": True}})
     else:
         db.users.insert_one(user_attrs)
-
-    if "vertex" not in user:
-        db.users.update_one(
-            {"_id": user["_id"]}, {"$set": {"vertex": user_attrs["vertex"]}},
-        )
 
 
 if __name__ == "__main__":

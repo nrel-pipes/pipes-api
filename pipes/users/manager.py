@@ -7,15 +7,10 @@ from beanie import PydanticObjectId
 from pydantic import EmailStr
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import (
-    DocumentDoesNotExist,
-    DocumentAlreadyExists,
-    VertexAlreadyExists,
-)
+from pipes.common.exceptions import DocumentDoesNotExist, DocumentAlreadyExists
 from pipes.common.utilities import parse_organization
 from pipes.db.manager import AbstractObjectManager
-from pipes.graph.constants import VertexLabel
-from pipes.graph.schemas import UserVertexProperties, UserVertex
+from pipes.common.constants import NodeLabel
 from pipes.users.schemas import UserCreate, CognitoUserCreate, UserDocument
 
 logger = logging.getLogger(__name__)
@@ -24,60 +19,13 @@ logger = logging.getLogger(__name__)
 class UserManager(AbstractObjectManager):
     """Manager class for user management"""
 
-    __label__ = VertexLabel.User.value
+    __label__ = NodeLabel.User.value
 
     async def create_user(
         self,
         u_create: UserCreate | CognitoUserCreate,
     ) -> UserDocument:
         """Admin create new user"""
-        u_vertex = await self._get_or_create_user_vertex(u_create.email)
-        return await self._create_user_document(u_create, u_vertex)
-
-    async def _get_user_vertex(self, email: EmailStr) -> UserVertex | None:
-        vlist = self.n.get_v(self.label, email=email)
-        if not vlist:
-            return None
-
-        u_vtx = vlist[0]
-        properties_model = UserVertexProperties(email=email)
-        user_vertex_model = UserVertex(
-            id=u_vtx.id,
-            label=self.label,
-            properties=properties_model,
-        )
-        return user_vertex_model
-
-    async def _create_user_vertex(self, email: EmailStr) -> UserVertex | None:
-        if self.n.exists(self.label, email=email):
-            raise VertexAlreadyExists(f"User vertex ({email}) already exists.")
-
-        properties_model = UserVertexProperties(email=email)
-        properties = properties_model.model_dump()
-        u_vtx = self.n.add_v(self.label, **properties)
-
-        # Dcoument creation
-        user_vertex_model = UserVertex(
-            id=u_vtx.id,
-            label=self.label,
-            properties=properties_model,
-        )
-        return user_vertex_model
-
-    async def _get_or_create_user_vertex(self, email: EmailStr) -> UserVertex:
-        properties_model = UserVertexProperties(email=email)
-        properties = properties_model.model_dump()
-
-        u_vtx = self.n.get_or_add_v(self.label, **properties)
-
-        user_vertex_model = UserVertex(
-            id=u_vtx.id,
-            label=self.label,
-            properties=properties_model,
-        )
-        return user_vertex_model
-
-    async def _create_user_document(self, u_create, u_vertex):
         # Check if user already exists
         exists = await self.d.exists(
             collection=UserDocument,
@@ -95,7 +43,6 @@ class UserManager(AbstractObjectManager):
             organization = parse_organization(u_create.email)
 
         u_doc = UserDocument(
-            vertex=u_vertex,
             username=username,
             email=u_create.email,
             first_name=u_create.first_name,
@@ -126,10 +73,7 @@ class UserManager(AbstractObjectManager):
         if not organization:
             organization = parse_organization(u_create.email)
 
-        u_vertex = await self._get_or_create_user_vertex(u_create.email)
-
         u_doc = UserDocument(
-            vertex=u_vertex,
             email=u_create.email,
             first_name=u_create.first_name,
             last_name=u_create.last_name,

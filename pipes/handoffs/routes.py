@@ -10,7 +10,6 @@ from pipes.common.exceptions import (
     DocumentAlreadyExists,
     DocumentDoesNotExist,
     DomainValidationError,
-    EdgeAlreadyExists,
 )
 from pipes.handoffs.manager import HandoffManager
 from pipes.handoffs.schemas import HandoffCreate, HandoffRead
@@ -64,7 +63,6 @@ async def create_handoff(
     try:
         h_docs = await manager.create_handoffs(data, user)
     except (
-        EdgeAlreadyExists,
         DocumentAlreadyExists,
         DomainValidationError,
         DocumentDoesNotExist,

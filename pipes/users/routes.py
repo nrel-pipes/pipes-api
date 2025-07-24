@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-from pipes.common.exceptions import (
-    DocumentAlreadyExists,
-    DocumentDoesNotExist,
-    VertexAlreadyExists,
-)
+from pipes.common.exceptions import DocumentAlreadyExists, DocumentDoesNotExist
 from pipes.users.auth import auth_required
 from pipes.users.manager import UserManager
 from pipes.users.schemas import UserCreate, UserDocument, UserRead, UserUpdate
@@ -30,7 +26,7 @@ async def create_user(
     try:
         manager = UserManager()
         u_doc = await manager.create_user(data)
-    except (VertexAlreadyExists, DocumentAlreadyExists) as e:
+    except DocumentAlreadyExists as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
