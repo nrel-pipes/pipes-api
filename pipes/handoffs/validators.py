@@ -131,7 +131,7 @@ class HandoffDomainValidator(DomainValidator):
 
         if h_create.scheduled_start > m_doc.scheduled_end:  # type: ignore
             raise DomainValidationError(
-                f"Handoff 'scheduled_start' could not be late than {m_doc.scheduled_end}",  # type: ignore
+                f"Handoff 'scheduled_start' could not be later than {m_doc.scheduled_end}",  # type: ignore
             )
 
         return h_create
@@ -166,7 +166,7 @@ class HandoffDomainValidator(DomainValidator):
 
         if h_create.scheduled_end > m_doc.scheduled_end:  # type: ignore
             raise DomainValidationError(
-                f"Handoff 'scheduled_end' could not be late than {m_doc.scheduled_end}",  # type: ignore
+                f"Handoff 'scheduled_end' could not be later than {m_doc.scheduled_end}",  # type: ignore
             )
 
         return h_create
