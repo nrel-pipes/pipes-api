@@ -23,8 +23,6 @@ RUN pip3 install --upgrade pip setuptools
 RUN pip3 install -r requirements-dev.txt
 
 # operations
-COPY ./wait-for-mongodb.sh /wait-for-mongodb.sh
-RUN chmod +x /wait-for-mongodb.sh
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
