@@ -17,6 +17,7 @@ from pipes.projects.contexts import ProjectSimpleContext, ProjectDocumentContext
 from pipes.projects.validators import ProjectContextValidator
 from pipes.projectruns.contexts import ProjectRunSimpleContext
 from pipes.projectruns.validators import ProjectRunContextValidator
+from pipes.modelruns.manager import ModelRunManager
 from pipes.users.auth import auth_required
 from pipes.users.schemas import UserDocument
 
@@ -122,3 +123,68 @@ async def get_models(
         m_reads.extend(_m_reads)
 
     return m_reads
+
+
+@router.delete("/models", status_code=204)
+async def delete_model(
+    project: str,
+    projectrun: str,
+    model: str,
+    user: UserDocument = Depends(auth_required),
+):
+    """Delete model if it doesn't have any model runs under it"""
+    context = ProjectRunSimpleContext(
+        project=project,
+        projectrun=projectrun,
+    )
+
+    try:
+        validator = ProjectRunContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    manager = ModelManager(context=validated_context)
+
+    try:
+        try:
+            await manager.get_model(model)
+        except DocumentDoesNotExist:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Model '{model}' not found",
+            )
+
+        # Check if there are any model runs under this model
+        modelrun_manager = ModelRunManager(context=validated_context)
+        modelruns = await modelrun_manager.get_modelruns()
+
+        if modelruns:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot delete model '{model}' because it has model runs associated with it",
+            )
+
+        # Delete the model
+        await manager.delete_model(
+            project=validated_context.project,
+            projectrun=validated_context.projectrun,
+            model=model,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    return None

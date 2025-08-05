@@ -195,3 +195,74 @@ class ModelManager(AbstractObjectManager):
         data["modeling_team"] = await team_manager.read_team(modeling_team_doc)
 
         return ModelRead.model_validate(data)
+
+    async def get_model(self, name: str) -> ModelDocument:
+        """Get a specific model by name"""
+        context = self.context
+
+        if hasattr(context, "projectrun"):
+            # If we have a project run context
+            query = {
+                "context.project": context.project.id,
+                "context.projectrun": context.projectrun.id,
+                "name": name,
+            }
+        else:
+            # If we only have a project context
+            query = {
+                "context.project": context.project.id,
+                "name": name,
+            }
+
+        model_doc = await self.d.find_one(
+            collection=ModelDocument,
+            query=query,
+        )
+
+        if not model_doc:
+            project_name = context.project.name
+            projectrun_name = context.projectrun.name
+
+            if projectrun_name:
+                raise DocumentDoesNotExist(
+                    f"Model '{name}' not found in project '{project_name}', project run '{projectrun_name}'",
+                )
+            else:
+                raise DocumentDoesNotExist(
+                    f"Model '{name}' not found in project '{project_name}'",
+                )
+
+        return model_doc
+
+    async def delete_model(
+        self,
+        project: ProjectDocument,
+        projectrun: ProjectRunDocument,
+        model: str,
+    ) -> None:
+        """Delete a model by name"""
+        await self.d.delete_one(
+            collection=ModelDocument,
+            query={
+                "context.project": project.id,
+                "context.projectrun": projectrun.id,
+                "name": model,
+            },
+        )
+
+        project_name = self.context.project.name
+        projectrun_name = self.context.projectrun.name
+
+        if projectrun_name:
+            logger.info(
+                "Model '%s' of project '%s', project run '%s' deleted successfully",
+                model,
+                project_name,
+                projectrun_name,
+            )
+        else:
+            logger.info(
+                "Model '%s' of project '%s' deleted successfully",
+                model,
+                project_name,
+            )
