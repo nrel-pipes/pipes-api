@@ -100,7 +100,7 @@ class ProjectManager(AbstractObjectManager):
 
     async def get_basic_projects(self, user: UserDocument) -> list[ProjectDocument]:
         """Get all projects of current user, basic information only."""
-        if user.is_superuser:
+        if user and user.is_superuser:
             available_p_docs = await self.d.find_all(collection=ProjectDocument)
         else:
             # project created by current user
