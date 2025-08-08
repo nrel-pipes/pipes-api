@@ -47,6 +47,7 @@ class CognitoJWKsVerifier:
     @property
     def keys(self):
         # Check if we have cached keys that haven't expired
+        global _jwks_cache  # pylint: disable=global-statement  # noqa: F824
         now = datetime.now()
         if (
             _jwks_cache["keys"] is not None
