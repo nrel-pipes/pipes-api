@@ -125,6 +125,44 @@ async def get_models(
     return m_reads
 
 
+@router.get("/models/detail", response_model=ModelRead)
+async def get_model(
+    project: str,
+    model: str,
+    user: UserDocument = Depends(auth_required),
+):
+    """Get a specific model by project and model name"""
+    context = ProjectSimpleContext(project=project)
+
+    try:
+        validator = ProjectContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    try:
+        p_context = ProjectDocumentContext(project=validated_context.project)
+        manager = ModelManager(context=p_context)
+        m_doc = await manager.get_model(model)
+    except DocumentDoesNotExist as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+
+    m_read = await manager.read_model(m_doc)
+    print("========", m_read)
+    return m_read
+
+
 @router.delete("/models", status_code=204)
 async def delete_model(
     project: str,
