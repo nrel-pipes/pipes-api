@@ -132,6 +132,9 @@ class ModelCreate(BaseModel):
         return value
 
 
+class ModelUpdate(ModelCreate): ...
+
+
 class ModelRead(ModelCreate):
     context: ProjectRunSimpleContext = Field(
         title="context",

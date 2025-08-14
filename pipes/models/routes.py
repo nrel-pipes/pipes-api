@@ -12,7 +12,7 @@ from pipes.common.exceptions import (
     DomainValidationError,
 )
 from pipes.models.manager import ModelManager
-from pipes.models.schemas import ModelCreate, ModelRead
+from pipes.models.schemas import ModelCreate, ModelRead, ModelUpdate
 from pipes.projects.contexts import ProjectSimpleContext, ProjectDocumentContext
 from pipes.projects.validators import ProjectContextValidator
 from pipes.projectruns.contexts import ProjectRunSimpleContext
@@ -128,14 +128,15 @@ async def get_models(
 @router.get("/models/detail", response_model=ModelRead)
 async def get_model(
     project: str,
+    projectrun: str,
     model: str,
     user: UserDocument = Depends(auth_required),
 ):
     """Get a specific model by project and model name"""
-    context = ProjectSimpleContext(project=project)
+    context = ProjectRunSimpleContext(project=project, projectrun=projectrun)
 
     try:
-        validator = ProjectContextValidator()
+        validator = ProjectRunContextValidator()
         validated_context = await validator.validate(user, context)
     except ContextValidationError as e:
         raise HTTPException(
@@ -159,7 +160,6 @@ async def get_model(
         )
 
     m_read = await manager.read_model(m_doc)
-    print("========", m_read)
     return m_read
 
 
@@ -226,3 +226,50 @@ async def delete_model(
         )
 
     return None
+
+
+@router.patch("/models", response_model=ModelRead)
+async def update_model(
+    project: str,
+    projectrun: str,
+    model: str,
+    data: ModelUpdate,
+    user: UserDocument = Depends(auth_required),
+):
+    """Update a model by project, projectrun, and model name"""
+    context = ProjectRunSimpleContext(
+        project=project,
+        projectrun=projectrun,
+    )
+
+    try:
+        validator = ProjectRunContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    manager = ModelManager(context=validated_context)
+    try:
+        m_doc = await manager.get_model(model)
+        updated_m_doc = await manager.update_model(m_doc, data, user)
+    except DocumentDoesNotExist as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except DocumentAlreadyExists as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    m_read = await manager.read_model(updated_m_doc)
+    return m_read
