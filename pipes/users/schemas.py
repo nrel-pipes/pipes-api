@@ -84,7 +84,7 @@ class UserUpdate(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "first_name": "Jane",
                 "last_name": "Doe",

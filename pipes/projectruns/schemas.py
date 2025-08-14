@@ -74,6 +74,9 @@ class ProjectRunCreate(BaseModel):
         return value
 
 
+class ProjectRunUpdate(ProjectRunCreate): ...
+
+
 class ProjectRunRead(ProjectRunCreate):
     context: ProjectSimpleContext = Field(
         title="context",

@@ -146,8 +146,12 @@ class ProjectManager(AbstractObjectManager):
             if p_doc.id in p_docs:
                 continue
             p_docs[p_doc.id] = p_doc
-
-        return list(p_docs.values())
+            owner_id = p_doc.owner
+            owner_doc = await UserDocument.get(owner_id)
+            owner_read = UserRead.model_validate(owner_doc.model_dump())
+            p_doc.owner = owner_read
+        result = list(p_docs.values())
+        return result
 
     async def read_project_detail(self, p_doc: ProjectDocument) -> ProjectDetailRead:
         """Dump project document into dictionary"""

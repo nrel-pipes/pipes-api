@@ -63,7 +63,7 @@ class ModelCreate(BaseModel):
         title="type",
         description="Type of model to use in graphic headers (e.g, 'Capacity Expansion')",
     )
-    description: list[str] = Field(
+    description: str | list[str] = Field(
         title="description",
         description="Description of the model",
     )
@@ -91,7 +91,7 @@ class ModelCreate(BaseModel):
     )
     # TODO: if missing from TOML, populate with project-run or project scenarios
     expected_scenarios: list[str] = Field(
-        title="assumptions",
+        title="expected_scenarios",
         description="List of expected model scenarios",
         default=[],  # TODO: default to the list from project or project run
     )
@@ -130,6 +130,9 @@ class ModelCreate(BaseModel):
         except Exception as e:
             raise ValueError(f"Invalid scheduled_end value: {value}; Error: {e}")
         return value
+
+
+class ModelUpdate(ModelCreate): ...
 
 
 class ModelRead(ModelCreate):

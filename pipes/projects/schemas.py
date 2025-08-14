@@ -188,6 +188,10 @@ class ProjectBasicRead(BaseModel):
         default="",
         description="project description",
     )
+    owner: UserRead = Field(
+        title="owner",
+        description="project owner",
+    )
     milestones: list[Milestone] = Field(
         title="milestones",
         default=[],

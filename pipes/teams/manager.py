@@ -102,6 +102,12 @@ class TeamManager(AbstractObjectManager):
         p_doc = self.context.project
         query = {"context.project": p_doc.id, "name": t_name}
         t_doc = await self.d.find_one(collection=TeamDocument, query=query)
+
+        if not t_doc:
+            raise DocumentDoesNotExist(
+                f"Team '{t_name}' not found in project '{p_doc.name}'",
+            )
+
         return t_doc
 
     async def get_all_teams(self) -> list[TeamRead]:
@@ -173,3 +179,19 @@ class TeamManager(AbstractObjectManager):
         data["context"]["project"] = p_doc.name
         data["members"] = await self.get_team_members(t_doc)
         return TeamRead.model_validate(data)
+
+    async def delete_team(self, name: str) -> None:
+        """Delete a team by name"""
+        p_doc = self.context.project
+
+        # Delete the team document
+        await self.d.delete_one(
+            collection=TeamDocument,  # Replace with your actual team document class
+            query={"context.project": p_doc.id, "name": name},
+        )
+
+        logger.info(
+            "Team '%s' of project '%s' deleted successfully",
+            name,
+            p_doc.name,
+        )
