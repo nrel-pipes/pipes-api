@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bookworm
+FROM python:3.12-slim-trixie
 
 # set environment variables
 ENV LC_ALL=C.UTF-8
