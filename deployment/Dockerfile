@@ -1,5 +1,5 @@
 # Build stage - includes build tools and compiles dependencies
-FROM python:3.12-slim-bookworm AS builder
+FROM python:3.12-slim-trixie AS builder
 
 # Set build environment variables
 ENV PIP_NO_CACHE_DIR=1 \
@@ -24,7 +24,7 @@ RUN pip install --upgrade pip setuptools \
     && pip install -r requirements.txt
 
 # Production stage - minimal runtime image
-FROM python:3.12-slim-bookworm AS runtime
+FROM python:3.12-slim-trixie AS runtime
 
 # Set runtime environment variables
 ENV LC_ALL=C.UTF-8 \

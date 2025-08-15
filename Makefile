@@ -1,6 +1,6 @@
 -include env_make
 
-BASE_IMAGE_TAG ?= py312bookworm
+BASE_IMAGE_TAG ?= py312trixie
 
 PROJECT_NAME=pipes-api
 
