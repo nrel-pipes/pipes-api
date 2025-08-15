@@ -5,14 +5,9 @@ from datetime import datetime
 from itertools import chain
 
 from pymongo.errors import DuplicateKeyError
-from pipes.common.exceptions import (
-    DocumentAlreadyExists,
-    VertexAlreadyExists,
-    DocumentDoesNotExist,
-)
+from pipes.common.exceptions import DocumentAlreadyExists, DocumentDoesNotExist
 from pipes.db.manager import AbstractObjectManager
-from pipes.graph.constants import VertexLabel, EdgeLabel
-from pipes.graph.schemas import ProjectVertexProperties, ProjectVertex
+from pipes.common.constants import NodeLabel
 from pipes.projects.contexts import ProjectDocumentContext
 from pipes.projects.schemas import (
     ProjectCreate,
@@ -34,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class ProjectManager(AbstractObjectManager):
 
-    __label__ = VertexLabel.Project.value
+    __label__ = NodeLabel.Project.value
 
     async def create_project(
         self,
@@ -42,40 +37,16 @@ class ProjectManager(AbstractObjectManager):
         user: UserDocument,
     ) -> ProjectDocument:
         # Validate project domain business
-
         domain_validator = ProjectDomainValidator()
         p_create = await domain_validator.validate(p_create)
 
-        # Get or create user vertex & document
+        # Get or create user document
         p_owner = await self._get_or_create_project_owner(p_create.owner)
 
-        # Create project vertex & document
-        p_vertex = await self._create_project_vertex(p_create.name)
-        p_doc = await self._create_project_document(p_create, p_vertex, p_owner, user)
-
-        # Add edget: user owns project
-        u_vtx_id = p_owner.vertex.id
-        p_vtx_id = p_vertex.id
-        self.n.add_e(u_vtx_id, p_vtx_id, EdgeLabel.owns.value)
+        # Create project document
+        p_doc = await self._create_project_document(p_create, p_owner, user)
 
         return p_doc
-
-    async def _create_project_vertex(self, p_name: str) -> ProjectVertex:
-        properties = {"name": p_name}
-        if self.n.exists(self.label, **properties):
-            raise VertexAlreadyExists(f"Project vertex {properties} already exists.")
-
-        properties_model = ProjectVertexProperties(**properties)
-        properties = properties_model.model_dump()
-        p_vtx = self.n.add_v(self.label, **properties)
-
-        # Dcoument creation
-        p_vtx_model = ProjectVertex(
-            id=p_vtx.id,
-            label=self.label,
-            properties=properties_model,
-        )
-        return p_vtx_model
 
     async def _get_or_create_project_owner(self, owner: UserCreate) -> UserDocument:
         # Get or create user object
@@ -86,7 +57,6 @@ class ProjectManager(AbstractObjectManager):
     async def _create_project_document(
         self,
         p_create: ProjectCreate,
-        p_vertex: ProjectVertex,
         p_owner: UserDocument,
         user: UserDocument,
     ) -> ProjectDocument:
@@ -101,7 +71,6 @@ class ProjectManager(AbstractObjectManager):
             raise DocumentAlreadyExists(f"Project '{p_create.name}' already exists.")
 
         p_doc = ProjectDocument(
-            vertex=p_vertex,
             # project information
             name=p_create.name,
             title=p_create.title,
@@ -131,7 +100,7 @@ class ProjectManager(AbstractObjectManager):
 
     async def get_basic_projects(self, user: UserDocument) -> list[ProjectDocument]:
         """Get all projects of current user, basic information only."""
-        if user.is_superuser:
+        if user and user.is_superuser:
             available_p_docs = await self.d.find_all(collection=ProjectDocument)
         else:
             # project created by current user
@@ -323,23 +292,7 @@ class ProjectManager(AbstractObjectManager):
         return updated_doc
 
     async def delete_project(self, project: str) -> None:
-        """Delete a project by name"""
-        try:
-            # First delete the project vertex and all related edges from Neptune
-            p_vertices = self.n.get_v(self.label, name=project)
-            if p_vertices:
-                p_vtx = p_vertices[0]
-                # Delete vertex and all connected edges
-                self.n.delete_v_and_edges(p_vtx.id)
-                logger.info(
-                    "Project vertex '%s' and related edges deleted from Neptune",
-                    project,
-                )
-        except Exception as e:
-            logger.warning("Failed to delete project vertex from Neptune: %s", str(e))
-            # Continue with document deletion even if Neptune deletion fails
-
-        # Delete the project document from documentdb
+        """Delete a project from DocumentDB by name"""
         try:
             await self.d.delete_one(
                 collection=ProjectDocument,

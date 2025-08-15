@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from calendar import timegm
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 import boto3
@@ -26,13 +26,17 @@ from pipes.users.manager import UserManager
 
 http_bearer = HTTPBearer()
 
+_jwks_cache = {
+    "keys": None,
+    "expires_at": None,
+}
+
 
 class CognitoJWKsVerifier:
     """AWS Cognito JWKs Verifier"""
 
     def __init__(self) -> None:
         self._aud = settings.PIPES_COGNITO_CLIENT_ID
-        self._keys: dict[str, Any] = {}
         self._iss = f"https://cognito-idp.{settings.PIPES_REGION}.amazonaws.com/{settings.PIPES_COGNITO_USER_POOL_ID}"
         self._claims: dict[Any, Any] = {}
 
@@ -42,12 +46,28 @@ class CognitoJWKsVerifier:
 
     @property
     def keys(self):
-        if self._keys:
-            return self._keys
+        # Check if we have cached keys that haven't expired
+        global _jwks_cache  # pylint: disable=global-statement  # noqa: F824
+        now = datetime.now()
+        if (
+            _jwks_cache["keys"] is not None
+            and _jwks_cache["expires_at"] is not None
+            and now < _jwks_cache["expires_at"]
+        ):
+            return _jwks_cache["keys"]
 
-        response = requests.get(self.jwks_url).json()
-        self._keys = {key["kid"]: key for key in response["keys"]}
-        return self._keys
+        try:
+            response = requests.get(self.jwks_url, timeout=10).json()
+            keys = {key["kid"]: key for key in response["keys"]}
+
+            # Cache for 24 hours
+            _jwks_cache["keys"] = keys
+            _jwks_cache["expires_at"] = now + timedelta(hours=24)
+
+            return keys
+
+        except Exception as e:
+            raise CognitoAuthError(f"Failed to fetch JWKs: {e}")
 
     @property
     def aud(self):

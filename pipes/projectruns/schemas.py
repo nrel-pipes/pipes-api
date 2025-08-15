@@ -8,11 +8,9 @@ from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field, field_validator
 
 from pipes.common.utilities import parse_datetime
-from pipes.graph.schemas import ProjectRunVertex
 from pipes.projects.contexts import ProjectSimpleContext, ProjectObjectContext
 
 
-# Project Run
 class ProjectRunCreate(BaseModel):
     name: str = Field(
         title="name",
@@ -84,10 +82,6 @@ class ProjectRunRead(ProjectRunCreate):
 
 
 class ProjectRunDocument(ProjectRunRead, Document):
-    vertex: ProjectRunVertex = Field(
-        title="vertex",
-        description="The project run vertex model",
-    )
     context: ProjectObjectContext = Field(
         title="context",
         description="project referenced context",

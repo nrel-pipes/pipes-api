@@ -10,7 +10,6 @@ from pipes.common.exceptions import (
     DocumentAlreadyExists,
     DocumentDoesNotExist,
     DomainValidationError,
-    VertexAlreadyExists,
 )
 from pipes.models.manager import ModelManager
 from pipes.models.schemas import ModelCreate, ModelRead
@@ -56,7 +55,6 @@ async def create_model(
     try:
         m_doc = await manager.create_model(data, user)
     except (
-        VertexAlreadyExists,
         DocumentAlreadyExists,
         DomainValidationError,
         DocumentDoesNotExist,

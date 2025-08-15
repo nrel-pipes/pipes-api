@@ -5,10 +5,9 @@ from datetime import datetime
 
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import DocumentAlreadyExists, VertexAlreadyExists
+from pipes.common.exceptions import DocumentAlreadyExists
 from pipes.db.manager import AbstractObjectManager
-from pipes.graph.constants import VertexLabel, EdgeLabel
-from pipes.graph.schemas import ModelRunVertexProperties, ModelRunVertex
+from pipes.common.constants import NodeLabel
 from pipes.projects.contexts import ProjectDocumentContext
 from pipes.projects.schemas import ProjectDocument
 from pipes.projectruns.contexts import ProjectRunDocumentContext
@@ -28,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class ModelRunManager(AbstractObjectManager):
 
-    __label__ = VertexLabel.ModelRun.value
+    __label__ = NodeLabel.ModelRun.value
 
     def __init__(
         self,
@@ -43,66 +42,18 @@ class ModelRunManager(AbstractObjectManager):
         mr_create: ModelRunCreate,
         user: UserDocument,
     ) -> ModelRunDocument:
-        p_doc = self.context.project
-        pr_doc = self.context.projectrun
-        m_doc = self.context.model
-
         # Validate model run create
         domain_validator = ModelRunDomainValidator(self.context)
         mr_create = await domain_validator.validate(mr_create)
 
-        # Create model run vertex
-        mr_vertex = await self._create_modelrun_vertex(
-            p_doc.name,
-            pr_doc.name,
-            m_doc.name,
-            mr_create.name,
-        )
-
         # Create model run document
-        mr_doc = await self._create_modelrun_document(mr_create, mr_vertex, user)
-
-        # Add edge: model -(performs)- model run
-        m_vtx_id = m_doc.vertex.id
-        mr_vtx_id = mr_vertex.id
-        self.n.add_e(m_vtx_id, mr_vtx_id, EdgeLabel.performs.value)
+        mr_doc = await self._create_modelrun_document(mr_create, user)
 
         return mr_doc
-
-    async def _create_modelrun_vertex(
-        self,
-        p_name: str,
-        pr_name: str,
-        m_name: str,
-        mr_name: str,
-    ):
-        properties = {
-            "project": p_name,
-            "projectrun": pr_name,
-            "model": m_name,
-            "name": mr_name,
-        }
-        if self.n.exists(self.label, **properties):
-            raise VertexAlreadyExists(
-                f"Model vertex '{m_name}' already exists in context: {self.context}.",
-            )
-
-        properties_model = ModelRunVertexProperties(**properties)
-        properties = properties_model.model_dump()
-        mr_vtx = self.n.add_v(self.label, **properties)
-
-        # Dcoument creation
-        mr_vertex_model = ModelRunVertex(
-            id=mr_vtx.id,
-            label=self.label,
-            properties=properties_model,
-        )
-        return mr_vertex_model
 
     async def _create_modelrun_document(
         self,
         mr_create: ModelRunCreate,
-        mr_vertex: ModelRunVertex,
         user: UserDocument,
     ):
         """Create a model run under given context"""
@@ -132,7 +83,6 @@ class ModelRunManager(AbstractObjectManager):
             model=m_doc.id,
         )
         mr_doc = ModelRunDocument(
-            vertex=mr_vertex,
             context=context,
             # model run information
             name=mr_name,
@@ -179,7 +129,7 @@ class ModelRunManager(AbstractObjectManager):
                 "context.project": p_doc.id,
                 "context.projectrun": pr_doc.id,
             }
-        if m_doc:
+        if pr_doc and m_doc:
             query = {
                 "context.project": p_doc.id,
                 "context.projectrun": pr_doc.id,

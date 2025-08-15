@@ -9,7 +9,6 @@ from beanie import Document
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from pipes.common.utilities import parse_datetime
-from pipes.graph.schemas import ModelVertex
 from pipes.projectruns.contexts import ProjectRunSimpleContext, ProjectRunObjectContext
 from pipes.teams.schemas import TeamRead
 
@@ -58,7 +57,7 @@ class ModelCreate(BaseModel):
     display_name: str | None = Field(
         title="display_name",
         default=None,
-        description="Display name for this model vertex.",
+        description="Display name for this model.",
     )
     type: str = Field(
         title="type",
@@ -145,10 +144,6 @@ class ModelRead(ModelCreate):
 
 
 class ModelDocument(ModelRead, Document):
-    vertex: ModelVertex = Field(
-        title="vertex",
-        description="The model vertex pydantic model",
-    )
     context: ProjectRunObjectContext = Field(
         title="context",
         description="the project run object id",

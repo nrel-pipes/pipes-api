@@ -111,7 +111,7 @@ class ModelDomainValidator(DomainValidator):
 
         if m_create.scheduled_start > pr_doc.scheduled_end:
             raise DomainValidationError(
-                f"Model 'scheduled_start' could not be late than {pr_doc.scheduled_end}",
+                f"Model 'scheduled_start' could not be later than {pr_doc.scheduled_end}",
             )
 
         return m_create
@@ -136,7 +136,7 @@ class ModelDomainValidator(DomainValidator):
 
         if m_create.scheduled_end > pr_doc.scheduled_end:
             raise DomainValidationError(
-                f"Model 'scheduled_end' could not be late than {pr_doc.scheduled_end}",
+                f"Model 'scheduled_end' could not be later than {pr_doc.scheduled_end}",
             )
 
         return m_create

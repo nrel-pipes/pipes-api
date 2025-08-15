@@ -6,7 +6,6 @@ from pipes.common.exceptions import (
     DocumentDoesNotExist,
     DomainValidationError,
     UserPermissionDenied,
-    VertexAlreadyExists,
 )
 from pipes.datasets.manager import DatasetManager
 from pipes.datasets.schemas import DatasetCreate, DatasetRead
@@ -55,7 +54,6 @@ async def create_dataset(
     try:
         d_doc = await manager.create_dataset(data, user)
     except (
-        VertexAlreadyExists,
         DocumentAlreadyExists,
         DomainValidationError,
         DocumentDoesNotExist,

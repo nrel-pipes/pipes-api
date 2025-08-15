@@ -68,7 +68,7 @@ class ProjectRunDomainValidator(DomainValidator):
 
         if diff:
             raise DomainValidationError(
-                f"Invalid project run scenarions {pr_create.scenarios}, please check project scenarios configured.",
+                f"Invalid project run scenarios {pr_create.scenarios}, please check project scenarios configured.",
             )
 
         return pr_create
@@ -93,7 +93,7 @@ class ProjectRunDomainValidator(DomainValidator):
 
         if pr_create.scheduled_start > p_doc.scheduled_end:
             raise DomainValidationError(
-                f"Project run 'scheduled_start' could not be late than {p_doc.scheduled_end}",
+                f"Project run 'scheduled_start' could not be later than {p_doc.scheduled_end}",
             )
 
         return pr_create
@@ -118,7 +118,7 @@ class ProjectRunDomainValidator(DomainValidator):
 
         if pr_create.scheduled_end > p_doc.scheduled_end:
             raise DomainValidationError(
-                f"Project run 'scheduled_end' could not be late than {p_doc.scheduled_end}",
+                f"Project run 'scheduled_end' could not be later than {p_doc.scheduled_end}",
             )
 
         return pr_create
