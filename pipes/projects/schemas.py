@@ -197,6 +197,10 @@ class ProjectBasicRead(BaseModel):
         default=[],
         description="project milestones",
     )
+    created_at: datetime = Field(
+        title="created_at",
+        description="project creation time",
+    )
 
 
 class ProjectDetailRead(ProjectCreate):
