@@ -5,7 +5,7 @@ from datetime import datetime
 
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import DocumentAlreadyExists
+from pipes.common.exceptions import DocumentAlreadyExists, DocumentDoesNotExist
 from pipes.db.manager import AbstractObjectManager
 from pipes.common.constants import NodeLabel
 from pipes.projects.contexts import (
@@ -18,6 +18,7 @@ from pipes.projectruns.schemas import (
     ProjectRunCreate,
     ProjectRunDocument,
     ProjectRunRead,
+    ProjectRunUpdate,
 )
 from pipes.projectruns.validators import ProjectRunDomainValidator
 from pipes.users.schemas import UserDocument
@@ -133,3 +134,71 @@ class ProjectRunManager(AbstractObjectManager):
         pr_read = ProjectRunRead.model_validate(data)
 
         return pr_read
+
+    async def get_projectrun(self, name: str) -> ProjectRunDocument:
+        """Get a specific project run by name"""
+        p_doc = self.context.project
+        pr_doc = await self.d.find_one(
+            collection=ProjectRunDocument,
+            query={"context.project": p_doc.id, "name": name},
+        )
+
+        if not pr_doc:
+            raise DocumentDoesNotExist(
+                f"Project run '{name}' not found in project '{p_doc.name}'",
+            )
+
+        return pr_doc
+
+    async def delete_projectrun(self, name: str) -> None:
+        """Delete a project run by name"""
+        p_doc = self.context.project
+
+        # Delete the project run document
+        await self.d.delete_one(
+            collection=ProjectRunDocument,
+            query={"context.project": p_doc.id, "name": name},
+        )
+
+        logger.info(
+            "Project run '%s' of project '%s' deleted successfully",
+            name,
+            p_doc.name,
+        )
+
+    async def update_projectrun(
+        self,
+        name: str,
+        pr_update: ProjectRunUpdate,
+        user: UserDocument,
+    ) -> ProjectRunDocument:
+        """Update project run document"""
+        # Get existing project run
+        pr_doc = await self.get_projectrun(name)
+
+        # Validate project run update
+        domain_validator = ProjectRunDomainValidator(self.context)
+        pr_update = await domain_validator.validate(pr_update)
+
+        # Prepare update data
+        update_data = pr_update.model_dump(exclude_unset=True)
+        update_data["last_modified"] = datetime.now()
+        update_data["modified_by"] = user.id
+
+        # Save updated document using MongoDB $set operator
+        await self.d.update_one(
+            collection=ProjectRunDocument,
+            find={"context.project": pr_doc.context.project, "name": name},
+            update={"$set": update_data},
+        )
+
+        # Get the updated document
+        updated_pr_doc = await self.get_projectrun(name)
+
+        logger.info(
+            "Project run '%s' of project '%s' updated successfully",
+            name,
+            self.context.project.name,
+        )
+
+        return updated_pr_doc
