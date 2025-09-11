@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pipes.common.utilities import parse_datetime
+from pipes.projectruns.contexts import ProjectRunObjectContext, ProjectRunSimpleContext
+from pipes.teams.schemas import TeamRead
 
 import pymongo
-from beanie import PydanticObjectId
+from beanie import Document, PydanticObjectId
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pymongo import IndexModel
-from beanie import Document
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-
-from pipes.common.utilities import parse_datetime
-from pipes.projectruns.contexts import ProjectRunSimpleContext, ProjectRunObjectContext
-from pipes.teams.schemas import TeamRead
 
 
 # Model
