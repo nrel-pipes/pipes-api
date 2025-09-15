@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pipes.common.utilities import parse_datetime
+from pipes.projectruns.contexts import ProjectRunObjectContext, ProjectRunSimpleContext
+from pipes.teams.schemas import TeamRead
 
 import pymongo
-from beanie import PydanticObjectId
+from beanie import Document, PydanticObjectId
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pymongo import IndexModel
-from beanie import Document
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-
-from pipes.common.utilities import parse_datetime
-from pipes.projectruns.contexts import ProjectRunSimpleContext, ProjectRunObjectContext
-from pipes.teams.schemas import TeamRead
 
 
 # Model
@@ -63,7 +61,7 @@ class ModelCreate(BaseModel):
         title="type",
         description="Type of model to use in graphic headers (e.g, 'Capacity Expansion')",
     )
-    description: list[str] = Field(
+    description: str | list[str] = Field(
         title="description",
         description="Description of the model",
     )
@@ -91,7 +89,7 @@ class ModelCreate(BaseModel):
     )
     # TODO: if missing from TOML, populate with project-run or project scenarios
     expected_scenarios: list[str] = Field(
-        title="assumptions",
+        title="expected_scenarios",
         description="List of expected model scenarios",
         default=[],  # TODO: default to the list from project or project run
     )
@@ -130,6 +128,9 @@ class ModelCreate(BaseModel):
         except Exception as e:
             raise ValueError(f"Invalid scheduled_end value: {value}; Error: {e}")
         return value
+
+
+class ModelUpdate(ModelCreate): ...
 
 
 class ModelRead(ModelCreate):

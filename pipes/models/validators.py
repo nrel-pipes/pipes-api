@@ -3,10 +3,10 @@ from __future__ import annotations
 from pipes.common.exceptions import ContextValidationError, DomainValidationError
 from pipes.common.validators import DomainValidator
 from pipes.db.document import DocumentDB
+from pipes.models.contexts import ModelDocumentContext, ModelSimpleContext
+from pipes.models.schemas import ModelCreate, ModelDocument
 from pipes.projectruns.contexts import ProjectRunDocumentContext
 from pipes.projectruns.validators import ProjectRunContextValidator
-from pipes.models.contexts import ModelSimpleContext, ModelDocumentContext
-from pipes.models.schemas import ModelCreate, ModelDocument
 
 
 class ModelContextValidator(ProjectRunContextValidator):
@@ -77,16 +77,18 @@ class ModelDomainValidator(DomainValidator):
 
         # Validate project scenarios
         pr_doc = self.context.projectrun
-        pr_scneario_pool = set(pr_doc.scenarios)
+        pr_scenario_pool = set(pr_doc.scenarios)
+        if not pr_scenario_pool:
+            pr_scenario_pool = {s.name for s in self.context.project.scenarios}
 
         for scenario_mapping in m_create.scenario_mappings:
             for p_s_name in scenario_mapping.project_scenarios:
-                if p_s_name in pr_scneario_pool:
+                if p_s_name in pr_scenario_pool:
                     continue
                 raise DomainValidationError(
                     "Invalid scenario mapping."
                     f"Scenario '{p_s_name}' has not been defined in project scenarios."
-                    f"Valid scenarios include: {pr_scneario_pool}",
+                    f"Valid scenarios include: {pr_scenario_pool}",
                 )
 
         return m_create
