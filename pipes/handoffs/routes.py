@@ -83,6 +83,47 @@ async def create_handoff(
     return h_reads
 
 
+@router.get("/handoff", response_model=HandoffRead)
+async def get_handoff(
+    project: str,
+    projectrun: str,
+    handoff: str,
+    user: UserDocument = Depends(auth_required),
+):
+    """Get a specific handoff"""
+    context = ProjectRunSimpleContext(
+        project=project,
+        projectrun=projectrun,
+    )
+
+    try:
+        validator = ProjectRunContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    manager = HandoffManager(context=validated_context)
+
+    try:
+        h_doc = await manager.get_handoff_by_name(handoff)
+        h_read = await manager.read_handoff(h_doc)
+    except DocumentDoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Handoff '{handoff}' not found",
+        )
+
+    return h_read
+
+
 @router.get("/handoffs", response_model=list[HandoffRead])
 async def get_handoffs(
     project: str,
@@ -216,11 +257,11 @@ async def update_handoff(
             detail=str(e),
         )
 
-    manager = HandoffManager(context=validated_context)
+    handoff_manager = HandoffManager(context=validated_context)
 
     try:
         # Check if handoff exists
-        await manager.get_handoff_by_name(handoff)
+        h_doc = await handoff_manager.get_handoff_by_name(handoff)
     except DocumentDoesNotExist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -228,17 +269,9 @@ async def update_handoff(
         )
 
     try:
-        h_doc = await manager.update_handoff(handoff, data, user)
-        h_read = await manager.read_handoff(h_doc)
-        return h_read
-    except (
-        DocumentDoesNotExist,
-        DomainValidationError,
-    ) as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+        updated_h_doc = await handoff_manager.update_handoff(h_doc, data, user)
+        updated_h_read = await handoff_manager.read_handoff(updated_h_doc)
+        return updated_h_read
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

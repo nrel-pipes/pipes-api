@@ -101,7 +101,7 @@ class HandoffRead(HandoffCreate):
     )
 
 
-class HandoffUpdate(BaseModel): ...
+class HandoffUpdate(HandoffCreate): ...
 
 
 class HandoffDocument(HandoffRead, Document):
