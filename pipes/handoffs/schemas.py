@@ -101,6 +101,9 @@ class HandoffRead(HandoffCreate):
     )
 
 
+class HandoffUpdate(BaseModel): ...
+
+
 class HandoffDocument(HandoffRead, Document):
     context: ProjectRunObjectContext = Field(
         title="context",

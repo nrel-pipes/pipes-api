@@ -8,7 +8,12 @@ from pymongo.errors import DuplicateKeyError
 from pipes.common.exceptions import DocumentAlreadyExists
 from pipes.db.manager import AbstractObjectManager
 from pipes.common.constants import EdgeLabel
-from pipes.handoffs.schemas import HandoffCreate, HandoffDocument, HandoffRead
+from pipes.handoffs.schemas import (
+    HandoffCreate,
+    HandoffDocument,
+    HandoffRead,
+    HandoffUpdate,
+)
 from pipes.handoffs.validators import HandoffDomainValidator
 from pipes.models.schemas import ModelDocument
 from pipes.modelruns.schemas import ModelRunDocument
@@ -113,6 +118,47 @@ class HandoffManager(AbstractObjectManager):
             h_reads.append(h_read)
         return h_reads
 
+    async def get_handoff_by_name(self, handoff_name: str) -> HandoffRead:
+        """Get a single handoff document by name"""
+        p_doc = self.context.project
+        pr_doc = getattr(self.context, "projectrun", None)
+
+        if pr_doc:
+            query = {
+                "context.project": p_doc.id,
+                "context.projectrun": pr_doc.id,
+                "name": handoff_name,
+            }
+        else:
+            query = {
+                "context.project": p_doc.id,
+                "name": handoff_name,
+            }
+
+        h_doc = await self.d.find_one(
+            collection=HandoffDocument,
+            query=query,
+        )
+        return await self.read_handoff(h_doc)
+
+    async def delete_handoff(
+        self,
+        project: str,
+        projectrun: str,
+        handoff: str,
+    ) -> None:
+        """Delete a handoff document by name"""
+        query = {
+            "context.project": project,
+            "context.projectrun": projectrun,
+            "name": handoff,
+        }
+
+        return await self.d.delete_one(
+            collection=HandoffDocument,
+            query=query,
+        )
+
     async def read_handoff(self, h_doc: HandoffDocument) -> HandoffRead:
         # Read context
         p_id = h_doc.context.project
@@ -143,3 +189,45 @@ class HandoffManager(AbstractObjectManager):
         data["from_modelrun"] = mr_doc.name if mr_doc else None
 
         return HandoffRead.model_validate(data)
+
+    async def update_handoff(
+        self,
+        handoff_name: str,
+        h_update: HandoffUpdate,
+        user: UserDocument,
+    ) -> HandoffDocument:
+        """Update a handoff document"""
+        p_doc = self.context.project
+        pr_doc = getattr(self.context, "projectrun", None)
+
+        if pr_doc:
+            query = {
+                "context.project": p_doc.id,
+                "context.projectrun": pr_doc.id,
+                "name": handoff_name,
+            }
+        else:
+            query = {
+                "context.project": p_doc.id,
+                "name": handoff_name,
+            }
+
+        # Get the existing handoff document
+        await self.d.find_one(
+            collection=HandoffDocument,
+            query=query,
+        )
+
+        # Update the document with new values
+        update_data = h_update.model_dump(exclude_unset=True)
+        update_data["last_modified"] = datetime.now()
+        update_data["modified_by"] = user.id
+
+        # Update the document in the database
+        updated_h_doc = await self.d.update_one(
+            collection=HandoffDocument,
+            query=query,
+            update={"$set": update_data},
+        )
+
+        return updated_h_doc
