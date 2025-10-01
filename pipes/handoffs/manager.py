@@ -5,12 +5,18 @@ from datetime import datetime
 
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import DocumentAlreadyExists
+from pipes.common.exceptions import DocumentAlreadyExists, DocumentDoesNotExist
 from pipes.db.manager import AbstractObjectManager
 from pipes.common.constants import EdgeLabel
-from pipes.handoffs.schemas import HandoffCreate, HandoffDocument, HandoffRead
+from pipes.handoffs.schemas import (
+    HandoffCreate,
+    HandoffDocument,
+    HandoffRead,
+    HandoffUpdate,
+)
 from pipes.handoffs.validators import HandoffDomainValidator
 from pipes.models.schemas import ModelDocument
+from pipes.models.manager import ModelManager
 from pipes.modelruns.schemas import ModelRunDocument
 from pipes.projects.schemas import ProjectDocument
 from pipes.projectruns.contexts import (
@@ -113,6 +119,47 @@ class HandoffManager(AbstractObjectManager):
             h_reads.append(h_read)
         return h_reads
 
+    async def get_handoff_by_name(self, handoff_name: str) -> HandoffDocument:
+        """Get a single handoff document by name"""
+        p_doc = self.context.project
+        pr_doc = getattr(self.context, "projectrun", None)
+
+        if pr_doc:
+            query = {
+                "context.project": p_doc.id,
+                "context.projectrun": pr_doc.id,
+                "name": handoff_name,
+            }
+        else:
+            query = {
+                "context.project": p_doc.id,
+                "name": handoff_name,
+            }
+
+        h_doc = await self.d.find_one(
+            collection=HandoffDocument,
+            query=query,
+        )
+        return h_doc
+
+    async def delete_handoff(
+        self,
+        project: str,
+        projectrun: str,
+        handoff: str,
+    ) -> None:
+        """Delete a handoff document by name"""
+        query = {
+            "context.project": project,
+            "context.projectrun": projectrun,
+            "name": handoff,
+        }
+
+        return await self.d.delete_one(
+            collection=HandoffDocument,
+            query=query,
+        )
+
     async def read_handoff(self, h_doc: HandoffDocument) -> HandoffRead:
         # Read context
         p_id = h_doc.context.project
@@ -143,3 +190,66 @@ class HandoffManager(AbstractObjectManager):
         data["from_modelrun"] = mr_doc.name if mr_doc else None
 
         return HandoffRead.model_validate(data)
+
+    async def update_handoff(
+        self,
+        h_doc: HandoffDocument,
+        data: HandoffUpdate,
+        user: UserDocument,
+    ) -> HandoffDocument:
+        """Update a handoff document"""
+        context = self.context
+
+        # Check if handoff exists
+        if h_doc is None:
+            raise DocumentDoesNotExist(
+                f"Handoff does not exist in context: {context}",
+            )
+
+        # If name is changing, check for duplicate
+        if data.name and data.name != h_doc.name:
+            if hasattr(context, "projectrun"):
+                query = {
+                    "context.project": context.project.id,
+                    "context.projectrun": context.projectrun.id,
+                    "name": data.name,
+                }
+            else:
+                query = {
+                    "context.project": context.project.id,
+                    "name": data.name,
+                }
+            other_h_doc = await self.d.find_one(
+                collection=HandoffDocument,
+                query=query,
+            )
+            if other_h_doc:
+                raise DocumentAlreadyExists(
+                    f"Handoff '{data.name}' already exists in context: {context}",
+                )
+
+        update_fields = data.model_dump(exclude_unset=True)
+        model_manager = ModelManager(context=self.context)
+        if "from_model" in update_fields:
+            model_name = update_fields["from_model"]
+            from_model_doc = await model_manager.get_model(name=model_name)
+            update_fields["from_model"] = from_model_doc.id  # type: ignore
+
+        if "to_model" in update_fields:
+            model_name = update_fields["to_model"]
+            to_model_doc = await model_manager.get_model(name=model_name)
+            update_fields["to_model"] = to_model_doc.id  # type: ignore
+
+        # Update the document with new values
+        for k, v in update_fields.items():
+            setattr(h_doc, k, v)
+        h_doc.last_modified = datetime.now()
+        h_doc.modified_by = user.id
+        await h_doc.save()
+
+        logger.info(
+            "Handoff '%s' updated successfully under context: %s",
+            h_doc.name,
+            context,
+        )
+        return h_doc
