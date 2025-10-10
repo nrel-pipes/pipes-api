@@ -31,11 +31,6 @@ class CommonSettings(BaseSettings):
     PIPES_DOCDB_USER: str | None
     PIPES_DOCDB_PASS: str | None
 
-    # NeptuneDB
-    PIPES_NEPTUNE_HOST: str
-    PIPES_NEPTUNE_PORT: str
-    PIPES_NEPTUNE_SECURE: bool = True
-
 
 class DevelopmentSettings(CommonSettings):
     DEBUG: bool = True

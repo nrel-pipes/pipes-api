@@ -1,23 +1,22 @@
 
 services:
-  mongodb:
-    image: "mongo:4.0"
-    container_name: mongodb
+  mongo:
+    image: "mongo:6.0"
+    container_name: mongo
     ports:
       - "27019:27017"
     restart: always
     volumes:
-      - .mongodb:/data/db
+      - mongo-data:/data/db
     networks:
       - backend
 
-  app:
-    platform: linux/amd64
+  api:
     build:
       context: .
       dockerfile: Dockerfile
     image: pipes-api
-    container_name: app
+    container_name: api
     restart: on-failure
     env_file:
       - .env
@@ -26,10 +25,13 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - mongodb
-    command: ["/wait-for-mongodb.sh", "/entrypoint.sh"]
+      - mongo
+    command: ["/entrypoint.sh"]
     networks:
       - backend
 
 networks:
   backend:
+
+volumes:
+  mongo-data:

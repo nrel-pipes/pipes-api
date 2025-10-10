@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict
 from pymongo import IndexModel
 
 from pipes.common.utilities import parse_datetime
-from pipes.graph.schemas import FeedsEdge
 from pipes.projectruns.contexts import ProjectRunSimpleContext, ProjectRunObjectContext
 
 
@@ -102,11 +101,10 @@ class HandoffRead(HandoffCreate):
     )
 
 
+class HandoffUpdate(HandoffCreate): ...
+
+
 class HandoffDocument(HandoffRead, Document):
-    edge: FeedsEdge = Field(
-        title="edge",
-        description="the edge in the graph db",
-    )
     context: ProjectRunObjectContext = Field(
         title="context",
         description="the project run object id",

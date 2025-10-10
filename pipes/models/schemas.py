@@ -3,14 +3,12 @@ from __future__ import annotations
 from datetime import datetime
 
 import pymongo
-from beanie import PydanticObjectId
 from pymongo import IndexModel
-from beanie import Document
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from beanie import Document, PydanticObjectId
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from pipes.common.utilities import parse_datetime
-from pipes.graph.schemas import ModelVertex
-from pipes.projectruns.contexts import ProjectRunSimpleContext, ProjectRunObjectContext
+from pipes.projectruns.contexts import ProjectRunObjectContext, ProjectRunSimpleContext
 from pipes.teams.schemas import TeamRead
 
 
@@ -111,13 +109,13 @@ class ModelCreate(BaseModel):
     display_name: str | None = Field(
         title="display_name",
         default=None,
-        description="Display name for this model vertex.",
+        description="Display name for this model.",
     )
     type: str = Field(
         title="type",
         description="Type of model to use in graphic headers (e.g, 'Capacity Expansion')",
     )
-    description: list[str] = Field(
+    description: str | list[str] = Field(
         title="description",
         description="Description of the model",
     )
@@ -145,7 +143,7 @@ class ModelCreate(BaseModel):
     )
     # TODO: if missing from TOML, populate with project-run or project scenarios
     expected_scenarios: list[str] = Field(
-        title="assumptions",
+        title="expected_scenarios",
         description="List of expected model scenarios",
         default=[],  # TODO: default to the list from project or project run
     )
@@ -186,6 +184,9 @@ class ModelCreate(BaseModel):
         return value
 
 
+class ModelUpdate(ModelCreate): ...  # noqa: E701
+
+
 class ModelRead(ModelCreate):
     context: ProjectRunSimpleContext = Field(
         title="context",
@@ -221,7 +222,7 @@ class CatalogModelDocument(CatalogModelCreate, Document):
         indexes = [
             IndexModel(
                 [
-                    ("name", pymongo.ASCENDING)
+                    ("name", pymongo.ASCENDING),
                 ],
                 unique=True,
             ),
@@ -229,10 +230,6 @@ class CatalogModelDocument(CatalogModelCreate, Document):
 
 
 class ModelDocument(ModelRead, Document):
-    vertex: ModelVertex = Field(
-        title="vertex",
-        description="The model vertex pydantic model",
-    )
     context: ProjectRunObjectContext = Field(
         title="context",
         description="the project run object id",

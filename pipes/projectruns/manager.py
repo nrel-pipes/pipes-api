@@ -5,10 +5,9 @@ from datetime import datetime
 
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import DocumentAlreadyExists, VertexAlreadyExists
+from pipes.common.exceptions import DocumentAlreadyExists, DocumentDoesNotExist
 from pipes.db.manager import AbstractObjectManager
-from pipes.graph.constants import VertexLabel, EdgeLabel
-from pipes.graph.schemas import ProjectRunVertexProperties, ProjectRunVertex
+from pipes.common.constants import NodeLabel
 from pipes.projects.contexts import (
     ProjectDocumentContext,
     ProjectSimpleContext,
@@ -19,6 +18,7 @@ from pipes.projectruns.schemas import (
     ProjectRunCreate,
     ProjectRunDocument,
     ProjectRunRead,
+    ProjectRunUpdate,
 )
 from pipes.projectruns.validators import ProjectRunDomainValidator
 from pipes.users.schemas import UserDocument
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 class ProjectRunManager(AbstractObjectManager):
     """Project run object manager class"""
 
-    __label__ = VertexLabel.ProjectRun.value
+    __label__ = NodeLabel.ProjectRun.value
 
     def __init__(self, context: ProjectDocumentContext) -> None:
         self.context = context
@@ -39,55 +39,19 @@ class ProjectRunManager(AbstractObjectManager):
         pr_create: ProjectRunCreate,
         user: UserDocument,
     ) -> ProjectRunDocument:
-        """Create project run vertex and document"""
-        p_doc = self.context.project
-
+        """Create project run document"""
         # Validate project run create
         domain_validator = ProjectRunDomainValidator(self.context)
         pr_create = await domain_validator.validate(pr_create)
 
-        # Add project run vertex
-        pr_vertex = await self._create_projectrun_vertex(p_doc.name, pr_create.name)
-        pr_doc = await self._create_projectrun_document(
-            pr_create,
-            pr_vertex,
-            user,
-        )
-
-        # Add edge: project -(runs)- project run
-        p_vtx_id = p_doc.vertex.id
-        pr_vtx_id = pr_vertex.id
-        self.n.add_e(p_vtx_id, pr_vtx_id, EdgeLabel.runs.value)
+        # Create project run document
+        pr_doc = await self._create_projectrun_document(pr_create, user)
 
         return pr_doc
-
-    async def _create_projectrun_vertex(
-        self,
-        p_name: str,
-        pr_name: str,
-    ) -> ProjectRunVertex:
-        properties = {"project": p_name, "name": pr_name}
-        if self.n.exists(self.label, **properties):
-            raise VertexAlreadyExists(
-                f"Project run vertex {properties} already exists under project {p_name}.",
-            )
-
-        properties_model = ProjectRunVertexProperties(**properties)
-        properties = properties_model.model_dump()
-        pr_vtx = self.n.add_v(self.label, **properties)
-
-        # Dcoument creation
-        pr_vertex_model = ProjectRunVertex(
-            id=pr_vtx.id,
-            label=self.label,
-            properties=properties_model,
-        )
-        return pr_vertex_model
 
     async def _create_projectrun_document(
         self,
         pr_create: ProjectRunCreate,
-        pr_vertex: ProjectRunVertex,
         user: UserDocument,
     ) -> ProjectRunDocument:
         """Create a new project run under given project"""
@@ -108,7 +72,6 @@ class ProjectRunManager(AbstractObjectManager):
 
         # Project run document
         pr_doc = ProjectRunDocument(
-            vertex=pr_vertex,
             context=context,
             # project run information
             name=pr_name,
@@ -171,3 +134,71 @@ class ProjectRunManager(AbstractObjectManager):
         pr_read = ProjectRunRead.model_validate(data)
 
         return pr_read
+
+    async def get_projectrun(self, name: str) -> ProjectRunDocument:
+        """Get a specific project run by name"""
+        p_doc = self.context.project
+        pr_doc = await self.d.find_one(
+            collection=ProjectRunDocument,
+            query={"context.project": p_doc.id, "name": name},
+        )
+
+        if not pr_doc:
+            raise DocumentDoesNotExist(
+                f"Project run '{name}' not found in project '{p_doc.name}'",
+            )
+
+        return pr_doc
+
+    async def delete_projectrun(self, name: str) -> None:
+        """Delete a project run by name"""
+        p_doc = self.context.project
+
+        # Delete the project run document
+        await self.d.delete_one(
+            collection=ProjectRunDocument,
+            query={"context.project": p_doc.id, "name": name},
+        )
+
+        logger.info(
+            "Project run '%s' of project '%s' deleted successfully",
+            name,
+            p_doc.name,
+        )
+
+    async def update_projectrun(
+        self,
+        name: str,
+        pr_update: ProjectRunUpdate,
+        user: UserDocument,
+    ) -> ProjectRunDocument:
+        """Update project run document"""
+        # Get existing project run
+        pr_doc = await self.get_projectrun(name)
+
+        # Validate project run update
+        domain_validator = ProjectRunDomainValidator(self.context)
+        pr_update = await domain_validator.validate(pr_update)
+
+        # Prepare update data
+        update_data = pr_update.model_dump(exclude_unset=True)
+        update_data["last_modified"] = datetime.now()
+        update_data["modified_by"] = user.id
+
+        # Save updated document using MongoDB $set operator
+        await self.d.update_one(
+            collection=ProjectRunDocument,
+            find={"context.project": pr_doc.context.project, "name": name},
+            update={"$set": update_data},
+        )
+
+        # Get the updated document
+        updated_pr_doc = await self.get_projectrun(name)
+
+        logger.info(
+            "Project run '%s' of project '%s' updated successfully",
+            name,
+            self.context.project.name,
+        )
+
+        return updated_pr_doc

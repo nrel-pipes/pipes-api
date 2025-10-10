@@ -1,6 +1,6 @@
 # PIPES API
 
-PIPES API built with FastAPI, DocDB &amp; Neptune.
+PIPES API built with FastAPI &amp; DocumentDB
 
 
 **Prerequisites**:
@@ -33,11 +33,6 @@ PIPES_DOCDB_PORT=27017
 PIPES_DOCDB_NAME=pipes_dev
 PIPES_DOCDB_USER=pipes
 PIPES_DOCDB_PASS=
-
-# Neptune
-PIPES_NEPTUNE_HOST=
-PIPES_NEPTUNE_PORT=8182
-PIPES_NEPTUNE_SECURE=True
 
 # Cognito
 PIPES_REGION=us-west-2

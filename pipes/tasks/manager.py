@@ -6,17 +6,12 @@ from datetime import datetime
 from pydantic import EmailStr
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import (
-    DocumentAlreadyExists,
-    DocumentDoesNotExist,
-    VertexAlreadyExists,
-)
+from pipes.common.exceptions import DocumentAlreadyExists, DocumentDoesNotExist
 from pipes.common.schemas import ExecutionStatus
 from pipes.datasets.manager import DatasetManager
 from pipes.datasets.schemas import DatasetRead
 from pipes.db.manager import AbstractObjectManager
-from pipes.graph.constants import VertexLabel, EdgeLabel
-from pipes.graph.schemas import TaskVertex, TaskVertexProperties
+from pipes.common.constants import NodeLabel
 from pipes.projects.schemas import ProjectDocument
 from pipes.projectruns.schemas import ProjectRunDocument
 from pipes.models.schemas import ModelDocument
@@ -36,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 class TaskManager(AbstractObjectManager):
 
-    __label__ = VertexLabel.Task.value
+    __label__ = NodeLabel.Task.value
 
     def __init__(self, context: ModelRunDocumentContext) -> None:
         self.context = context
@@ -61,31 +56,7 @@ class TaskManager(AbstractObjectManager):
             await self._get_dataset(d_name) for d_name in task_create.output_datasets
         ]
 
-        # Create task vertex
-        task_vtx_model = await self._create_task_vertex(task_create.name)
-        task_vtx_id = task_vtx_model.id
-
-        # Add edges between task and assignee
-        if assignee_doc:
-            u_vtx_id = assignee_doc.vertex.id
-            self.n.add_e(task_vtx_id, u_vtx_id, EdgeLabel.associated.value)
-            assignee_doc_id = assignee_doc.id
-        else:
-            assignee_doc_id = None
-
-        # Task used datasets
-        for d_doc in input_datasets:
-            d_vtx_id = d_doc.vertex.id
-            self.n.add_e(task_vtx_id, d_vtx_id, EdgeLabel.used.value)
-
-        mr_vtx_id = self.context.modelrun.vertex.id
-        for d_doc in output_datasets:
-            d_vtx_id = d_doc.vertex.id
-            # Task output dataset
-            self.n.add_e(task_vtx_id, d_vtx_id, EdgeLabel.output.value)
-
-            # Model run connected to task output dataset
-            self.n.add_e(mr_vtx_id, d_vtx_id, EdgeLabel.connected.value)
+        assignee_doc_id = assignee_doc.id if assignee_doc else None
 
         # Create task document
         _context = ModelRunObjectContext(
@@ -96,7 +67,6 @@ class TaskManager(AbstractObjectManager):
         )
         task_doc = TaskDocument(
             context=_context,
-            vertex=task_vtx_model,
             # task properties
             name=task_create.name,
             type=task_create.type,
@@ -128,31 +98,6 @@ class TaskManager(AbstractObjectManager):
             )
 
         return task_doc
-
-    async def _create_task_vertex(self, task_name: str) -> TaskVertex:
-        properties = {
-            "project": self.context.project.name,
-            "projectrun": self.context.projectrun.name,
-            "model": self.context.model.name,
-            "modelrun": self.context.modelrun.name,
-            "name": task_name,
-        }
-        if self.n.exists(self.label, **properties):
-            raise VertexAlreadyExists(
-                f"Task vertex {properties} already exists under context: {self.context}",
-            )
-
-        properties_model = TaskVertexProperties(**properties)
-        properties = properties_model.model_dump()
-        task_vtx = self.n.add_v(self.label, **properties)
-
-        # Dcoument creation
-        task_vtx_model = TaskVertex(
-            id=task_vtx.id,
-            label=self.label,
-            properties=properties_model,
-        )
-        return task_vtx_model
 
     async def _get_or_create_assignee(self, assignee: EmailStr | UserCreate | None):
         if not assignee:

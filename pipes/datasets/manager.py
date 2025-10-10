@@ -5,9 +5,8 @@ from datetime import datetime
 
 from pymongo.errors import DuplicateKeyError
 
-from pipes.common.exceptions import DocumentAlreadyExists, VertexAlreadyExists
-from pipes.graph.constants import VertexLabel, EdgeLabel
-from pipes.graph.schemas import DatasetVertexProperties, DatasetVertex
+from pipes.common.exceptions import DocumentAlreadyExists
+from pipes.common.constants import NodeLabel
 from pipes.db.manager import AbstractObjectManager
 from pipes.projects.schemas import ProjectDocument
 from pipes.projectruns.schemas import ProjectRunDocument
@@ -28,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class DatasetManager(AbstractObjectManager):
 
-    __label__ = VertexLabel.Dataset.value
+    __label__ = NodeLabel.Dataset.value
 
     def __init__(self, context: ModelRunDocumentContext) -> None:
         self.context = context
@@ -47,48 +46,9 @@ class DatasetManager(AbstractObjectManager):
             d_create.registration_author,
         )
 
-        # Create dataset vertex
-        d_vertex = await self._create_dataset_vertex(d_create.name)
-
-        # Add edge between dataset and registration author
-        d_vtx_id = d_vertex.id
-        u_vtx_id = r_author.vertex.id
-        self.n.add_e(d_vtx_id, u_vtx_id, EdgeLabel.attributed.value)
-
-        # Create dataset document
-        d_doc = await self._create_dataset_document(d_create, r_author, d_vertex, user)
-
-        # Add edge between dataset and model run
-        mr_doc = self.context.modelrun
-        mr_vtx_id = mr_doc.vertex.id
-        self.n.add_e(mr_vtx_id, d_vtx_id, EdgeLabel.produced.value)
+        d_doc = await self._create_dataset_document(d_create, r_author, user)
 
         return d_doc
-
-    async def _create_dataset_vertex(self, d_name: str) -> DatasetVertex:
-        properties = {
-            "project": self.context.project.name,
-            "projectrun": self.context.projectrun.name,
-            "model": self.context.model.name,
-            "modelrun": self.context.modelrun.name,
-            "name": d_name,
-        }
-        if self.n.exists(self.label, **properties):
-            raise VertexAlreadyExists(
-                f"Dataset vertex '{d_name}' already exists in context: {self.context}.",
-            )
-
-        properties_model = DatasetVertexProperties(**properties)
-        properties = properties_model.model_dump()
-        d_vtx = self.n.add_v(self.label, **properties)
-
-        # Dcoument creation
-        d_vertex_model = DatasetVertex(
-            id=d_vtx.id,
-            label=self.label,
-            properties=properties_model,
-        )
-        return d_vertex_model
 
     async def _get_or_create_registration_author(
         self,
@@ -102,7 +62,6 @@ class DatasetManager(AbstractObjectManager):
         self,
         d_create: DatasetCreate,
         d_r_author: UserDocument,
-        d_vertex: DatasetVertex,
         user: UserDocument,
     ) -> DatasetDocument:
         """Checkin a dataset with given context"""
@@ -130,7 +89,6 @@ class DatasetManager(AbstractObjectManager):
 
         # dataset document
         d_doc = DatasetDocument(
-            vertex=d_vertex,
             context=_context,
             # dataset information
             name=d_name,

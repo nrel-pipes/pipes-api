@@ -10,10 +10,9 @@ from pipes.common.exceptions import (
     DocumentAlreadyExists,
     DocumentDoesNotExist,
     DomainValidationError,
-    EdgeAlreadyExists,
 )
 from pipes.handoffs.manager import HandoffManager
-from pipes.handoffs.schemas import HandoffCreate, HandoffRead
+from pipes.handoffs.schemas import HandoffCreate, HandoffRead, HandoffUpdate
 from pipes.projects.contexts import ProjectSimpleContext
 from pipes.projects.validators import ProjectContextValidator
 from pipes.projectruns.contexts import ProjectRunSimpleContext
@@ -64,7 +63,6 @@ async def create_handoff(
     try:
         h_docs = await manager.create_handoffs(data, user)
     except (
-        EdgeAlreadyExists,
         DocumentAlreadyExists,
         DomainValidationError,
         DocumentDoesNotExist,
@@ -83,6 +81,47 @@ async def create_handoff(
         return h_reads[0]
 
     return h_reads
+
+
+@router.get("/handoff", response_model=HandoffRead)
+async def get_handoff(
+    project: str,
+    projectrun: str,
+    handoff: str,
+    user: UserDocument = Depends(auth_required),
+):
+    """Get a specific handoff"""
+    context = ProjectRunSimpleContext(
+        project=project,
+        projectrun=projectrun,
+    )
+
+    try:
+        validator = ProjectRunContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    manager = HandoffManager(context=validated_context)
+
+    try:
+        h_doc = await manager.get_handoff_by_name(handoff)
+        h_read = await manager.read_handoff(h_doc)
+    except DocumentDoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Handoff '{handoff}' not found",
+        )
+
+    return h_read
 
 
 @router.get("/handoffs", response_model=list[HandoffRead])
@@ -136,3 +175,105 @@ async def get_handoffs(
         h_reads = await manager.get_handoffs(model)
 
         return h_reads
+
+
+@router.delete("/handoffs", status_code=204)
+async def delete_handoff(
+    project: str,
+    projectrun: str,
+    handoff: str,
+    user: UserDocument = Depends(auth_required),
+):
+    """Delete handoff"""
+    context = ProjectRunSimpleContext(
+        project=project,
+        projectrun=projectrun,
+    )
+
+    try:
+        validator = ProjectRunContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    manager = HandoffManager(context=validated_context)
+
+    try:
+        await manager.get_handoff_by_name(handoff)
+    except DocumentDoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Handoff '{handoff}' not found",
+        )
+
+    try:
+        await manager.delete_handoff(
+            project=validated_context.project.id,
+            projectrun=validated_context.projectrun.id,
+            handoff=handoff,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    return None
+
+
+@router.put("/handoffs", response_model=HandoffRead)
+async def update_handoff(
+    project: str,
+    projectrun: str,
+    handoff: str,
+    data: HandoffUpdate,
+    user: UserDocument = Depends(auth_required),
+):
+    """Update a handoff"""
+    context = ProjectRunSimpleContext(
+        project=project,
+        projectrun=projectrun,
+    )
+
+    try:
+        validator = ProjectRunContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    handoff_manager = HandoffManager(context=validated_context)
+
+    try:
+        # Check if handoff exists
+        h_doc = await handoff_manager.get_handoff_by_name(handoff)
+    except DocumentDoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Handoff '{handoff}' not found",
+        )
+
+    try:
+        updated_h_doc = await handoff_manager.update_handoff(h_doc, data, user)
+        updated_h_read = await handoff_manager.read_handoff(updated_h_doc)
+        return updated_h_read
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )

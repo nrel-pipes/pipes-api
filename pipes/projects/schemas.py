@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from pipes.common.utilities import parse_datetime
-from pipes.graph.schemas import ProjectVertex
 from pipes.teams.schemas import TeamBasicRead
 from pipes.users.schemas import UserCreate, UserRead
 
@@ -189,10 +188,18 @@ class ProjectBasicRead(BaseModel):
         default="",
         description="project description",
     )
+    owner: UserRead = Field(
+        title="owner",
+        description="project owner",
+    )
     milestones: list[Milestone] = Field(
         title="milestones",
         default=[],
         description="project milestones",
+    )
+    created_at: datetime = Field(
+        title="created_at",
+        description="project creation time",
     )
 
 
@@ -214,10 +221,6 @@ class ProjectDetailRead(ProjectCreate):
 
 
 class ProjectDocument(ProjectDetailRead, Document):
-    vertex: ProjectVertex = Field(
-        title="vertex",
-        description="The project vertex model",
-    )
     owner: PydanticObjectId = Field(
         title="owner",
         description="project owner",

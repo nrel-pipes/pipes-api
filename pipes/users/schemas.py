@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pipes.graph.schemas import UserVertex
 from uuid import UUID
 
 import pymongo
@@ -85,7 +84,7 @@ class UserUpdate(BaseModel):
     )
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "first_name": "Jane",
                 "last_name": "Doe",
@@ -99,10 +98,6 @@ class UserUpdate(BaseModel):
 class UserDocument(UserRead, Document):
     """User document in db"""
 
-    vertex: UserVertex = Field(
-        title="vertex",
-        description="The neptune vertex model",
-    )
     username: str | None = Field(
         title="username",
         default=None,

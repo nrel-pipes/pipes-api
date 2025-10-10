@@ -7,7 +7,6 @@ from pipes.common.exceptions import (
     UserPermissionDenied,
     DocumentAlreadyExists,
     DocumentDoesNotExist,
-    VertexAlreadyExists,
 )
 from pipes.db.document import DocumentDB
 from pipes.projects.contexts import ProjectSimpleContext
@@ -47,7 +46,7 @@ async def create_team(
     try:
         manager = TeamManager(context=validated_context)
         t_doc = await manager.create_team(data)
-    except (VertexAlreadyExists, DocumentAlreadyExists) as e:
+    except DocumentAlreadyExists as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -97,7 +96,56 @@ async def get_teams(
     return p_teams
 
 
-@router.patch("/teams/detail")
+@router.get("/teams/detail", response_model=TeamRead)
+async def get_team(
+    project: str,
+    team: str,
+    user: UserDocument = Depends(auth_required),
+):
+    """Get a specific team by name"""
+    context = ProjectSimpleContext(project=project)
+
+    try:
+        validator = ProjectContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    try:
+        manager = TeamManager(context=validated_context)
+        t_doc = await manager.get_team(team)
+    except DocumentDoesNotExist as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+
+    # Query members
+    docdb = DocumentDB()
+    u_docs = await docdb.find_all(
+        collection=UserDocument,
+        query={"_id": {"$in": t_doc.members}},
+    )
+
+    t_read = TeamRead(
+        name=t_doc.name,
+        description=t_doc.description,
+        context={"project": project},
+        members=u_docs,
+    )
+
+    return t_read
+
+
+@router.patch("/teams")
 async def update_team(
     project: str,
     team: str,
@@ -124,7 +172,7 @@ async def update_team(
     try:
         manager = TeamManager(context=validated_context)
         t_doc = await manager.update_team(team, data)
-    except (VertexAlreadyExists, DocumentDoesNotExist, DocumentAlreadyExists) as e:
+    except (DocumentDoesNotExist, DocumentAlreadyExists) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
@@ -142,3 +190,36 @@ async def update_team(
         context=ProjectSimpleContext(project=project),
     )
     return t_read
+
+
+@router.delete("/teams", status_code=204)
+async def delete_team(
+    project: str,
+    team: str,
+    user: UserDocument = Depends(auth_required),
+):
+    """Delete a specific team by name"""
+    context = ProjectSimpleContext(project=project)
+
+    try:
+        validator = ProjectContextValidator()
+        validated_context = await validator.validate(user, context)
+    except ContextValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except UserPermissionDenied as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+
+    try:
+        manager = TeamManager(context=validated_context)
+        await manager.delete_team(team)
+    except DocumentDoesNotExist as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
