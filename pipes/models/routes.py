@@ -11,7 +11,7 @@ from pipes.common.exceptions import (
     UserPermissionDenied,
 )
 from pipes.modelruns.manager import ModelRunManager
-from pipes.models.manager import ModelManager, ModelCatalogManager
+from pipes.models.manager import ModelManager, CatalogModelManager
 from pipes.models.schemas import (
     ModelCreate,
     ModelRead,
@@ -30,12 +30,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/model_catalog", response_model=CatalogModelDocument, status_code=201)
+@router.post("/catalogmodel", response_model=CatalogModelDocument, status_code=201)
 async def create_catalog_model(
     data: CatalogModelCreate,
     user: UserDocument = Depends(auth_required),
 ):
-    manager = ModelCatalogManager()
+    manager = CatalogModelManager()
     try:
         mc_doc = await manager.create_model(data, user)
     except (
@@ -51,13 +51,13 @@ async def create_catalog_model(
     return mr_doc
 
 
-@router.get("/model_catalog", response_model=list[CatalogModelCreate], status_code=200)
+@router.get("/catalogmodels", response_model=list[CatalogModelCreate], status_code=200)
 async def get_catalog_models(
     user: UserDocument = Depends(auth_required),
 ):
-    manager = ModelCatalogManager()
-    model_catalog = await manager.get_models()
-    return model_catalog
+    manager = CatalogModelManager()
+    catalogmodels = await manager.get_models()
+    return catalogmodels
 
 
 @router.post("/models", response_model=ModelRead, status_code=201)

@@ -218,7 +218,7 @@ class CatalogModelDocument(CatalogModelCreate, Document):
     )
 
     class Settings:
-        name = "model_catalog"
+        name = "catalogmodels"
         indexes = [
             IndexModel(
                 [

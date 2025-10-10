@@ -32,7 +32,7 @@ from pipes.users.schemas import UserDocument
 logger = logging.getLogger(__name__)
 
 
-class ModelCatalogManager(AbstractObjectManager):
+class CatalogModelManager(AbstractObjectManager):
     async def create_model(
         self,
         m_create: CatalogModelCreate,
@@ -93,7 +93,7 @@ class ModelCatalogManager(AbstractObjectManager):
             )
         # object context
         current_time = datetime.now()
-        m_doc = CatalogModelDocument(
+        cm_doc = CatalogModelDocument(
             # model information
             name=m_name,
             display_name=m_create.display_name,
@@ -110,17 +110,17 @@ class ModelCatalogManager(AbstractObjectManager):
         )
         # Create document
         try:
-            m_doc = await self.d.insert(m_doc)
+            cm_doc = await self.d.insert(cm_doc)
         except DuplicateKeyError:
             raise DocumentAlreadyExists(
                 f"Model document '{m_name}'.",
             )
 
         logger.info(
-            "New model '%s' was created successfully under context: %s",
+            "New model '%s' was created successfully in catalog.",
             m_name,
         )
-        return m_doc
+        return cm_doc
 
 
 class ModelManager(AbstractObjectManager):
