@@ -83,6 +83,7 @@ class CatalogModelManager(AbstractObjectManager):
         """Read a model from given model document"""
         cm_docs = await self.d.find_all(
             collection=CatalogModelDocument,
+            query={"created_by": user.id},
         )
         cm_reads = []
         for cm_doc in cm_docs:
