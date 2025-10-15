@@ -14,6 +14,10 @@ from pipes.config.settings import settings
 # Health
 from pipes.health.routes import router as health_router
 
+# Catalog Models
+from pipes.catalogmodels.schemas import CatalogModelDocument
+from pipes.catalogmodels.routes import router as catalogmodels_router
+
 # Projects
 from pipes.projects.schemas import ProjectDocument
 from pipes.projects.routes import router as projects_router
@@ -24,7 +28,7 @@ from pipes.projectruns.routes import router as projectruns_router
 
 # Models
 from pipes.models.routes import router as models_router
-from pipes.models.schemas import ModelDocument, CatalogModelDocument
+from pipes.models.schemas import ModelDocument
 
 # Modelruns
 from pipes.modelruns.schemas import ModelRunDocument
@@ -84,11 +88,14 @@ async def lifespan(app: FastAPI):
             TaskDocument,
             TeamDocument,
             UserDocument,
-            CatalogModelDocument
+            CatalogModelDocument,
         ],
     )
 
     yield
+
+    # Close motor client
+    motor_client.close()
 
 
 app = FastAPI(
@@ -109,6 +116,7 @@ app.add_middleware(
 
 # Routers
 app.include_router(health_router, prefix="/api", tags=["health"])
+app.include_router(catalogmodels_router, prefix="/api", tags=["catalogmodels"])
 app.include_router(projects_router, prefix="/api", tags=["projects"])
 app.include_router(projectruns_router, prefix="/api", tags=["projectruns"])
 app.include_router(models_router, prefix="/api", tags=["models"])

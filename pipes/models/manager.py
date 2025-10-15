@@ -21,8 +21,6 @@ from pipes.models.schemas import (
     ModelDocument,
     ModelRead,
     ModelUpdate,
-    CatalogModelCreate,
-    CatalogModelDocument,
 )
 from pipes.models.validators import ModelDomainValidator
 from pipes.teams.manager import TeamManager
@@ -30,97 +28,6 @@ from pipes.teams.schemas import TeamDocument
 from pipes.users.schemas import UserDocument
 
 logger = logging.getLogger(__name__)
-
-
-class CatalogModelManager(AbstractObjectManager):
-    async def create_model(
-        self,
-        m_create: CatalogModelCreate,
-        user: UserDocument,
-    ) -> CatalogModelDocument:
-
-        m_doc = await self._create_model_document(m_create, user)
-        return m_doc
-
-    async def get_models(self) -> list[CatalogModelDocument]:
-        """Read a model from given model document"""
-        m_docs = await self.d.find_all(
-            collection=CatalogModelDocument,
-        )
-        mc_reads = []
-        for m_doc in m_docs:
-            data = m_doc.model_dump()
-            mc_reads.append(CatalogModelCreate.model_validate(data))
-        return mc_reads
-
-    async def read_model(
-        self,
-        model_name: str,
-    ):
-        """Retrieve a specific model from the database by name"""
-
-        # Find the model in the database by name
-        query = {"name": model_name}
-        model_doc = await self.d.find_one(
-            collection=CatalogModelDocument,
-            query=query,
-        )
-        if not model_doc:
-            raise ValueError(f"Model with name '{model_name}' not found")
-
-        # Convert the document to a model document
-        data = model_doc.model_dump()
-        return CatalogModelDocument.model_validate(data)
-
-    async def _create_model_document(
-        self,
-        m_create: CatalogModelCreate,
-        user: UserDocument,
-    ) -> CatalogModelDocument:
-        """Create a new model under given project and project run"""
-
-        # Check if model already exists or not
-        m_name = m_create.name
-        m_doc_exits = await self.d.exists(
-            collection=CatalogModelDocument,
-            query={
-                "name": m_name,
-            },
-        )
-        if m_doc_exits:
-            raise DocumentAlreadyExists(
-                f"Model '{m_name}' already exists in catalog.",
-            )
-        # object context
-        current_time = datetime.now()
-        cm_doc = CatalogModelDocument(
-            # model information
-            name=m_name,
-            display_name=m_create.display_name,
-            type=m_create.type,
-            description=m_create.description,
-            assumptions=m_create.assumptions,
-            requirements=m_create.requirements,
-            expected_scenarios=m_create.expected_scenarios,
-            other=m_create.other,
-            created_at=current_time,
-            created_by=user.id,
-            last_modified=current_time,
-            modified_by=user.id,
-        )
-        # Create document
-        try:
-            cm_doc = await self.d.insert(cm_doc)
-        except DuplicateKeyError:
-            raise DocumentAlreadyExists(
-                f"Model document '{m_name}'.",
-            )
-
-        logger.info(
-            "New model '%s' was created successfully in catalog.",
-            m_name,
-        )
-        return cm_doc
 
 
 class ModelManager(AbstractObjectManager):

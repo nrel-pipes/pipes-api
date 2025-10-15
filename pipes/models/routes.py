@@ -11,13 +11,11 @@ from pipes.common.exceptions import (
     UserPermissionDenied,
 )
 from pipes.modelruns.manager import ModelRunManager
-from pipes.models.manager import ModelManager, CatalogModelManager
+from pipes.models.manager import ModelManager
 from pipes.models.schemas import (
     ModelCreate,
     ModelRead,
     ModelUpdate,
-    CatalogModelCreate,
-    CatalogModelDocument,
 )
 from pipes.projects.contexts import ProjectSimpleContext, ProjectDocumentContext
 from pipes.projects.validators import ProjectContextValidator
@@ -28,36 +26,6 @@ from pipes.users.schemas import UserDocument
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-
-
-@router.post("/catalogmodel", response_model=CatalogModelDocument, status_code=201)
-async def create_catalog_model(
-    data: CatalogModelCreate,
-    user: UserDocument = Depends(auth_required),
-):
-    manager = CatalogModelManager()
-    try:
-        mc_doc = await manager.create_model(data, user)
-    except (
-        DocumentAlreadyExists,
-        DomainValidationError,
-        DocumentDoesNotExist,
-    ) as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    mr_doc = await manager.read_model(mc_doc.name)
-    return mr_doc
-
-
-@router.get("/catalogmodels", response_model=list[CatalogModelCreate], status_code=200)
-async def get_catalog_models(
-    user: UserDocument = Depends(auth_required),
-):
-    manager = CatalogModelManager()
-    catalogmodels = await manager.get_models()
-    return catalogmodels
 
 
 @router.post("/models", response_model=ModelRead, status_code=201)
