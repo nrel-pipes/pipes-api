@@ -7,7 +7,18 @@ from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field, field_validator
 
-from pipes.users.schemas import UserRead
+from pipes.users.schemas import UserRead, UserCreate
+
+
+class ModelingTeam(BaseModel):
+    name: str = Field(
+        title="name",
+        description="Name of the modeling team",
+    )
+    members: list[UserCreate] = Field(
+        title="members",
+        description="List of team members",
+    )
 
 
 class CatalogModelCreate(BaseModel):
@@ -45,6 +56,11 @@ class CatalogModelCreate(BaseModel):
         title="expected_scenarios",
         description="List of expected model scenarios",
         default=[],
+    )
+    modeling_team: ModelingTeam | None = Field(
+        title="modeling_team",
+        description="Information about the modeling team",
+        default=None,
     )
     other: dict = Field(
         title="other",

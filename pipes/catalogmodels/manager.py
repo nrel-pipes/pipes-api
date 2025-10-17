@@ -59,6 +59,7 @@ class CatalogModelManager(AbstractObjectManager):
             assumptions=m_create.assumptions,
             requirements=m_create.requirements,
             expected_scenarios=m_create.expected_scenarios,
+            modeling_team=m_create.modeling_team,
             other=m_create.other,
             created_at=current_time,
             created_by=user.id,
