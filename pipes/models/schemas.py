@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from datetime import datetime
+
+import pymongo
+from pymongo import IndexModel
+from beanie import Document, PydanticObjectId
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
 from pipes.common.utilities import parse_datetime
 from pipes.projectruns.contexts import ProjectRunObjectContext, ProjectRunSimpleContext
 from pipes.teams.schemas import TeamRead
-
-import pymongo
-from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-from pymongo import IndexModel
 
 
 # Model
@@ -130,7 +131,7 @@ class ModelCreate(BaseModel):
         return value
 
 
-class ModelUpdate(ModelCreate): ...
+class ModelUpdate(ModelCreate): ...  # noqa: E701
 
 
 class ModelRead(ModelCreate):
@@ -157,20 +158,20 @@ class ModelDocument(ModelRead, Document):
     # document information
     created_at: datetime = Field(
         title="created_at",
-        description="project creation time",
+        description="model creation time",
     )
     created_by: PydanticObjectId = Field(
         title="created_by",
-        description="user who created the project",
+        description="user who created the model",
     )
     last_modified: datetime = Field(
         title="last_modified",
         default=datetime.now(),
-        description="last modification datetime",
+        description="model's last modification datetime",
     )
     modified_by: PydanticObjectId = Field(
         title="modified_by",
-        description="user who modified the project",
+        description="user who modified the model",
     )
 
     class Settings:

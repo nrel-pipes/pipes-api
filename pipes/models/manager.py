@@ -16,7 +16,12 @@ from pipes.projectruns.contexts import (
     ProjectRunSimpleContext,
 )
 from pipes.projectruns.schemas import ProjectRunDocument
-from pipes.models.schemas import ModelCreate, ModelDocument, ModelRead, ModelUpdate
+from pipes.models.schemas import (
+    ModelCreate,
+    ModelDocument,
+    ModelRead,
+    ModelUpdate,
+)
 from pipes.models.validators import ModelDomainValidator
 from pipes.teams.manager import TeamManager
 from pipes.teams.schemas import TeamDocument
