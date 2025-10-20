@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pydantic import EmailStr
 
 import pymongo
 from pymongo import IndexModel
@@ -67,10 +68,10 @@ class CatalogModelCreate(BaseModel):
         default={},
         description="other metadata info about the model in dictionary",
     )
-    access_group: PydanticObjectId | None = Field(
+    access_group: list[EmailStr] = Field(
         title="access_group",
-        default=None,
-        description="Group that has access to this model",
+        default=[],
+        description="A group of users that has access to this model",
     )
 
     @field_validator("description", mode="before")
@@ -82,16 +83,24 @@ class CatalogModelCreate(BaseModel):
 
 
 class CatalogModelUpdate(CatalogModelCreate):
-    pass
+    access_group: list[EmailStr] = Field(
+        title="access_group",
+        default=[],
+        description="A group of users' emails that has access to this model",
+    )
 
 
 class CatalogModelRead(CatalogModelCreate):
 
+    access_group: list[EmailStr] = Field(
+        title="access_group",
+        default=[],
+        description="A group of users' emails that has access to this model",
+    )
     created_at: datetime = Field(
         title="created_at",
         description="catalog model creation time",
     )
-
     created_by: UserRead = Field(
         title="created_by",
         description="user who created the model in catalog",
@@ -115,6 +124,11 @@ class CatalogModelDocument(CatalogModelCreate, Document):
     modified_by: PydanticObjectId = Field(
         title="modified_by",
         description="user who modified the project",
+    )
+    access_group: list[PydanticObjectId] = Field(
+        title="access_group",
+        default=[],
+        description="A group of users that has access to this model",
     )
 
     class Settings:

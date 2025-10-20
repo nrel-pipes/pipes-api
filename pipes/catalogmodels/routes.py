@@ -15,6 +15,7 @@ from pipes.catalogmodels.schemas import (
     CatalogModelUpdate,
 )
 from pipes.users.auth import auth_required
+from pipes.users.manager import UserManager
 from pipes.users.schemas import UserDocument
 
 logger = logging.getLogger(__name__)
@@ -67,6 +68,19 @@ async def update_catalog_model(
     data: CatalogModelUpdate,
     user: UserDocument = Depends(auth_required),
 ):
+    user_manager = UserManager()
+    user_ids = []
+    for email in data.access_group:
+        try:
+            user_doc = await user_manager.get_user_by_email(email)
+        except DocumentDoesNotExist:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User with email '{email}' does not exist.",
+            )
+        user_ids.append(user_doc.id)
+    data.access_group = user_ids
+
     manager = CatalogModelManager()
     try:
         updated_model = await manager.update_model(model_name, data, user)

@@ -84,14 +84,18 @@ class CatalogModelManager(AbstractObjectManager):
         """Read a model from given model document"""
         cm_docs = await self.d.find_all(
             collection=CatalogModelDocument,
-            query={"created_by": user.id},
+            query={
+                "$or": [
+                    {"created_by": user.id},
+                    {"access_group": {"$in": [user.id]}},
+                ],
+            },
         )
+
         cm_reads = []
         for cm_doc in cm_docs:
-            data = cm_doc.model_dump()
-            created_by_doc = await UserDocument.get(data["created_by"])
-            data["created_by"] = created_by_doc.model_dump()
-            cm_reads.append(CatalogModelRead.model_validate(data))
+            cm_read = await self.read_model(cm_doc)
+            cm_reads.append(cm_read)
         return cm_reads
 
     async def read_model(
@@ -105,6 +109,13 @@ class CatalogModelManager(AbstractObjectManager):
         data = cm_doc.model_dump()
         created_by_doc = await UserDocument.get(data["created_by"])
         data["created_by"] = UserRead.model_validate(created_by_doc.model_dump())
+
+        user_emails = []
+        for user_id in data["access_group"]:
+            user_doc = await UserDocument.get(user_id)
+            if user_doc:
+                user_emails.append(user_doc.email)
+        data["access_group"] = user_emails
         return CatalogModelRead.model_validate(data)
 
     async def get_model(
@@ -113,7 +124,13 @@ class CatalogModelManager(AbstractObjectManager):
         user: UserDocument,
     ) -> CatalogModelRead:
         """Get a specific model by name"""
-        query = {"name": model_name, "created_by": user.id}
+        query = {
+            "name": model_name,
+            "$or": [
+                {"created_by": user.id},
+                {"access_group": {"$in": [user.id]}},
+            ],
+        }
         cm_doc = await self.d.find_one(
             collection=CatalogModelDocument,
             query=query,
