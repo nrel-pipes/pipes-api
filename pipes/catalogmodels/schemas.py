@@ -83,11 +83,7 @@ class CatalogModelCreate(BaseModel):
 
 
 class CatalogModelUpdate(CatalogModelCreate):
-    access_group: list[EmailStr] = Field(
-        title="access_group",
-        default=[],
-        description="A group of users' emails that has access to this model",
-    )
+    pass
 
 
 class CatalogModelRead(CatalogModelCreate):
