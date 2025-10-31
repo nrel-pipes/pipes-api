@@ -23,6 +23,7 @@ class SourceCode(BaseModel):
 
     location: str = Field(
         title="location",
+        default="",
         description="The location of the source code",
     )
     branch: str | None = Field(
