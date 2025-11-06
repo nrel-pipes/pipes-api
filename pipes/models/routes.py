@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+from fastapi import APIRouter, Depends, HTTPException, status
+
 from pipes.common.exceptions import (
     ContextValidationError,
     DocumentAlreadyExists,
@@ -10,15 +12,17 @@ from pipes.common.exceptions import (
 )
 from pipes.modelruns.manager import ModelRunManager
 from pipes.models.manager import ModelManager
-from pipes.models.schemas import ModelCreate, ModelRead, ModelUpdate
+from pipes.models.schemas import (
+    ModelCreate,
+    ModelRead,
+    ModelUpdate,
+)
+from pipes.projects.contexts import ProjectSimpleContext, ProjectDocumentContext
+from pipes.projects.validators import ProjectContextValidator
 from pipes.projectruns.contexts import ProjectRunSimpleContext
 from pipes.projectruns.validators import ProjectRunContextValidator
-from pipes.projects.contexts import ProjectDocumentContext, ProjectSimpleContext
-from pipes.projects.validators import ProjectContextValidator
 from pipes.users.auth import auth_required
 from pipes.users.schemas import UserDocument
-
-from fastapi import APIRouter, Depends, HTTPException, status
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
