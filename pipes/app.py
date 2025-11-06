@@ -18,6 +18,10 @@ from pipes.health.routes import router as health_router
 from pipes.catalogmodels.schemas import CatalogModelDocument
 from pipes.catalogmodels.routes import router as catalogmodels_router
 
+# Catalog Datasets
+from pipes.catalogdatasets.schemas import CatalogDatasetDocument
+from pipes.catalogdatasets.routes import router as catalogdatasets_router
+
 # Projects
 from pipes.projects.schemas import ProjectDocument
 from pipes.projects.routes import router as projects_router
@@ -89,6 +93,7 @@ async def lifespan(app: FastAPI):
             TeamDocument,
             UserDocument,
             CatalogModelDocument,
+            CatalogDatasetDocument,
         ],
     )
 
@@ -117,6 +122,7 @@ app.add_middleware(
 # Routers
 app.include_router(health_router, prefix="/api", tags=["health"])
 app.include_router(catalogmodels_router, prefix="/api", tags=["catalogmodels"])
+app.include_router(catalogdatasets_router, prefix="/api", tags=["catalogdatasets"])
 app.include_router(projects_router, prefix="/api", tags=["projects"])
 app.include_router(projectruns_router, prefix="/api", tags=["projectruns"])
 app.include_router(models_router, prefix="/api", tags=["models"])
