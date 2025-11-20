@@ -4,7 +4,16 @@ from pydantic import BaseModel, Field
 
 
 class ActivityCreate(BaseModel):
-    """Activity Creation Schema"""
+    """Activity Creation Schema.
+
+    Attributes:
+        name: Event name.
+        event_time: The time of the event.
+        event_type: The category of event.
+        affected_identifier: The ID of the affected entity.
+        source_system: The source system.
+        data: Related data.
+    """
 
     name: str = Field(
         title="name",
@@ -37,7 +46,32 @@ class ActivityCreate(BaseModel):
 
 
 class EventCreate(BaseModel):
-    """Event Schema"""
+    """Event Schema.
+
+    Attributes:
+        name: Event name.
+        affected_identifier: Primary affected entity's identifier.
+        event_time: The time of the event.
+        event_type: The category of event.
+        source_identitifer: The ID of the source.
+        source_system: The source system.
+        source_type: Source type if available.
+        relationships_project_id: Related project ID.
+        relationships_project: Related project name.
+        relationships_project_run_id: Related project run ID.
+        relationships_project_run: Related project run name.
+        relationships_model_id: Related model ID.
+        relationships_model: Related model name.
+        relationships_model_run_id: Related model run ID.
+        relationships_model_run: Related model run name.
+        relationships_qa_run_id: Related QA run ID.
+        relationships_qa_run: Related QA run name.
+        relationships_transform_run_id: Related transform run ID.
+        relationships_transform_run: Related transform run name.
+        relationships_creator: Related creator of the new values.
+        relationships_creator_id: Related creator ID of the new values.
+        data: Related data.
+    """
 
     name: str = Field(
         title="name",
@@ -149,7 +183,13 @@ class EventCreate(BaseModel):
 
 
 class ExceptionData(BaseModel):
-    """Exception Data Schema"""
+    """Exception Data Schema.
+
+    Attributes:
+        traceback: Exception traceback.
+        value: Exception value.
+        type: Exception type.
+    """
 
     traceback: str = Field(
         title="traceback",
@@ -167,7 +207,19 @@ class ExceptionData(BaseModel):
 
 
 class ExceptionSource(BaseModel):
-    """Exception Source Schema"""
+    """Exception Source Schema.
+
+    Attributes:
+        name: Event name.
+        API: The API source related to the exception.
+        CLI_command: The CLI_command of exception source.
+        web_source: The web_source of the exception.
+        identifier: The identifier of the source.
+        type: The type of source.
+        user_id: The type of source.
+        ip: The ip of source.
+        named_environment: The named_environment of source.
+    """
 
     name: str = Field(
         title="name",
@@ -216,7 +268,15 @@ class ExceptionSource(BaseModel):
 
 
 class ExceptionCreate(BaseModel):
-    """Exception Schema"""
+    """Exception Schema.
+
+    Attributes:
+        name: Event name.
+        event_type: The category of event.
+        event_time: The time of the event.
+        source: The source of the exception.
+        data: Exception detail data.
+    """
 
     name: str = Field(
         title="name",

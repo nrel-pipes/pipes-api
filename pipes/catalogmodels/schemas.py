@@ -12,6 +12,13 @@ from pipes.users.schemas import UserRead, UserCreate
 
 
 class ModelingTeam(BaseModel):
+    """Modeling team information.
+
+    Attributes:
+        name: Name of the modeling team.
+        members: List of team members.
+    """
+
     name: str = Field(
         title="name",
         description="Name of the modeling team",
@@ -23,7 +30,20 @@ class ModelingTeam(BaseModel):
 
 
 class CatalogModelCreate(BaseModel):
-    """Model schema for catalog"""
+    """Model schema for catalog.
+
+    Attributes:
+        name: The model name.
+        display_name: Display name for this model vertex.
+        type: Type of model to use in graphic headers (e.g, 'Capacity Expansion').
+        description: Description of the model.
+        assumptions: List of model assumptions.
+        requirements: Model specific requirements (if different from Project and Project-Run).
+        expected_scenarios: List of expected model scenarios.
+        modeling_team: Information about the modeling team.
+        other: Other metadata info about the model in dictionary.
+        access_group: A group of users that has access to this model.
+    """
 
     name: str = Field(
         title="model_catalog",
@@ -83,10 +103,41 @@ class CatalogModelCreate(BaseModel):
 
 
 class CatalogModelUpdate(CatalogModelCreate):
+    """Model update schema.
+
+    Attributes:
+        name: The model name.
+        display_name: Display name for this model vertex.
+        type: Type of model to use in graphic headers (e.g, 'Capacity Expansion').
+        description: Description of the model.
+        assumptions: List of model assumptions.
+        requirements: Model specific requirements (if different from Project and Project-Run).
+        expected_scenarios: List of expected model scenarios.
+        modeling_team: Information about the modeling team.
+        other: Other metadata info about the model in dictionary.
+        access_group: A group of users that has access to this model.
+    """
+
     pass
 
 
 class CatalogModelRead(CatalogModelCreate):
+    """Model read schema.
+
+    Attributes:
+        name: The model name.
+        display_name: Display name for this model vertex.
+        type: Type of model to use in graphic headers (e.g, 'Capacity Expansion').
+        description: Description of the model.
+        assumptions: List of model assumptions.
+        requirements: Model specific requirements (if different from Project and Project-Run).
+        expected_scenarios: List of expected model scenarios.
+        modeling_team: Information about the modeling team.
+        other: Other metadata info about the model in dictionary.
+        access_group: A group of users' emails that has access to this model.
+        created_at: Catalog model creation time.
+        created_by: User who created the model in catalog.
+    """
 
     access_group: list[EmailStr] = Field(
         title="access_group",
@@ -104,6 +155,25 @@ class CatalogModelRead(CatalogModelCreate):
 
 
 class CatalogModelDocument(CatalogModelCreate, Document):
+    """Catalog model document.
+
+    Attributes:
+        name: The model name.
+        display_name: Display name for this model vertex.
+        type: Type of model to use in graphic headers (e.g, 'Capacity Expansion').
+        description: Description of the model.
+        assumptions: List of model assumptions.
+        requirements: Model specific requirements (if different from Project and Project-Run).
+        expected_scenarios: List of expected model scenarios.
+        modeling_team: Information about the modeling team.
+        other: Other metadata info about the model in dictionary.
+        access_group: A group of users that has access to this model.
+        created_at: Catalog model creation time.
+        created_by: User who created the model in catalog.
+        last_modified: Last modification datetime.
+        modified_by: User who modified the project.
+    """
+
     created_at: datetime = Field(
         title="created_at",
         description="catalog model creation time",
