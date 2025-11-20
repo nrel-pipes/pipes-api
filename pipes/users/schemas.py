@@ -11,7 +11,14 @@ from pymongo import IndexModel
 
 # User
 class UserCreate(BaseModel):
-    """User base model"""
+    """User base model.
+
+    Attributes:
+        email: Email address.
+        first_name: First name.
+        last_name: Last name.
+        organization: Organization name.
+    """
 
     email: EmailStr = Field(
         title="email",
@@ -36,6 +43,16 @@ class UserCreate(BaseModel):
 
 
 class CognitoUserCreate(UserCreate):
+    """Cognito user creation schema.
+
+    Attributes:
+        email: Email address.
+        first_name: First name.
+        last_name: Last name.
+        organization: Organization name.
+        username: Cognito username in uuid string.
+    """
+
     username: str | None = Field(
         title="username",
         description="Cognito username in uuid string",
@@ -58,7 +75,16 @@ class CognitoUserCreate(UserCreate):
 
 
 class UserRead(UserCreate):
-    """Schema for user read"""
+    """Schema for user read.
+
+    Attributes:
+        email: Email address.
+        first_name: First name.
+        last_name: Last name.
+        organization: Organization name.
+        is_active: Active or inactive user.
+        is_superuser: Is superuser or not.
+    """
 
     is_active: bool = Field(
         title="is_active",
@@ -71,7 +97,16 @@ class UserRead(UserCreate):
 
 
 class UserUpdate(BaseModel):
-    """Schema for updating user information"""
+    """Schema for updating user information.
+
+    Attributes:
+        first_name: First name.
+        last_name: Last name.
+        organization: Organization name.
+        is_active: Active or inactive user.
+        is_superuser: Is superuser or not.
+        updated_at: Timestamp of when the user was last updated.
+    """
 
     first_name: str | None = None
     last_name: str | None = None
@@ -96,7 +131,18 @@ class UserUpdate(BaseModel):
 
 
 class UserDocument(UserRead, Document):
-    """User document in db"""
+    """User document in db.
+
+    Attributes:
+        email: Email address.
+        first_name: First name.
+        last_name: Last name.
+        organization: Organization name.
+        is_active: Active or inactive user.
+        is_superuser: Is superuser or not.
+        username: Cognito username.
+        created_at: User created datetime.
+    """
 
     username: str | None = Field(
         title="username",

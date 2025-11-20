@@ -12,7 +12,12 @@ from pipes.users.schemas import UserRead
 
 
 class TemporalInfo(BaseModel):
-    """Dataset temporal information"""
+    """Dataset temporal information.
+
+    Attributes:
+        extent: The temporal extent of the dataset.
+        fidelity: The fidelity of the dataset in time.
+    """
 
     extent: str = Field(
         title="extent",
@@ -27,7 +32,12 @@ class TemporalInfo(BaseModel):
 
 
 class SpatialInfo(BaseModel):
-    """Dataset spatial information"""
+    """Dataset spatial information.
+
+    Attributes:
+        extent: The spatial extent of the dataset.
+        fidelity: The fidelity of the dataset in space.
+    """
 
     extent: str = Field(
         title="extent",
@@ -42,7 +52,14 @@ class SpatialInfo(BaseModel):
 
 
 class DatasetLocation(BaseModel):
-    """Dataset storage location information"""
+    """Dataset storage location information.
+
+    Attributes:
+        system_type: The data system of the dataset location.
+        storage_path: The path to the dataset within the data system.
+        access_info: The access information for the dataset location.
+        extra_note: Any extra note about the dataset location.
+    """
 
     system_type: str = Field(
         title="system_type",
@@ -65,7 +82,30 @@ class DatasetLocation(BaseModel):
 
 
 class CatalogDatasetCreate(BaseModel):
-    """Dataset Checkin Schema"""
+    """Dataset Checkin Schema.
+
+    Attributes:
+        name: A short name.
+        display_name: The dataset display name.
+        description: The description of the scheduled dataset.
+        version: Dataset version.
+        previous_version: Previous version of this dataset.
+        hash_value: The hash value of this dataset used for integrity check.
+        data_format: Data format, or a list of formats separated by commas.
+        schema_info: The schema description of the dataset.
+        location: The dataset location on data system.
+        weather_years: The weather year(s) of the dataset.
+        model_years: The model year(s) of the dataset.
+        units: The units of the dataset.
+        temporal_info: The temporal metadata of the dataset.
+        spatial_info: The spatial metadata of the dataset.
+        scenarios: The list of scenario names the dataset relates to.
+        sensitivities: The sensitivities of the dataset.
+        source_code: The source code that produces the dataset.
+        relevant_links: Relevant links to this dataset.
+        resource_url: The resource URL for this dataset.
+        access_group: A group of users that has access to this model.
+    """
 
     name: str = Field(
         title="name",
@@ -168,12 +208,62 @@ class CatalogDatasetCreate(BaseModel):
 
 
 class CatalogDatasetUpdate(CatalogDatasetCreate):
-    """Catalog Dataset Update Schema"""
+    """Catalog Dataset Update Schema.
+
+    Attributes:
+        name: A short name.
+        display_name: The dataset display name.
+        description: The description of the scheduled dataset.
+        version: Dataset version.
+        previous_version: Previous version of this dataset.
+        hash_value: The hash value of this dataset used for integrity check.
+        data_format: Data format, or a list of formats separated by commas.
+        schema_info: The schema description of the dataset.
+        location: The dataset location on data system.
+        weather_years: The weather year(s) of the dataset.
+        model_years: The model year(s) of the dataset.
+        units: The units of the dataset.
+        temporal_info: The temporal metadata of the dataset.
+        spatial_info: The spatial metadata of the dataset.
+        scenarios: The list of scenario names the dataset relates to.
+        sensitivities: The sensitivities of the dataset.
+        source_code: The source code that produces the dataset.
+        relevant_links: Relevant links to this dataset.
+        resource_url: The resource URL for this dataset.
+        access_group: A group of users that has access to this model.
+    """
 
     pass
 
 
 class CatalogDatasetRead(CatalogDatasetCreate):
+    """Dataset read schema.
+
+    Attributes:
+        name: A short name.
+        display_name: The dataset display name.
+        description: The description of the scheduled dataset.
+        version: Dataset version.
+        previous_version: Previous version of this dataset.
+        hash_value: The hash value of this dataset used for integrity check.
+        data_format: Data format, or a list of formats separated by commas.
+        schema_info: The schema description of the dataset.
+        location: The dataset location on data system.
+        weather_years: The weather year(s) of the dataset.
+        model_years: The model year(s) of the dataset.
+        units: The units of the dataset.
+        temporal_info: The temporal metadata of the dataset.
+        spatial_info: The spatial metadata of the dataset.
+        scenarios: The list of scenario names the dataset relates to.
+        sensitivities: The sensitivities of the dataset.
+        source_code: The source code that produces the dataset.
+        relevant_links: Relevant links to this dataset.
+        resource_url: The resource URL for this dataset.
+        access_group: A group of users that has access to this model.
+        created_at: Catalog model creation time.
+        created_by: User who created the model in catalog.
+    """
+
     created_at: datetime = Field(
         title="created_at",
         description="catalog model creation time",
@@ -185,6 +275,34 @@ class CatalogDatasetRead(CatalogDatasetCreate):
 
 
 class CatalogDatasetDocument(CatalogDatasetRead, Document):
+    """Catalog dataset document.
+
+    Attributes:
+        name: A short name.
+        display_name: The dataset display name.
+        description: The description of the scheduled dataset.
+        version: Dataset version.
+        previous_version: Previous version of this dataset.
+        hash_value: The hash value of this dataset used for integrity check.
+        data_format: Data format, or a list of formats separated by commas.
+        schema_info: The schema description of the dataset.
+        location: The dataset location on data system.
+        weather_years: The weather year(s) of the dataset.
+        model_years: The model year(s) of the dataset.
+        units: The units of the dataset.
+        temporal_info: The temporal metadata of the dataset.
+        spatial_info: The spatial metadata of the dataset.
+        scenarios: The list of scenario names the dataset relates to.
+        sensitivities: The sensitivities of the dataset.
+        source_code: The source code that produces the dataset.
+        relevant_links: Relevant links to this dataset.
+        resource_url: The resource URL for this dataset.
+        access_group: A group of users that has access to this model.
+        created_at: Project creation time.
+        created_by: User who created the project.
+        last_modified: Last modification datetime.
+        modified_by: User who modified the project.
+    """
 
     # document information
     created_at: datetime = Field(

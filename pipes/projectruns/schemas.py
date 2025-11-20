@@ -12,6 +12,18 @@ from pipes.projects.contexts import ProjectSimpleContext, ProjectObjectContext
 
 
 class ProjectRunCreate(BaseModel):
+    """Project run creation schema.
+
+    Attributes:
+        name: Project run name.
+        description: The description of this project run.
+        assumptions: Assumptions associated with project run that differ from project.
+        requirements: Requirements of the project run that differ from the project.
+        scenarios: The scenarios of this project run.
+        scheduled_start: Schedule project run start date in YYYY-MM-DD format.
+        scheduled_end: Schedule project run end date in YYYY-MM-DD format.
+    """
+
     name: str = Field(
         title="name",
         min_length=1,
@@ -74,10 +86,34 @@ class ProjectRunCreate(BaseModel):
         return value
 
 
-class ProjectRunUpdate(ProjectRunCreate): ...
+class ProjectRunUpdate(ProjectRunCreate):
+    """Project run update schema.
+
+    Attributes:
+        name: Project run name.
+        description: The description of this project run.
+        assumptions: Assumptions associated with project run that differ from project.
+        requirements: Requirements of the project run that differ from the project.
+        scenarios: The scenarios of this project run.
+        scheduled_start: Schedule project run start date in YYYY-MM-DD format.
+        scheduled_end: Schedule project run end date in YYYY-MM-DD format.
+    """
 
 
 class ProjectRunRead(ProjectRunCreate):
+    """Project run read schema.
+
+    Attributes:
+        name: Project run name.
+        description: The description of this project run.
+        assumptions: Assumptions associated with project run that differ from project.
+        requirements: Requirements of the project run that differ from the project.
+        scenarios: The scenarios of this project run.
+        scheduled_start: Schedule project run start date in YYYY-MM-DD format.
+        scheduled_end: Schedule project run end date in YYYY-MM-DD format.
+        context: Project context of team.
+    """
+
     context: ProjectSimpleContext = Field(
         title="context",
         description="project context of team",
@@ -85,6 +121,23 @@ class ProjectRunRead(ProjectRunCreate):
 
 
 class ProjectRunDocument(ProjectRunRead, Document):
+    """Project run document.
+
+    Attributes:
+        name: Project run name.
+        description: The description of this project run.
+        assumptions: Assumptions associated with project run that differ from project.
+        requirements: Requirements of the project run that differ from the project.
+        scenarios: The scenarios of this project run.
+        scheduled_start: Schedule project run start date in YYYY-MM-DD format.
+        scheduled_end: Schedule project run end date in YYYY-MM-DD format.
+        context: Project referenced context.
+        created_at: Project creation time.
+        created_by: User who created the project.
+        last_modified: Last modification datetime.
+        modified_by: User who modified the project.
+    """
+
     context: ProjectObjectContext = Field(
         title="context",
         description="project referenced context",

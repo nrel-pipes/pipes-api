@@ -19,7 +19,14 @@ class ExecutionStatus(str, Enum):
 
 
 class SourceCode(BaseModel):
-    """Source Model Schema"""
+    """Source Model Schema.
+
+    Attributes:
+        location: The location of the source code.
+        branch: The git branch of source code.
+        tag: The git tag of source code.
+        image: The location of container image.
+    """
 
     location: str = Field(
         title="location",
