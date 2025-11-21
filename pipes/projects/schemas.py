@@ -12,6 +12,14 @@ from pymongo import IndexModel
 
 
 class Milestone(BaseModel):
+    """Project milestone schema.
+
+    Attributes:
+        name: Milestone name must be unique from each other.
+        description: Description of milestone.
+        milestone_date: Format YYYY-MM-DD, it must be within the dates of the project.
+    """
+
     name: str = Field(
         title="name",
         description="milestone name must be unique from each other.",
@@ -44,6 +52,13 @@ class Milestone(BaseModel):
 
 
 class Sensitivity(BaseModel):
+    """Project sensitivity schema.
+
+    Attributes:
+        name: Sensitivity name.
+        description: Sensitivity description.
+    """
+
     name: str = Field(
         title="name",
         description="sensitivity name",
@@ -62,6 +77,14 @@ class Sensitivity(BaseModel):
 
 
 class Scenario(BaseModel):
+    """Project scenario schema.
+
+    Attributes:
+        name: Scenario name.
+        description: Scenario description.
+        other: Other properties applied to scenario.
+    """
+
     name: str = Field(
         title="name",
         description="scenario name",
@@ -87,6 +110,24 @@ class Scenario(BaseModel):
 
 # Project
 class ProjectCreate(BaseModel):
+    """Project creation schema.
+
+    Attributes:
+        name: Human-readable project id name, must be unique.
+        title: Project title.
+        description: Project description.
+        assumptions: Project assumptions.
+        requirements: Project requirements.
+        scenarios: Project scenarios.
+        sensitivities: Project sensitivities.
+        milestones: Project milestones.
+        scheduled_start: Project start datetime, format YYYY-MM-DD.
+        scheduled_end: Project end datetime, format YYYY-MM-DD.
+        owner: Project owner.
+        leads: List of project leads.
+        # teams: List of project teams.
+    """
+
     name: str = Field(
         title="name",
         min_length=1,
@@ -169,10 +210,38 @@ class ProjectCreate(BaseModel):
         return value
 
 
-class ProjectUpdate(ProjectCreate): ...
+class ProjectUpdate(ProjectCreate):
+    """Project update schema.
+
+    Attributes:
+        name: Human-readable project id name, must be unique.
+        title: Project title.
+        description: Project description.
+        assumptions: Project assumptions.
+        requirements: Project requirements.
+        scenarios: Project scenarios.
+        sensitivities: Project sensitivities.
+        milestones: Project milestones.
+        scheduled_start: Project start datetime, format YYYY-MM-DD.
+        scheduled_end: Project end datetime, format YYYY-MM-DD.
+        owner: Project owner.
+        leads: List of project leads.
+        # teams: List of project teams.
+    """
 
 
 class ProjectBasicRead(BaseModel):
+    """Project basic read schema.
+
+    Attributes:
+        name: Human-readable project id name, must be unique.
+        title: Project title.
+        description: Project description.
+        owner: Project owner.
+        milestones: Project milestones.
+        created_at: Project creation time.
+    """
+
     name: str = Field(
         title="name",
         min_length=1,
@@ -204,6 +273,24 @@ class ProjectBasicRead(BaseModel):
 
 
 class ProjectDetailRead(ProjectCreate):
+    """Project detail read schema.
+
+    Attributes:
+        name: Human-readable project id name, must be unique.
+        title: Project title.
+        description: Project description.
+        assumptions: Project assumptions.
+        requirements: Project requirements.
+        scenarios: Project scenarios.
+        sensitivities: Project sensitivities.
+        milestones: Project milestones.
+        scheduled_start: Project start datetime, format YYYY-MM-DD.
+        scheduled_end: Project end datetime, format YYYY-MM-DD.
+        owner: Project owner.
+        leads: List of project leads.
+        teams: List of project teams.
+    """
+
     owner: UserRead = Field(
         title="owner",
         description="project owner",
@@ -221,6 +308,28 @@ class ProjectDetailRead(ProjectCreate):
 
 
 class ProjectDocument(ProjectDetailRead, Document):
+    """Project document.
+
+    Attributes:
+        name: Human-readable project id name, must be unique.
+        title: Project title.
+        description: Project description.
+        assumptions: Project assumptions.
+        requirements: Project requirements.
+        scenarios: Project scenarios.
+        sensitivities: Project sensitivities.
+        milestones: Project milestones.
+        scheduled_start: Project start datetime, format YYYY-MM-DD.
+        scheduled_end: Project end datetime, format YYYY-MM-DD.
+        owner: Project owner.
+        leads: List of project leads.
+        teams: List of project teams.
+        created_at: Project creation time.
+        created_by: User who created the project.
+        last_modified: Last modification datetime.
+        modified_by: User who modified the project.
+    """
+
     owner: PydanticObjectId = Field(
         title="owner",
         description="project owner",

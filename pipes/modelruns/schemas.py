@@ -14,7 +14,19 @@ from pipes.datasets.schemas import DatasetSchedule
 
 # Model Run
 class ModelRunCreate(BaseModel):
-    """Model Run Schema"""
+    """Model Run Schema.
+
+    Attributes:
+        name: Model run name.
+        description: The description of the model run.
+        version: The version of model code.
+        assumptions: List of model run assumptions.
+        notes: Model run notes.
+        source_code: The source code of the model run.
+        config: Model run config.
+        env_deps: Model run environment dependencies.
+        datasets: Output datasets for handoff.
+    """
 
     name: str = Field(
         title="name",
@@ -71,6 +83,21 @@ class ModelRunCreate(BaseModel):
 
 
 class ModelRunRead(ModelRunCreate):
+    """Model run read schema.
+
+    Attributes:
+        name: Model run name.
+        description: The description of the model run.
+        version: The version of model code.
+        assumptions: List of model run assumptions.
+        notes: Model run notes.
+        source_code: The source code of the model run.
+        config: Model run config.
+        env_deps: Model run environment dependencies.
+        datasets: Output datasets for handoff.
+        context: Project run context.
+    """
+
     context: ModelSimpleContext = Field(
         title="context",
         description="project run context",
@@ -78,6 +105,25 @@ class ModelRunRead(ModelRunCreate):
 
 
 class ModelRunDocument(ModelRunRead, Document):
+    """Model run document.
+
+    Attributes:
+        name: Model run name.
+        description: The description of the model run.
+        version: The version of model code.
+        assumptions: List of model run assumptions.
+        notes: Model run notes.
+        source_code: The source code of the model run.
+        config: Model run config.
+        env_deps: Model run environment dependencies.
+        datasets: Output datasets for handoff.
+        context: Model context.
+        created_at: Project creation time.
+        created_by: User who created the project.
+        last_modified: Last modification datetime.
+        modified_by: User who modified the project.
+    """
+
     context: ModelObjectContext = Field(
         title="context",
         description="model context",

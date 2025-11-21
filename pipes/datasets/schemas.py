@@ -13,7 +13,14 @@ from pipes.users.schemas import UserCreate, UserRead
 
 
 class DatasetSchedule(BaseModel):
-    """The expected dataset output from model run"""
+    """The expected dataset output from model run.
+
+    Attributes:
+        name: A short dataset name.
+        display_name: The dataset display name.
+        description: The description of the scheduled dataset.
+        scheduled_checkin: Scheduled checkin date in YYYY-MM-DD format.
+    """
 
     name: str = Field(
         title="name",
@@ -37,7 +44,13 @@ class DatasetSchedule(BaseModel):
 
 
 class TemporalInfo(BaseModel):
-    """Dataset temporal information"""
+    """Dataset temporal information.
+
+    Attributes:
+        extent: The temporal extent of the dataset.
+        fidelity: The fidelity of the dataset in time.
+        other: Other info about temporal characteristics of data.
+    """
 
     extent: str = Field(
         title="extent",
@@ -57,7 +70,13 @@ class TemporalInfo(BaseModel):
 
 
 class SpatialInfo(BaseModel):
-    """Dataset spatial information"""
+    """Dataset spatial information.
+
+    Attributes:
+        extent: The spatial extent of the dataset.
+        fidelity: The fidelity of the dataset in space.
+        other: Other info about spatial characteristics of data.
+    """
 
     extent: str = Field(
         title="extent",
@@ -77,7 +96,33 @@ class SpatialInfo(BaseModel):
 
 
 class DatasetCreate(BaseModel):
-    """Dataset Checkin Schema"""
+    """Dataset Checkin Schema.
+
+    Attributes:
+        name: A short name.
+        display_name: The dataset display name.
+        description: The description of the scheduled dataset.
+        version: Dataset version.
+        hash_value: The hash value of this dataset used for integrity check.
+        version_status: Dataset version status.
+        previous_version: Previous version of this dataset.
+        data_format: Data format, or a list of formats separated by commas.
+        schema_info: The schema description of the dataset.
+        location: The dataset location on data system.
+        registration_author: The person who registered this dataset.
+        weather_years: The weather year(s) of the dataset.
+        model_years: The model year(s) of the dataset.
+        units: The units of the dataset.
+        temporal_info: The temportal metadata of the dataset.
+        spatial_info: The spatial metadata of the dataset.
+        scenarios: The list of scenario names the dataset relates to.
+        sensitivities: The sensitivities of the dataset.
+        source_code: The source code that produces the dataset.
+        relevant_links: Relevant links to this dataset.
+        comments: Registration comments about this dataset.
+        resource_url: The resource URL for this dataset.
+        other: Other metadata info about the dataset.
+    """
 
     name: str = Field(
         title="name",
@@ -196,6 +241,35 @@ class DatasetCreate(BaseModel):
 
 
 class DatasetRead(DatasetCreate):
+    """Dataset read schema.
+
+    Attributes:
+        name: A short name.
+        display_name: The dataset display name.
+        description: The description of the scheduled dataset.
+        version: Dataset version.
+        hash_value: The hash value of this dataset used for integrity check.
+        version_status: Dataset version status.
+        previous_version: Previous version of this dataset.
+        data_format: Data format, or a list of formats separated by commas.
+        schema_info: The schema description of the dataset.
+        location: The dataset location on data system.
+        registration_author: Registration author of this dataset.
+        weather_years: The weather year(s) of the dataset.
+        model_years: The model year(s) of the dataset.
+        units: The units of the dataset.
+        temporal_info: The temportal metadata of the dataset.
+        spatial_info: The spatial metadata of the dataset.
+        scenarios: The list of scenario names the dataset relates to.
+        sensitivities: The sensitivities of the dataset.
+        source_code: The source code that produces the dataset.
+        relevant_links: Relevant links to this dataset.
+        comments: Registration comments about this dataset.
+        resource_url: The resource URL for this dataset.
+        other: Other metadata info about the dataset.
+        context: Model run context.
+    """
+
     context: ModelRunSimpleContext = Field(
         title="context",
         description="model run context",
@@ -207,6 +281,39 @@ class DatasetRead(DatasetCreate):
 
 
 class DatasetDocument(DatasetRead, Document):
+    """Dataset document.
+
+    Attributes:
+        name: A short name.
+        display_name: The dataset display name.
+        description: The description of the scheduled dataset.
+        version: Dataset version.
+        hash_value: The hash value of this dataset used for integrity check.
+        version_status: Dataset version status.
+        previous_version: Previous version of this dataset.
+        data_format: Data format, or a list of formats separated by commas.
+        schema_info: The schema description of the dataset.
+        location: The dataset location on data system.
+        registration_author: Registration author reference.
+        weather_years: The weather year(s) of the dataset.
+        model_years: The model year(s) of the dataset.
+        units: The units of the dataset.
+        temporal_info: The temportal metadata of the dataset.
+        spatial_info: The spatial metadata of the dataset.
+        scenarios: The list of scenario names the dataset relates to.
+        sensitivities: The sensitivities of the dataset.
+        source_code: The source code that produces the dataset.
+        relevant_links: Relevant links to this dataset.
+        comments: Registration comments about this dataset.
+        resource_url: The resource URL for this dataset.
+        other: Other metadata info about the dataset.
+        context: Model run context reference.
+        created_at: Project creation time.
+        created_by: User who created the project.
+        last_modified: Last modification datetime.
+        modified_by: User who modified the project.
+    """
+
     context: ModelRunObjectContext = Field(
         title="context",
         description="model run context reference",

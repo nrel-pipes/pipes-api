@@ -13,7 +13,19 @@ from pipes.projectruns.contexts import ProjectRunSimpleContext, ProjectRunObject
 
 # Handoffs
 class HandoffCreate(BaseModel):
-    """Handoff schema between models"""
+    """Handoff schema between models.
+
+    Attributes:
+        from_model: The from_model name.
+        to_model: The to_model name.
+        from_modelrun: The model run name that generates the handoff.
+        name: Unique handoff identifier.
+        description: Description of this handoff.
+        scheduled_start: Scheduled start date.
+        scheduled_end: Scheduled end date.
+        submission_date: Scheduled end date.
+        notes: Handoff notes.
+    """
 
     from_model: str = Field(
         title="from_model",
@@ -95,16 +107,63 @@ class HandoffCreate(BaseModel):
 
 
 class HandoffRead(HandoffCreate):
+    """Handoff read schema.
+
+    Attributes:
+        from_model: The from_model name.
+        to_model: The to_model name.
+        from_modelrun: The model run name that generates the handoff.
+        name: Unique handoff identifier.
+        description: Description of this handoff.
+        scheduled_start: Scheduled start date.
+        scheduled_end: Scheduled end date.
+        submission_date: Scheduled end date.
+        notes: Handoff notes.
+        context: Project run context.
+    """
+
     context: ProjectRunSimpleContext = Field(
         title="context",
         description="project run context",
     )
 
 
-class HandoffUpdate(HandoffCreate): ...
+class HandoffUpdate(HandoffCreate):
+    """Handoff update schema.
+
+    Attributes:
+        from_model: The from_model name.
+        to_model: The to_model name.
+        from_modelrun: The model run name that generates the handoff.
+        name: Unique handoff identifier.
+        description: Description of this handoff.
+        scheduled_start: Scheduled start date.
+        scheduled_end: Scheduled end date.
+        submission_date: Scheduled end date.
+        notes: Handoff notes.
+    """
 
 
 class HandoffDocument(HandoffRead, Document):
+    """Handoff document.
+
+    Attributes:
+        from_model: The from_model object id.
+        to_model: The to_model object id.
+        from_modelrun: The modelrun object id.
+        name: Unique handoff identifier.
+        description: Description of this handoff.
+        scheduled_start: Scheduled start date.
+        scheduled_end: Scheduled end date.
+        submission_date: Scheduled end date.
+        notes: Handoff notes.
+        context: The project run object id.
+        created_at: Project creation time.
+        created_by: User who created the project.
+        last_modified: Last modification datetime.
+        modified_by: User who modified the project.
+    """
+
     context: ProjectRunObjectContext = Field(
         title="context",
         description="the project run object id",
