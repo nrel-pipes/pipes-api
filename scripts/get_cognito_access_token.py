@@ -38,7 +38,7 @@ def create_superuser(access_token):
         "email": None,
         "first_name": None,
         "last_name": None,
-        "organization": "NREL",
+        "organization": "NLR",
         "is_superuser": True,
     }
     for item in response["UserAttributes"]:
