@@ -13,6 +13,6 @@ async def welcome():
 @router.get("/ping")
 async def ping():
     """
-    Check the health status of the NREL PIPES service.
+    Check the health status of the PIPES service.
     """
     return {"message": "pong", "status": "healthy"}

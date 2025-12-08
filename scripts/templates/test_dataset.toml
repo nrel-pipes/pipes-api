@@ -39,7 +39,7 @@
     email = "Meghan.Mooney@nrel.gov"
 
   [dataset.source_code] # source code related to data
-    location = "https://github.com/NREL/mycode/"  # e.g. github url
+    location = "https://github.com/NLR/mycode/"  # e.g. github url
     branch = "test"
 
   [dataset.temporal_info]

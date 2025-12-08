@@ -109,7 +109,7 @@ class ESIFRepoAPI(BaseModel):
 
 
 class HPCStorage(BaseModel):
-    """NREL HPC Storage Schema"""
+    """NLR HPC Storage Schema"""
 
     path: str = Field(
         title="path",
