@@ -19,7 +19,7 @@ services:
     container_name: api
     restart: on-failure
     env_file:
-      - .env
+      - /.env
     volumes:
       - .:/app
     ports:
@@ -35,3 +35,4 @@ networks:
 
 volumes:
   mongo-data:
+    driver: local
