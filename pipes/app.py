@@ -15,7 +15,8 @@ from pipes.config.settings import settings
 from pipes.health.routes import router as health_router
 
 # Catalog Models
-from pipes.catalogmodels.schemas import CatalogModelDocument
+from pipes.catalogmodels.schemas import GeneralCatalogModelDocument
+from pipes.catalogmodels.ifac.schemas import IFACCatalogModelDocument
 from pipes.catalogmodels.routes import router as catalogmodels_router
 
 # Catalog Datasets
@@ -92,7 +93,8 @@ async def lifespan(app: FastAPI):
             TaskDocument,
             TeamDocument,
             UserDocument,
-            CatalogModelDocument,
+            GeneralCatalogModelDocument,
+            IFACCatalogModelDocument,
             CatalogDatasetDocument,
         ],
     )

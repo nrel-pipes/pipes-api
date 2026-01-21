@@ -6,28 +6,45 @@ from pydantic import EmailStr
 import pymongo
 from pymongo import IndexModel
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, Field, field_validator
 
 from pipes.users.schemas import UserRead, UserCreate
 
 
-class GeneralCatalogModelCreate(BaseModel, extra="allow"):
-    """Baseline model schema for model catalog entries. All catalog model entries will validate against this schema first before validating against specific schemas.
+class ModelingTeam(BaseModel):
+    """Modeling team information.
+
+    Attributes:
+        name: Name of the modeling team.
+        members: List of team members.
+    """
+
+    name: str = Field(
+        title="name",
+        description="Name of the modeling team",
+    )
+    members: list[UserCreate] = Field(
+        title="members",
+        description="List of team members",
+    )
+
+
+class DefaultCatalogModelCreate(BaseModel):
+    """Model schema for catalog.
 
     Attributes:
         name: The model name.
         display_name: Display name for this model vertex.
         type: Type of model to use in graphic headers (e.g, 'Capacity Expansion').
         description: Description of the model.
+        assumptions: List of model assumptions.
         requirements: Model specific requirements (if different from Project and Project-Run).
+        expected_scenarios: List of expected model scenarios.
+        modeling_team: Information about the modeling team.
         other: Other metadata info about the model in dictionary.
         access_group: A group of users that has access to this model.
     """
 
-    catalog_schema: str = Field(
-        title="catalog_schema",
-        description="The schema that this model conforms to.",
-    )
     name: str = Field(
         title="model_catalog",
         min_length=1,
@@ -46,10 +63,25 @@ class GeneralCatalogModelCreate(BaseModel, extra="allow"):
         title="description",
         description="Description of the model",
     )
+    assumptions: list[str] = Field(
+        title="assumptions",
+        description="List of model assumptions",
+        default=[],
+    )
     requirements: dict = Field(
         title="requirements",
         default={},
         description="Model specific requirements (if different from Project and Project-Run)",
+    )
+    expected_scenarios: list[str] = Field(
+        title="expected_scenarios",
+        description="List of expected model scenarios",
+        default=[],
+    )
+    modeling_team: ModelingTeam | None = Field(
+        title="modeling_team",
+        description="Information about the modeling team",
+        default=None,
     )
     other: dict = Field(
         title="other",
@@ -70,7 +102,7 @@ class GeneralCatalogModelCreate(BaseModel, extra="allow"):
         return value
 
 
-class GeneralCatalogModelUpdate(GeneralCatalogModelCreate):
+class DefaultCatalogModelUpdate(DefaultCatalogModelCreate):
     """Model update schema.
 
     Attributes:
@@ -89,7 +121,7 @@ class GeneralCatalogModelUpdate(GeneralCatalogModelCreate):
     pass
 
 
-class GeneralCatalogModelRead(GeneralCatalogModelCreate):
+class DefaultCatalogModelRead(DefaultCatalogModelCreate):
     """Model read schema.
 
     Attributes:
@@ -107,11 +139,6 @@ class GeneralCatalogModelRead(GeneralCatalogModelCreate):
         created_by: User who created the model in catalog.
     """
 
-    id: PydanticObjectId = Field(exclude=True)
-    modified_by: UserRead = Field(
-        title="modified_by",
-        description="user who last modified the model in catalog",
-    )
     access_group: list[EmailStr] = Field(
         title="access_group",
         default=[],
@@ -126,7 +153,8 @@ class GeneralCatalogModelRead(GeneralCatalogModelCreate):
         description="user who created the model in catalog",
     )
 
-class GeneralCatalogModelDocument(GeneralCatalogModelCreate, Document):
+
+class DefaultCatalogModelDocument(DefaultCatalogModelCreate, Document):
     """Catalog model document.
 
     Attributes:
