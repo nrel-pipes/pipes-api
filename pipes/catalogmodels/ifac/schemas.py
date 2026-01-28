@@ -395,28 +395,18 @@ class EnvironmentRequirement(BaseModel):
         description="Add additional environment requirement context.",
     )
 
-class Requirement(BaseModel):
-    general_data_description: Optional[GeneralDataDescriptionSchema] = Field(
-        title="general_data_description",
-        default=None,
-        description="The general data description requirement describes known data requirements for a tool that may need to be sourced/generated (e.g. Load Forecast Data, System Asset Data).",
-    )  # 
-    dataset: Optional[DatasetSchema] = Field(
-        title="dataset",
-        default=None,
-        description="The dataset requirement is a specific published dataset with a location and author (e.g. 2024 ATB).",
-    )
-    spatial: Optional[SpatialDimensions] = Field(
+class Requirements(BaseModel):
+    spatial: Optional[Dict[str,SpatialDimensions]] = Field(
         title="spatial",
         default=None,
         description="Spatial requirement block.",
     )
-    temporal: Optional[TemporalDimensions] = Field(
+    temporal: Optional[Dict[str,TemporalDimensions]] = Field(
         title="temporal",
         default=None,
         description="Temporal requirement block.",
     )
-    environment: Optional[EnvironmentRequirement] = Field(
+    environment: Optional[Dict[str,EnvironmentRequirement]] = Field(
         title="environment",
         default=None,
         description="Environment requirement block.",
@@ -426,6 +416,24 @@ class Requirement(BaseModel):
         default=None,
         description="Miscellaneous key-value requirements block.",
     )
+
+class Input(BaseModel):
+    general_data_description: Optional[GeneralDataDescriptionSchema] = Field(
+        title="general_data_description",
+        default=None,
+        description="The general data description output describes known data produced by the tool (e.g. Load Forecast Data, System Asset Data).",
+    )
+    dataset: Optional[DatasetSchema] = Field(
+        title="dataset",
+        default=None,
+        description="The dataset output is a specific published dataset with a location and author (e.g. 2024 ATB).",
+    )
+    misc: Optional[Dict[str, str]] = Field(
+        title="misc",
+        default=None,
+        description="Miscellaneous key-value output block.",
+    )
+
 
 class Output(BaseModel):
     general_data_description: Optional[GeneralDataDescriptionSchema] = Field(
@@ -547,12 +555,20 @@ class IFACCatalogModelCreate(BaseModel):
     )
 
     # Required
-    # Tool requirements. There are 5 types of requirements, Dataset, Spatial, Temporal, Environment, and Misc, and the specsheet supports multiple requirements of each type as needed to document the full set of tool requirements.
+    # Tool requirements. There are 4 types of requirements, Spatial, Temporal, Environment, and Misc, and the specsheet supports multiple requirements of each type as needed to document the full set of tool requirements.
     # The top level key in each element determines the requirement type and required fields. An example of each requirement type is shown below. 
-    requirements: Dict[str, Requirement] = Field(
+    requirements: Requirements = Field(
         title="requirements",
-        description="Tool requirements. There are 5 types of requirements, Dataset, Spatial, Temporal, Environment, and Misc, and the specsheet supports multiple requirements of each type as needed to document the full set of tool requirements.\
+        description="Tool requirements. There are 4 types of requirements, spatial, temporal, environment, and misc, and the specsheet supports multiple requirements of each type as needed to document the full set of tool requirements.\
               The top level key in each element determines the requirement type and required fields. An example of each requirement type is shown below.",
+    )
+
+    # Required
+    # Inputs of the tool, specifically input Datasets, GeneralDataDescriptions, or Misc inputs.
+    inputs: Optional[List[Input]] = Field(
+        title="inputs",
+        default=None,
+        description="Inputs of the tool, specifically input Datasets, GeneralDataDescriptions, or Misc inputs.",
     )
 
     # Optional
