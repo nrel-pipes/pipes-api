@@ -11,6 +11,7 @@ from pymongo import IndexModel
 from pipes.common.schemas import SourceCode, ExecutionStatus
 from pipes.modelruns.contexts import ModelRunObjectContext, ModelRunSimpleContext
 from pipes.users.schemas import UserCreate, UserRead
+from pipes.datasets.schemas import DatasetRead
 
 
 class TaskType(str, Enum):
@@ -119,7 +120,7 @@ class TaskCreate(BaseModel):
         default={},
     )
     output_datasets: list[str] = Field(
-        title="output_datasts",
+        title="output_datasets",
         description="List of datasets produced from this task",
         default=[],
     )
@@ -171,15 +172,15 @@ class TaskRead(TaskCreate):
         title="assignee",
         description="Assignee in user read schema",
     )
-    # input_datasets: list[DatasetRead] = Field(
-    #     title="input_datasets",
-    #     description="List of input datasets in read schema",
-    # )
-    # output_datasets: list[DatasetRead] = Field(
-    #     title="output_datasets",
-    #     description="List of output datasets in read schema",
-    #     default=[],
-    # )
+    input_datasets: list[DatasetRead] = Field(
+         title="input_datasets",
+         description="List of input datasets in read schema",
+    )
+    output_datasets: list[DatasetRead] = Field(
+        title="output_datasets",
+        description="List of output datasets in read schema",
+        default=[],
+    )
 
 
 class TaskDocument(TaskRead, Document):
@@ -220,6 +221,7 @@ class TaskDocument(TaskRead, Document):
     )
     input_datasets: list[PydanticObjectId] = Field(
         title="input_datasets",
+        default=[],
         description="List of input dataset object ids",
     )
     output_datasets: list[PydanticObjectId] = Field(
