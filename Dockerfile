@@ -12,6 +12,7 @@ RUN apt-get update \
         build-essential \
         gcc \
         g++ \
+    && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create virtual environment to isolate dependencies
@@ -37,6 +38,7 @@ ENV LC_ALL=C.UTF-8 \
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         netcat-openbsd \
+    && apt-get upgrade -y \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

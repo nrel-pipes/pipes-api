@@ -6,12 +6,13 @@ ENV PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-# Install build dependencies
+# Install build dependencies and upgrade all packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
         gcc \
         g++ \
+    && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create virtual environment to isolate dependencies
@@ -33,10 +34,11 @@ ENV LC_ALL=C.UTF-8 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH"
 
-# Install only runtime dependencies (no build tools!)
+# Install only runtime dependencies (no build tools!) and upgrade all packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         netcat-openbsd \
+    && apt-get upgrade -y \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
