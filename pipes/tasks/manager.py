@@ -9,7 +9,7 @@ from pymongo.errors import DuplicateKeyError
 from pipes.common.exceptions import DocumentAlreadyExists, DocumentDoesNotExist
 from pipes.common.schemas import ExecutionStatus
 from pipes.datasets.manager import DatasetManager
-from pipes.datasets.schemas import DatasetRead
+from pipes.datasets.schemas import DatasetRead, DatasetDocument
 from pipes.db.manager import AbstractObjectManager
 from pipes.common.constants import NodeLabel
 from pipes.projects.schemas import ProjectDocument
@@ -112,9 +112,9 @@ class TaskManager(AbstractObjectManager):
         assignee_doc = await user_manager.get_or_create_user(assignee)
         return assignee_doc
 
-    async def _get_dataset(self, d_name) -> DatasetRead:
+    async def _get_dataset(self, d_name) -> DatasetDocument:
         dataset_manager = DatasetManager(self.context)
-        d_doc = await dataset_manager.get_dataset(d_name)
+        d_doc = await dataset_manager.get_dataset_document(d_name)
         if not d_doc:
             raise DocumentDoesNotExist(
                 "Dataset does not exist, please checkin this dataset first.",
@@ -208,19 +208,19 @@ class TaskManager(AbstractObjectManager):
             data["assignee"] = None
 
         # task input & output datasets
-        # dataset_manager = DatasetManager(self.context)
-        # input_datasets = []
-        # for d_id in task_doc.input_datasets:
-        #     d_doc = await self.d.get(collection=DatasetDocument, id=d_id)
-        #     d_read = await dataset_manager.read_dataset(d_doc)
-        #     input_datasets.append(d_read)
-        # data["input_datasets"] = input_datasets
+        dataset_manager = DatasetManager(self.context)
+        input_datasets = []
+        for d_id in task_doc.input_datasets:
+            d_doc = await self.d.get(collection=DatasetDocument, id=d_id)
+            d_read = await dataset_manager.read_dataset(d_doc)
+            input_datasets.append(d_read)
+        data["input_datasets"] = input_datasets
 
-        # output_datasets = []
-        # for d_id in task_doc.output_datasets:
-        #     d_doc = await self.d.get(collection=DatasetDocument, id=d_id)
-        #     d_read = await dataset_manager.read_dataset(d_doc)
-        #     output_datasets.append(d_read)
-        # data["output_datasets"] = output_datasets
+        output_datasets = []
+        for d_id in task_doc.output_datasets:
+            d_doc = await self.d.get(collection=DatasetDocument, id=d_id)
+            d_read = await dataset_manager.read_dataset(d_doc)
+            output_datasets.append(d_read)
+        data["output_datasets"] = output_datasets
 
         return TaskRead.model_validate(data)
