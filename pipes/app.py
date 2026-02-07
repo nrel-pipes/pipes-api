@@ -57,6 +57,11 @@ from pipes.teams.schemas import TeamDocument
 # Users
 from pipes.users.schemas import UserDocument
 from pipes.users.routes import router as users_router
+
+# Access groups
+from pipes.accessgroups.schemas import AccessGroupDocument
+from pipes.accessgroups.routes import router as accessgroups_router
+
 from pipes.version import __version__
 
 
@@ -94,6 +99,7 @@ async def lifespan(app: FastAPI):
             UserDocument,
             CatalogModelDocument,
             CatalogDatasetDocument,
+            AccessGroupDocument,
         ],
     )
 
@@ -132,6 +138,7 @@ app.include_router(handoffs_router, prefix="/api", tags=["handoffs"])
 app.include_router(tasks_router, prefix="/api", tags=["tasks"])
 app.include_router(teams_router, prefix="/api", tags=["teams"])
 app.include_router(users_router, prefix="/api", tags=["users"])
+app.include_router(accessgroups_router, prefix="/api", tags=["accessgroups"])
 
 
 @app.get("/")
