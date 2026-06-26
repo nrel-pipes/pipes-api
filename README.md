@@ -142,18 +142,6 @@ The following skills and frameworks are recommended:
 * `superpowers`
 * `context7`
 
-Also, we need to install `openspec` for this project,
-
-```bash
-$ npm install -g @fission-ai/openspec@latest
-```
-
-Then navigate to the project root directory and initialize:
-
-```bash
-$ openspec init
-```
-
 
 ## 2. Cognito Authentication
 
@@ -183,12 +171,10 @@ $ db.users.updateOne({'email': <Your-Email>}, {'$set': {is_superuser: true}})
 ```
 
 
+
 ## 4. Coding Workflow
 
-PIPES adopts a hybrid spec-driven, test-driven development workflow using two complementary tools:
-
-- **[OpenSpec](https://github.com/fission-ai/openspec)** — the planning layer. Structures feature proposals, spec deltas, design decisions, and task breakdowns before any code is written.
-- **[Superpowers](https://github.com/obra/superpowers)** — the execution layer. A composable skill library for Claude Code that enforces TDD (RED-GREEN-REFACTOR), systematic debugging, and structured code review.
+PIPES adopts a test-driven development workflow using [Superpowers](https://github.com/obra/superpowers) — a composable skill library for Claude Code that enforces TDD (RED-GREEN-REFACTOR), systematic debugging, and structured code review.
 
 ### Workflow Overview
 
@@ -196,59 +182,52 @@ PIPES adopts a hybrid spec-driven, test-driven development workflow using two co
 Feature Request
       │
       ▼
- 1. /opsx:propose       ← OpenSpec: create proposal, spec deltas, design, tasks
+ 0. /grill-me               ← Superpowers: interview LLM to clarify requirements and write ADR
       │
       ▼
- 2. Review & refine     ← Team reviews proposal.md, design.md, tasks.md
+ 1. /brainstorming          ← Superpowers: explore design options before committing to an approach
       │
       ▼
- 3. /writing-plans      ← Superpowers: break tasks into TDD-ready steps
+ 2. /writing-plans          ← Superpowers: break tasks into TDD-ready steps
       │
       ▼
- 4. /test-driven-development  ← Superpowers: implement each task RED→GREEN→REFACTOR
+ 3. /test-driven-development  ← Superpowers: implement each task RED→GREEN→REFACTOR
       │
       ▼
- 5. /verification-before-completion  ← Superpowers: evidence-based sign-off
-      │
-      ▼
- 6. /opsx:archive       ← OpenSpec: mark change complete, update base specs
+ 4. /verification-before-completion  ← Superpowers: evidence-based sign-off
 ```
 
 ### Step-by-Step Guide
 
-**Step 1 — Propose (OpenSpec)**
+**Step 0 — Clarify requirements and write ADR (Superpowers)**
 
-Inside Claude Code, run:
+For any non-trivial feature, start by interviewing the LLM to surface unknowns and document decisions:
+
+This runs a relentless Q&A session, resolving each branch of the decision tree one question at
+a time. The output is used to write an ADR in `docs/ADRs/` before any code is written.
+
+**Step 1 — Brainstorm the approach (Superpowers)**
+
+Before writing a plan, explore the design space:
 
 ```
-/opsx:propose <change-name>
+/brainstorming
 ```
 
-OpenSpec reads the codebase and existing specs, then generates a structured change under `openspec/changes/<change-name>/`:
+This explores user intent, requirements, and constraints — helping you consider alternatives
+and trade-offs before committing to a direction. Use the output to inform the plan in Step 2.
 
-```
-openspec/changes/<change-name>/
-├── proposal.md    # Rationale, objectives, scope
-├── specs/         # Spec deltas — before/after requirement diffs
-├── design.md      # Technical architecture and decisions
-└── tasks.md       # Numbered implementation checklist (1.1, 1.2, 2.1 ...)
-```
+**Step 2 — Plan tasks (Superpowers)**
 
-**Step 2 — Review**
-
-Before writing any code, review `proposal.md`, `design.md`, and the spec deltas. Edit any of these files freely — OpenSpec is "fluid not rigid". The spec delta is the primary review artifact: it shows exactly what requirements are changing.
-
-**Step 3 — Plan tasks (Superpowers)**
-
-Once the proposal is agreed on, activate TDD-style planning:
+Activate TDD-style planning:
 
 ```
 /writing-plans
 ```
 
-This breaks each item in `tasks.md` into bite-sized steps following the pattern: write failing test → verify failure → implement minimally → verify passing → commit.
+This breaks each task into bite-sized steps following the pattern: write failing test → verify failure → implement minimally → verify passing → commit.
 
-**Step 4 — Implement with TDD (Superpowers)**
+**Step 3 — Implement with TDD (Superpowers)**
 
 For each task, enforce RED-GREEN-REFACTOR:
 
@@ -262,9 +241,9 @@ Key rules the skill enforces:
 - **REFACTOR**: Improve clarity while keeping all tests green.
 - Any production code written before a failing test exists must be deleted entirely.
 
-Run `tox` after each task to confirm nothing is broken.
+Run `python manage.py test` after each task to confirm nothing is broken.
 
-**Step 5 — Verify (Superpowers)**
+**Step 4 — Verify (Superpowers)**
 
 Before marking work done, run:
 
@@ -274,28 +253,18 @@ Before marking work done, run:
 
 This blocks "I think it works" claims and requires evidence (test output, manual checks) before closing a task.
 
-**Step 6 — Archive (OpenSpec)**
-
-Once all tasks are done and `tox` passes:
-
-```
-/opsx:archive
-```
-
-This moves the change to `openspec/changes/archive/` with a date prefix and updates the base specs, so future proposals have an accurate picture of the codebase.
-
 ### Quick Reference
 
 | Situation | Tool | Command |
 |---|---|---|
-| Propose a new feature or fix | OpenSpec | `/opsx:propose <name>` |
-| Resume in-progress work | OpenSpec | `/opsx:continue` |
+| Clarify requirements and write ADR | Superpowers | `/grill-me` |
+| Explore design options | Superpowers | `/brainstorming` |
 | Break proposal into TDD steps | Superpowers | `/writing-plans` |
 | Implement a task with TDD | Superpowers | `/test-driven-development` |
 | Debug a failing test systematically | Superpowers | `/systematic-debugging` |
 | Sign off on a completed task | Superpowers | `/verification-before-completion` |
-| Archive a completed change | OpenSpec | `/opsx:archive` |
 
+---
 
 ## 5. API Documentation
 
