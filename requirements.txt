@@ -3,7 +3,7 @@ beanie==1.30.0
 boto3==1.40.68
 cryptography==48.0.0
 email-validator==2.3.0
-fastapi==0.128.0
+fastapi==0.139.2
 pydantic-settings==2.12.0
 
 pymongo==4.15.3
